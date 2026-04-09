@@ -1,0 +1,142 @@
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+
+export type Tone = "casual" | "professional" | "trendy";
+export type Length = "short" | "medium" | "long";
+
+export interface GenerationResult {
+  id: string;
+  description: string;
+  hashtags: string[];
+  detected_brand?: string;
+  detected_category?: string;
+  tone: Tone;
+  length: Length;
+  timestamp: number;
+  imagePreview?: string; // thumbnail for history
+}
+
+interface FormState {
+  image: string | null; // base64
+  brand: string;
+  category: string;
+  condition: string;
+  size: string;
+  style_notes: string;
+  tone: Tone;
+  length: Length;
+}
+
+interface DescribeState {
+  form: FormState;
+  result: GenerationResult | null;
+  loading: boolean;
+  error: string | null;
+  history: GenerationResult[];
+  setField: <K extends keyof FormState>(key: K, value: FormState[K]) => void;
+  setImage: (image: string | null) => void;
+  setResult: (result: GenerationResult | null) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  addToHistory: (result: GenerationResult) => void;
+  clearForm: () => void;
+  generate: () => Promise<void>;
+}
+
+const initialForm: FormState = {
+  image: null,
+  brand: "",
+  category: "",
+  condition: "",
+  size: "",
+  style_notes: "",
+  tone: "casual",
+  length: "medium",
+};
+
+export const useDescribeStore = create<DescribeState>()(
+  persist(
+    (set, get) => ({
+      form: initialForm,
+      result: null,
+      loading: false,
+      error: null,
+      history: [],
+
+      setField: (key, value) =>
+        set((state) => ({ form: { ...state.form, [key]: value } })),
+
+      setImage: (image) =>
+        set((state) => ({ form: { ...state.form, image } })),
+
+      setResult: (result) => set({ result }),
+
+      setLoading: (loading) => set({ loading }),
+
+      setError: (error) => set({ error }),
+
+      addToHistory: (result) =>
+        set((state) => ({
+          history: [result, ...state.history].slice(0, 10),
+        })),
+
+      clearForm: () => set({ form: initialForm, result: null, error: null }),
+
+      generate: async () => {
+        const { form } = get();
+        set({ loading: true, error: null });
+
+        try {
+          const res = await fetch("/api/describe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              image: form.image,
+              brand: form.brand || undefined,
+              category: form.category || undefined,
+              condition: form.condition || undefined,
+              size: form.size || undefined,
+              style_notes: form.style_notes || undefined,
+              tone: form.tone,
+              length: form.length,
+            }),
+          });
+
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || "Failed to generate description");
+          }
+
+          const data = await res.json();
+
+          const result: GenerationResult = {
+            id: crypto.randomUUID(),
+            description: data.description,
+            hashtags: data.hashtags,
+            detected_brand: data.detected_brand,
+            detected_category: data.detected_category,
+            tone: form.tone,
+            length: form.length,
+            timestamp: Date.now(),
+            imagePreview: form.image
+              ? form.image.slice(0, 200)
+              : undefined,
+          };
+
+          set({ result, loading: false });
+          get().addToHistory(result);
+        } catch (err) {
+          set({
+            loading: false,
+            error:
+              err instanceof Error ? err.message : "Something went wrong",
+          });
+        }
+      },
+    }),
+    {
+      name: "relist-describe-history",
+      partialize: (state) => ({ history: state.history }),
+    }
+  )
+);

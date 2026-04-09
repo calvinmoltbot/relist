@@ -1,72 +1,77 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Repeat, TrendingUp, Zap } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  DollarSign,
+  Package,
+  Percent,
+  Clock,
+} from "lucide-react";
 
-export default function Home() {
+const stats = [
+  {
+    title: "Revenue this month",
+    value: "--",
+    icon: DollarSign,
+  },
+  {
+    title: "Items sold",
+    value: "--",
+    icon: Package,
+  },
+  {
+    title: "Profit margin",
+    value: "--",
+    icon: Percent,
+  },
+  {
+    title: "Effective hourly rate",
+    value: "--",
+    icon: Clock,
+  },
+];
+
+export default function DashboardPage() {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-6">
-      <main className="flex max-w-2xl flex-col items-center gap-8 text-center">
-        <Badge variant="secondary" className="text-sm">
-          Beta
-        </Badge>
-
-        <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
-          ReList
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-100">
+          Good morning
         </h1>
-
-        <p className="max-w-md text-lg text-muted-foreground">
-          Smart tools for Vinted resellers. Track listings, automate relisting,
-          and grow your shop.
+        <p className="mt-1 text-sm text-zinc-400">
+          Here&apos;s an overview of your reselling business.
         </p>
-
-        <div className="flex gap-3">
-          <Button size="lg">
-            Get Started
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-          <Button size="lg" variant="outline">
-            Learn More
-          </Button>
-        </div>
-
-        <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-3">
-          <Feature
-            icon={<Repeat className="h-5 w-5" />}
-            title="Auto Relist"
-            description="Automatically relist expired items to keep your shop fresh."
-          />
-          <Feature
-            icon={<TrendingUp className="h-5 w-5" />}
-            title="Analytics"
-            description="Track views, favourites, and sales across all your listings."
-          />
-          <Feature
-            icon={<Zap className="h-5 w-5" />}
-            title="Bulk Actions"
-            description="Edit prices, descriptions, and photos in bulk."
-          />
-        </div>
-      </main>
-    </div>
-  );
-}
-
-function Feature({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-2 rounded-lg border border-border p-6">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-        {icon}
       </div>
-      <h3 className="font-semibold">{title}</h3>
-      <p className="text-sm text-muted-foreground">{description}</p>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <Card key={stat.title} className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="flex flex-row items-center justify-between pb-1">
+              <CardTitle className="text-sm font-medium text-zinc-400">
+                {stat.title}
+              </CardTitle>
+              <stat.icon className="size-4 text-zinc-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-zinc-100">
+                {stat.value}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+          <Package className="size-10 text-zinc-600 mb-3" />
+          <p className="text-sm text-zinc-400">
+            Start by adding inventory to track your business
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

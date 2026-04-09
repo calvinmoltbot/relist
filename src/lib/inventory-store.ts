@@ -1,0 +1,169 @@
+import { create } from "zustand";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+export interface InventoryItem {
+  id: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  condition: string | null;
+  size: string | null;
+  costPrice: string | null;
+  listedPrice: string | null;
+  soldPrice: string | null;
+  status: string;
+  platform: string | null;
+  photoUrls: string[] | null;
+  description: string | null;
+  sourceType: string | null;
+  sourceLocation: string | null;
+  listedAt: string | null;
+  soldAt: string | null;
+  shippedAt: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface NewInventoryItem {
+  name: string;
+  brand?: string;
+  category?: string;
+  condition?: string;
+  size?: string;
+  costPrice?: string;
+  listedPrice?: string;
+  description?: string;
+  sourceType?: string;
+  sourceLocation?: string;
+}
+
+export type ItemStatus = "all" | "sourced" | "listed" | "sold" | "shipped";
+export type SortBy = "date" | "price" | "brand";
+
+export interface InventoryFilters {
+  status: ItemStatus;
+  search: string;
+  sortBy: SortBy;
+}
+
+// ---------------------------------------------------------------------------
+// Store
+// ---------------------------------------------------------------------------
+interface InventoryState {
+  items: InventoryItem[];
+  loading: boolean;
+  filters: InventoryFilters;
+  fetchItems: () => Promise<void>;
+  addItem: (item: NewInventoryItem) => Promise<void>;
+  updateItem: (id: string, data: Partial<InventoryItem>) => Promise<void>;
+  deleteItem: (id: string) => Promise<void>;
+  setFilters: (filters: Partial<InventoryFilters>) => void;
+}
+
+export const useInventoryStore = create<InventoryState>((set, get) => ({
+  items: [],
+  loading: false,
+  filters: {
+    status: "all",
+    search: "",
+    sortBy: "date",
+  },
+
+  fetchItems: async () => {
+    set({ loading: true });
+    try {
+      const { filters } = get();
+      const params = new URLSearchParams();
+      if (filters.status !== "all") params.set("status", filters.status);
+      if (filters.search) params.set("search", filters.search);
+      if (filters.sortBy) params.set("sort", filters.sortBy);
+
+      const res = await fetch(`/api/inventory?${params.toString()}`);
+      const data = await res.json();
+      set({ items: data.items });
+    } catch (err) {
+      console.error("Failed to fetch items:", err);
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  addItem: async (item) => {
+    // Optimistic: create a temp item
+    const tempId = `temp-${Date.now()}`;
+    const optimistic: InventoryItem = {
+      id: tempId,
+      name: item.name,
+      brand: item.brand ?? null,
+      category: item.category ?? null,
+      condition: item.condition ?? null,
+      size: item.size ?? null,
+      costPrice: item.costPrice ?? null,
+      listedPrice: item.listedPrice ?? null,
+      soldPrice: null,
+      status: "sourced",
+      platform: "vinted",
+      photoUrls: null,
+      description: item.description ?? null,
+      sourceType: item.sourceType ?? null,
+      sourceLocation: item.sourceLocation ?? null,
+      listedAt: null,
+      soldAt: null,
+      shippedAt: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    set((s) => ({ items: [optimistic, ...s.items] }));
+
+    try {
+      const res = await fetch("/api/inventory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(item),
+      });
+      const data = await res.json();
+      // Replace optimistic with real
+      set((s) => ({
+        items: s.items.map((i) => (i.id === tempId ? data.item : i)),
+      }));
+    } catch {
+      // Rollback
+      set((s) => ({ items: s.items.filter((i) => i.id !== tempId) }));
+    }
+  },
+
+  updateItem: async (id, data) => {
+    // Optimistic
+    const prev = get().items;
+    set((s) => ({
+      items: s.items.map((i) => (i.id === id ? { ...i, ...data } : i)),
+    }));
+
+    try {
+      await fetch(`/api/inventory/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+    } catch {
+      set({ items: prev });
+    }
+  },
+
+  deleteItem: async (id) => {
+    const prev = get().items;
+    set((s) => ({ items: s.items.filter((i) => i.id !== id) }));
+
+    try {
+      await fetch(`/api/inventory/${id}`, { method: "DELETE" });
+    } catch {
+      set({ items: prev });
+    }
+  },
+
+  setFilters: (partial) => {
+    set((s) => ({ filters: { ...s.filters, ...partial } }));
+  },
+}));
