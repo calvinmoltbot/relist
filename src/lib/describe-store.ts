@@ -25,6 +25,7 @@ interface FormState {
   style_notes: string;
   tone: Tone;
   length: Length;
+  model: string;
 }
 
 interface DescribeState {
@@ -52,6 +53,7 @@ const initialForm: FormState = {
   style_notes: "",
   tone: "casual",
   length: "medium",
+  model: "google/gemini-2.5-flash-lite",
 };
 
 export const useDescribeStore = create<DescribeState>()(
@@ -99,6 +101,7 @@ export const useDescribeStore = create<DescribeState>()(
               style_notes: form.style_notes || undefined,
               tone: form.tone,
               length: form.length,
+              model: form.model,
             }),
           });
 

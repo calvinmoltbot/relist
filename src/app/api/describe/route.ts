@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
 interface RequestBody {
   image?: string | null;
@@ -10,7 +10,48 @@ interface RequestBody {
   style_notes?: string;
   tone: "casual" | "professional" | "trendy";
   length: "short" | "medium" | "long";
+  model?: string;
 }
+
+export const AVAILABLE_MODELS = [
+  {
+    id: "google/gemini-2.5-flash-lite",
+    name: "Gemini Flash Lite",
+    description: "Best balance of quality & cost",
+    costPer1k: "$0.25",
+    tier: "recommended",
+  },
+  {
+    id: "openai/gpt-5-nano",
+    name: "GPT-5 Nano",
+    description: "Great natural copy",
+    costPer1k: "$0.19",
+    tier: "recommended",
+  },
+  {
+    id: "qwen/qwen3.5-flash-02-23",
+    name: "Qwen3.5 Flash",
+    description: "Strong structured extraction",
+    costPer1k: "$0.16",
+    tier: "budget",
+  },
+  {
+    id: "mistralai/mistral-small-3.1-24b-instruct",
+    name: "Mistral Small 3.1",
+    description: "Cheapest — good enough for most",
+    costPer1k: "$0.07",
+    tier: "budget",
+  },
+  {
+    id: "google/gemma-4-26b-a4b-it:free",
+    name: "Gemma 4 (Free)",
+    description: "Free tier — rate limited",
+    costPer1k: "Free",
+    tier: "free",
+  },
+] as const;
+
+const DEFAULT_MODEL = "google/gemini-2.5-flash-lite";
 
 const lengthGuide = {
   short: "2-3 sentences, punchy and concise",
@@ -65,10 +106,8 @@ function getMockResponse(body: RequestBody) {
     trendy: `obsessed with this ${brand} ${category} but doing a wardrobe refresh!! \u{2728} literally the perfect ${category} for that effortless cool-girl vibe. in ${condition} condition, size ${size}. styled it so many ways - with baggy jeans, mini skirts, layered over dresses. such a versatile piece! grab it before someone else does \u{1F525}\n\n#${brand.toLowerCase().replace(/\s+/g, "")} #${category.toLowerCase()} #y2k #streetstyle #preloved #sustainableFashion #thriftFlip #coolgirl`,
   };
 
-  const desc = descriptions[body.tone] || descriptions.casual;
-
   return {
-    description: desc,
+    description: descriptions[body.tone] || descriptions.casual,
     hashtags: [
       brand.toLowerCase().replace(/\s+/g, ""),
       category.toLowerCase(),
@@ -86,43 +125,30 @@ export async function POST(req: NextRequest) {
   try {
     const body: RequestBody = await req.json();
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env.OPENROUTER_API_KEY;
 
-    // If no API key, return mock response
     if (!apiKey) {
-      // Simulate a small delay for realism
       await new Promise((r) => setTimeout(r, 1200));
       return NextResponse.json(getMockResponse(body));
     }
 
-    const client = new Anthropic({ apiKey });
+    const client = new OpenAI({
+      baseURL: "https://openrouter.ai/api/v1",
+      apiKey,
+    });
+
+    const modelId = body.model || DEFAULT_MODEL;
 
     // Build user message content
-    const content: Anthropic.MessageCreateParams["messages"][0]["content"] = [];
+    const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [];
 
-    // Add image if provided
     if (body.image) {
-      // Extract media type and base64 data
-      const match = body.image.match(
-        /^data:(image\/(?:jpeg|png|gif|webp));base64,(.+)$/
-      );
-      if (match) {
-        content.push({
-          type: "image",
-          source: {
-            type: "base64",
-            media_type: match[1] as
-              | "image/jpeg"
-              | "image/png"
-              | "image/gif"
-              | "image/webp",
-            data: match[2],
-          },
-        });
-      }
+      content.push({
+        type: "image_url",
+        image_url: { url: body.image },
+      });
     }
 
-    // Build context text
     const contextParts: string[] = [];
     if (body.brand) contextParts.push(`Brand: ${body.brand}`);
     if (body.category) contextParts.push(`Category: ${body.category}`);
@@ -137,21 +163,29 @@ export async function POST(req: NextRequest) {
 
     content.push({ type: "text", text: userText });
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+    const completion = await client.chat.completions.create({
+      model: modelId,
       max_tokens: 1024,
-      system: buildSystemPrompt(body.tone, body.length),
-      messages: [{ role: "user", content }],
+      messages: [
+        { role: "system", content: buildSystemPrompt(body.tone, body.length) },
+        { role: "user", content },
+      ],
     });
 
-    // Extract text from response
-    const responseText = message.content
-      .filter((block): block is Anthropic.TextBlock => block.type === "text")
-      .map((block) => block.text)
-      .join("");
+    const responseText = completion.choices[0]?.message?.content || "";
 
-    // Parse JSON response
-    const parsed = JSON.parse(responseText);
+    // Try to parse JSON, handle models that wrap in markdown code blocks
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return NextResponse.json({
+        description: responseText,
+        hashtags: [],
+        detected_brand: null,
+        detected_category: null,
+      });
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
 
     return NextResponse.json({
       description: parsed.description,

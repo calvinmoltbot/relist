@@ -147,8 +147,10 @@ export default function DescribePage() {
                 <ToneControls
                   tone={form.tone}
                   length={form.length}
+                  model={form.model}
                   onToneChange={(t) => setField("tone", t)}
                   onLengthChange={(l) => setField("length", l)}
+                  onModelChange={(m) => setField("model", m)}
                 />
               </CardContent>
             </Card>
