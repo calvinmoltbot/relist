@@ -65,7 +65,7 @@ export function PhotoUpload({ image, onImageChange }: PhotoUploadProps) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="relative aspect-square overflow-hidden rounded-xl border border-zinc-800"
+            className="relative aspect-[4/3] overflow-hidden rounded-xl border border-zinc-800"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -89,7 +89,7 @@ export function PhotoUpload({ image, onImageChange }: PhotoUploadProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className={cn(
-              "flex aspect-square cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed transition-colors",
+              "flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed transition-colors",
               isDragging
                 ? "border-primary bg-primary/5"
                 : "border-zinc-700 hover:border-zinc-500 hover:bg-zinc-900/50"

@@ -35,32 +35,30 @@ export default function DescribePage() {
   const canGenerate = form.image !== null || form.brand || form.category;
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div>
       {/* Header */}
-      <div className="border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <div>
-            <h1 className="text-lg font-semibold text-zinc-100">
-              AI Description Generator
-            </h1>
-            <p className="text-sm text-zinc-500">
-              Upload a photo, get a Vinted-ready listing in seconds
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearForm}
-            className="gap-1.5 text-zinc-400"
-          >
-            <Trash2 className="size-3.5" />
-            Clear
-          </Button>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-lg font-semibold text-zinc-100">
+            AI Description Generator
+          </h1>
+          <p className="text-sm text-zinc-500">
+            Upload a photo, get a Vinted-ready listing in seconds
+          </p>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={clearForm}
+          className="gap-1.5 text-zinc-400"
+        >
+          <Trash2 className="size-3.5" />
+          Clear
+        </Button>
       </div>
 
       {/* Main content */}
-      <div className="mx-auto max-w-6xl px-4 py-6">
+      <div>
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Left column — Input */}
           <div className="space-y-4">

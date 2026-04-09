@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, Plus } from "lucide-react";
 import {
   Sheet,
-  SheetTrigger,
   SheetContent,
   SheetHeader,
   SheetTitle,
@@ -50,10 +49,11 @@ const SOURCE_TYPES = [
 // ---------------------------------------------------------------------------
 interface AddItemDialogProps {
   onAdd: (item: NewInventoryItem) => void;
-  trigger: React.ReactNode;
+  label?: string;
+  buttonSize?: "sm" | "default";
 }
 
-export function AddItemDialog({ onAdd, trigger }: AddItemDialogProps) {
+export function AddItemDialog({ onAdd, label = "Add Item", buttonSize = "sm" }: AddItemDialogProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [brand, setBrand] = useState("");
@@ -79,8 +79,8 @@ export function AddItemDialog({ onAdd, trigger }: AddItemDialogProps) {
     setDescription("");
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent | React.MouseEvent) => {
+    e?.preventDefault();
     if (!name.trim()) return;
 
     onAdd({
@@ -101,8 +101,12 @@ export function AddItemDialog({ onAdd, trigger }: AddItemDialogProps) {
   };
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger render={<>{trigger}</>} />
+    <>
+      <Button size={buttonSize} className="gap-1.5" onClick={() => setOpen(true)}>
+        <Plus className="size-3.5" />
+        {label}
+      </Button>
+      <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent side="right" className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Add Item</SheetTitle>
@@ -289,5 +293,6 @@ export function AddItemDialog({ onAdd, trigger }: AddItemDialogProps) {
         </SheetFooter>
       </SheetContent>
     </Sheet>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useCallback, useState } from "react";
-import { Plus, Package, LayoutGrid, List } from "lucide-react";
+import { Package, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useInventoryStore } from "@/lib/inventory-store";
 import type { InventoryItem } from "@/lib/inventory-store";
@@ -122,15 +122,7 @@ export default function InventoryPage() {
             </button>
           </div>
 
-          <AddItemDialog
-            onAdd={addItem}
-            trigger={
-              <Button size="sm" className="gap-1.5">
-                <Plus className="size-3.5" />
-                Add Item
-              </Button>
-            }
-          />
+          <AddItemDialog onAdd={addItem} />
         </div>
       </div>
 
@@ -181,15 +173,7 @@ export default function InventoryPage() {
             Add your first item to start tracking your inventory from source to
             sale.
           </p>
-          <AddItemDialog
-            onAdd={addItem}
-            trigger={
-              <Button size="sm" className="mt-4 gap-1.5">
-                <Plus className="size-3.5" />
-                Add your first item
-              </Button>
-            }
-          />
+          <AddItemDialog onAdd={addItem} label="Add your first item" />
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

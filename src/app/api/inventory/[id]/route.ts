@@ -1,42 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-// Re-use the same in-memory store from the parent route.
-// In a real app this would hit the DB — for now we import the module side-effect
-// by reaching into the same global. We duplicate the reference trick here because
-// Next.js bundles route files independently.
-
-interface MockItem {
-  id: string;
-  name: string;
-  brand: string | null;
-  category: string | null;
-  condition: string | null;
-  size: string | null;
-  costPrice: string | null;
-  listedPrice: string | null;
-  soldPrice: string | null;
-  status: string;
-  platform: string | null;
-  photoUrls: string[] | null;
-  description: string | null;
-  sourceType: string | null;
-  sourceLocation: string | null;
-  listedAt: string | null;
-  soldAt: string | null;
-  shippedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Shared global store so both route files reference the same array
-const globalStore = globalThis as unknown as { __inventoryStore?: MockItem[] };
-
-function getStore(): MockItem[] {
-  if (!globalStore.__inventoryStore) {
-    globalStore.__inventoryStore = [];
-  }
-  return globalStore.__inventoryStore;
-}
+import { getStore } from "../_store";
 
 // ---------------------------------------------------------------------------
 // GET /api/inventory/[id]

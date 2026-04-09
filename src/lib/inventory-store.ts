@@ -82,10 +82,9 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
 
       const res = await fetch(`/api/inventory?${params.toString()}`);
       const data = await res.json();
-      set({ items: data.items });
+      set({ items: data.items, loading: false });
     } catch (err) {
       console.error("Failed to fetch items:", err);
-    } finally {
       set({ loading: false });
     }
   },
