@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles, RefreshCw } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -270,18 +270,16 @@ export function AddItemDialog({ onAdd, label = "Add Item", buttonSize = "sm" }: 
             />
           </div>
 
-          {/* Description */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="item-desc">Description</Label>
-            <textarea
-              id="item-desc"
-              rows={3}
-              placeholder="Notes about condition, unique details..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-lg border border-input bg-zinc-900 px-2.5 py-2 text-sm placeholder:text-zinc-600 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-            />
-          </div>
+          {/* Description with AI generate */}
+          <AddDescriptionField
+            description={description}
+            onDescriptionChange={setDescription}
+            image={photos[0] ?? null}
+            brand={brand}
+            category={category}
+            condition={condition}
+            itemSize={size}
+          />
         </form>
 
         <SheetFooter>
@@ -296,5 +294,95 @@ export function AddItemDialog({ onAdd, label = "Add Item", buttonSize = "sm" }: 
       </SheetContent>
     </Sheet>
     </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Description field with inline AI generate
+// ---------------------------------------------------------------------------
+function AddDescriptionField({
+  description,
+  onDescriptionChange,
+  image,
+  brand,
+  category,
+  condition,
+  itemSize,
+}: {
+  description: string;
+  onDescriptionChange: (v: string) => void;
+  image: string | null;
+  brand: string;
+  category: string;
+  condition: string;
+  itemSize: string;
+}) {
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
+
+  const handleGenerate = useCallback(async () => {
+    setGenerating(true);
+    setGenError(null);
+
+    try {
+      const res = await fetch("/api/describe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: image ?? undefined,
+          brand: brand || undefined,
+          category: category || undefined,
+          condition: condition || undefined,
+          size: itemSize || undefined,
+          tone: "casual",
+          length: "medium",
+          model: "google/gemini-2.5-flash-lite",
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to generate");
+      }
+
+      const data = await res.json();
+      onDescriptionChange(data.description);
+    } catch (err) {
+      setGenError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setGenerating(false);
+    }
+  }, [image, brand, category, condition, itemSize, onDescriptionChange]);
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <Label htmlFor="item-desc">Description</Label>
+        <button
+          type="button"
+          className="flex items-center gap-1 text-[11px] font-medium text-violet-400 transition-colors hover:text-violet-300 disabled:opacity-50"
+          disabled={generating || (!image && !brand && !category)}
+          onClick={handleGenerate}
+        >
+          {generating ? (
+            <RefreshCw className="size-3 animate-spin" />
+          ) : (
+            <Sparkles className="size-3" />
+          )}
+          {generating ? "Generating..." : "AI Generate"}
+        </button>
+      </div>
+      <textarea
+        id="item-desc"
+        rows={4}
+        placeholder="Notes about condition, unique details..."
+        value={description}
+        onChange={(e) => onDescriptionChange(e.target.value)}
+        className="w-full rounded-lg border border-input bg-zinc-900 px-2.5 py-2 text-sm placeholder:text-zinc-600 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      />
+      {genError && (
+        <p className="text-xs text-red-400">{genError}</p>
+      )}
+    </div>
   );
 }
