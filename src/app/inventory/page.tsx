@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useCallback, useState } from "react";
-import { Package, LayoutGrid, List } from "lucide-react";
+import { Package, LayoutGrid, List, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useInventoryStore } from "@/lib/inventory-store";
 import type { InventoryItem } from "@/lib/inventory-store";
@@ -9,6 +9,7 @@ import { ItemCard } from "@/components/inventory/item-card";
 import { ItemFilters } from "@/components/inventory/item-filters";
 import { AddItemDialog } from "@/components/inventory/add-item-dialog";
 import { EditItemDialog } from "@/components/inventory/edit-item-dialog";
+import { ImportButton } from "@/components/inventory/import-button";
 
 // ---------------------------------------------------------------------------
 // Inventory Page
@@ -133,6 +134,7 @@ export default function InventoryPage() {
             </button>
           </div>
 
+          <ImportButton onImported={fetchItems} />
           <AddItemDialog onAdd={addItem} />
         </div>
       </div>
