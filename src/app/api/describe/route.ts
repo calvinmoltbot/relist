@@ -13,7 +13,10 @@ interface RequestBody {
   model?: string;
 }
 
-export const AVAILABLE_MODELS = [
+// Note: this is intentionally not exported from the route file
+// (Next.js route files can only export HTTP methods).
+// The describe page and tests define their own model lists.
+const AVAILABLE_MODELS = [
   {
     id: "google/gemini-2.5-flash-lite",
     name: "Gemini Flash Lite",
@@ -163,14 +166,40 @@ export async function POST(req: NextRequest) {
 
     content.push({ type: "text", text: userText });
 
-    const completion = await client.chat.completions.create({
-      model: modelId,
-      max_tokens: 1024,
-      messages: [
-        { role: "system", content: buildSystemPrompt(body.tone, body.length) },
-        { role: "user", content },
-      ],
-    });
+    // Try the requested model, fall back to alternatives on rate limit
+    const fallbackModels = [
+      modelId,
+      "google/gemini-2.5-flash-lite",
+      "mistralai/mistral-small-3.1-24b-instruct",
+    ].filter((m, i, a) => a.indexOf(m) === i); // dedupe
+
+    let completion;
+    let usedModel = modelId;
+
+    for (const tryModel of fallbackModels) {
+      try {
+        completion = await client.chat.completions.create({
+          model: tryModel,
+          max_tokens: 1024,
+          messages: [
+            { role: "system", content: buildSystemPrompt(body.tone, body.length) },
+            { role: "user", content },
+          ],
+        });
+        usedModel = tryModel;
+        break;
+      } catch (e: unknown) {
+        const status = (e as { status?: number }).status;
+        if (status === 429 && tryModel !== fallbackModels[fallbackModels.length - 1]) {
+          continue; // Try next model
+        }
+        throw e; // Re-throw if not rate-limited or last model
+      }
+    }
+
+    if (!completion) {
+      return NextResponse.json(getMockResponse(body));
+    }
 
     const responseText = completion.choices[0]?.message?.content || "";
 
