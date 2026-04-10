@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getStore, getNextId, type MockItem } from "./_store";
+import { db } from "@/lib/db";
+import { items } from "@/db/schema";
+import { desc, asc, ilike, eq, or, sql } from "drizzle-orm";
 
 // ---------------------------------------------------------------------------
 // GET /api/inventory
@@ -10,43 +12,47 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get("search")?.toLowerCase();
   const sort = searchParams.get("sort") ?? "date";
 
-  const store = getStore();
-  let filtered = [...store];
+  const conditions = [];
 
   if (status && status !== "all") {
-    filtered = filtered.filter((i) => i.status === status);
+    conditions.push(eq(items.status, status));
   }
 
   if (search) {
-    filtered = filtered.filter(
-      (i) =>
-        i.name.toLowerCase().includes(search) ||
-        (i.brand && i.brand.toLowerCase().includes(search)) ||
-        (i.category && i.category.toLowerCase().includes(search)),
+    conditions.push(
+      or(
+        ilike(items.name, `%${search}%`),
+        ilike(items.brand, `%${search}%`),
+        ilike(items.category, `%${search}%`),
+      ),
     );
   }
 
+  let orderBy;
   switch (sort) {
     case "price":
-      filtered.sort(
-        (a, b) =>
-          parseFloat(b.listedPrice ?? b.costPrice ?? "0") -
-          parseFloat(a.listedPrice ?? a.costPrice ?? "0"),
-      );
+      orderBy = desc(sql`COALESCE(${items.listedPrice}, ${items.costPrice}, '0')`);
       break;
     case "brand":
-      filtered.sort((a, b) => (a.brand ?? "").localeCompare(b.brand ?? ""));
+      orderBy = asc(items.brand);
       break;
     case "date":
     default:
-      filtered.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      );
+      orderBy = desc(items.createdAt);
       break;
   }
 
-  return NextResponse.json({ items: filtered });
+  const where = conditions.length > 0
+    ? conditions.reduce((a, b) => sql`${a} AND ${b}`)
+    : undefined;
+
+  const result = await db
+    .select()
+    .from(items)
+    .where(where)
+    .orderBy(orderBy);
+
+  return NextResponse.json({ items: result });
 }
 
 // ---------------------------------------------------------------------------
@@ -62,32 +68,21 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const store = getStore();
-  const now = new Date().toISOString();
-  const item: MockItem = {
-    id: getNextId(),
-    name: body.name,
-    brand: body.brand ?? null,
-    category: body.category ?? null,
-    condition: body.condition ?? null,
-    size: body.size ?? null,
-    costPrice: body.costPrice ?? null,
-    listedPrice: body.listedPrice ?? null,
-    soldPrice: null,
-    status: "sourced",
-    platform: "vinted",
-    photoUrls: null,
-    description: body.description ?? null,
-    sourceType: body.sourceType ?? null,
-    sourceLocation: body.sourceLocation ?? null,
-    listedAt: null,
-    soldAt: null,
-    shippedAt: null,
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  store.unshift(item);
+  const [item] = await db
+    .insert(items)
+    .values({
+      name: body.name,
+      brand: body.brand ?? null,
+      category: body.category ?? null,
+      condition: body.condition ?? null,
+      size: body.size ?? null,
+      costPrice: body.costPrice ?? null,
+      listedPrice: body.listedPrice ?? null,
+      description: body.description ?? null,
+      sourceType: body.sourceType ?? null,
+      sourceLocation: body.sourceLocation ?? null,
+    })
+    .returning();
 
   return NextResponse.json({ item }, { status: 201 });
 }
