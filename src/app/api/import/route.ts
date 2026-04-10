@@ -4,11 +4,22 @@ import { items } from "@/db/schema";
 import * as XLSX from "xlsx";
 
 // ---------------------------------------------------------------------------
-// POST /api/import — Import items from an xlsx file
-// Accepts multipart form data with a "file" field.
+// POST /api/import — Import items from xlsx file OR JSON array
+//
+// Accepts either:
+//   1. Multipart form data with a "file" field (xlsx/xls)
+//   2. JSON body with { "items": [...] } from the Vinted scraper script
 // ---------------------------------------------------------------------------
 export async function POST(request: NextRequest) {
   try {
+    const contentType = request.headers.get("content-type") ?? "";
+
+    // JSON import (from Vinted scraper paste)
+    if (contentType.includes("application/json")) {
+      return handleJsonImport(request);
+    }
+
+    // File import (xlsx)
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
 
@@ -116,6 +127,68 @@ export async function POST(request: NextRequest) {
     console.error("Import error:", error);
     return NextResponse.json(
       { error: "Failed to import file" },
+      { status: 500 },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// JSON import — accepts the output from the Vinted scraper script
+// Format: { items: [{ title, brand, condition, size, price, url }] }
+// Or just a raw array: [{ title, brand, ... }]
+// ---------------------------------------------------------------------------
+async function handleJsonImport(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const list: Record<string, unknown>[] = Array.isArray(body) ? body : body.items;
+
+    if (!Array.isArray(list) || list.length === 0) {
+      return NextResponse.json(
+        { error: "Expected a JSON array of items" },
+        { status: 400 },
+      );
+    }
+
+    const conditionMap: Record<string, string> = {
+      "new with tags": "new",
+      "very good": "like_new",
+      "good": "good",
+      "satisfactory": "fair",
+      "fair": "fair",
+    };
+
+    let imported = 0;
+    let skipped = 0;
+
+    for (const item of list) {
+      const name = String(item.title ?? item.name ?? "").trim();
+      if (!name) { skipped++; continue; }
+
+      const rawCondition = String(item.condition ?? "").trim().toLowerCase();
+      const condition = conditionMap[rawCondition] ?? (rawCondition || null);
+
+      const price = item.price != null ? Number(item.price) : null;
+      const brand = String(item.brand ?? "").trim() || null;
+      const size = String(item.size ?? "").trim() || null;
+
+      await db.insert(items).values({
+        name,
+        brand,
+        condition,
+        size,
+        soldPrice: price != null && price > 0 ? String(price) : null,
+        status: price && price > 0 ? "sold" : "sourced",
+        platform: "vinted",
+      });
+
+      imported++;
+    }
+
+    return NextResponse.json({ imported, skipped, total: list.length });
+  } catch (error) {
+    console.error("JSON import error:", error);
+    return NextResponse.json(
+      { error: "Failed to import JSON data" },
       { status: 500 },
     );
   }
