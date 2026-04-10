@@ -1,7 +1,7 @@
 "use client";
 
 import { RefreshCw, Sparkles, Trash2, Clock } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,6 +32,8 @@ export default function DescribePage() {
     setResult,
   } = useDescribeStore();
 
+  const prefersReducedMotion = useReducedMotion();
+
   const canGenerate = form.image !== null || form.brand || form.category;
 
   return (
@@ -61,9 +63,9 @@ export default function DescribePage() {
       <div>
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Left column — Input */}
-          <div className="space-y-4">
-            <Card className="border-zinc-800 bg-zinc-900">
-              <CardHeader>
+          <div className="space-y-3">
+            <Card>
+              <CardHeader className="pb-0">
                 <CardTitle>Item Photo</CardTitle>
                 <CardDescription>
                   A good photo helps generate better descriptions
@@ -74,8 +76,8 @@ export default function DescribePage() {
               </CardContent>
             </Card>
 
-            <Card className="border-zinc-800 bg-zinc-900">
-              <CardHeader>
+            <Card>
+              <CardHeader className="pb-0">
                 <CardTitle>Item Details</CardTitle>
                 <CardDescription>
                   Optional — helps the AI write a more accurate description
@@ -137,8 +139,8 @@ export default function DescribePage() {
               </CardContent>
             </Card>
 
-            <Card className="border-zinc-800 bg-zinc-900">
-              <CardHeader>
+            <Card>
+              <CardHeader className="pb-0">
                 <CardTitle>Output Settings</CardTitle>
               </CardHeader>
               <CardContent>
@@ -155,18 +157,22 @@ export default function DescribePage() {
 
             {/* Generate button */}
             <Button
-              className="w-full gap-2 py-5 text-sm font-semibold"
+              className="w-full gap-2 py-5 text-sm font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 disabled:from-zinc-700 disabled:to-zinc-700 shadow-lg shadow-violet-500/20"
               size="lg"
               disabled={!canGenerate || loading}
               onClick={generate}
             >
               {loading ? (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                >
-                  <RefreshCw className="size-4" />
-                </motion.div>
+                prefersReducedMotion ? (
+                  <RefreshCw className="size-4 opacity-70" />
+                ) : (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  >
+                    <RefreshCw className="size-4" />
+                  </motion.div>
+                )
               ) : (
                 <Sparkles className="size-4" />
               )}
@@ -185,9 +191,9 @@ export default function DescribePage() {
           </div>
 
           {/* Right column — Output */}
-          <div className="space-y-4">
-            <Card className="border-zinc-800 bg-zinc-900">
-              <CardHeader>
+          <div className="space-y-3 lg:sticky lg:top-6 lg:self-start">
+            <Card>
+              <CardHeader className="pb-0">
                 <CardTitle>Generated Description</CardTitle>
                 <CardDescription>
                   {result
@@ -195,7 +201,7 @@ export default function DescribePage() {
                     : "Fill in the details and hit Generate"}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="min-h-[400px]">
                 <AnimatePresence mode="wait">
                   {loading ? (
                     <motion.div
@@ -205,16 +211,20 @@ export default function DescribePage() {
                       exit={{ opacity: 0 }}
                       className="flex flex-col items-center justify-center gap-3 py-16"
                     >
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "linear",
-                        }}
-                      >
+                      {prefersReducedMotion ? (
                         <Sparkles className="size-8 text-primary" />
-                      </motion.div>
+                      ) : (
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
+                        >
+                          <Sparkles className="size-8 text-primary" />
+                        </motion.div>
+                      )}
                       <p className="text-sm text-zinc-400">
                         Crafting your listing...
                       </p>
@@ -247,14 +257,19 @@ export default function DescribePage() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="flex flex-col items-center justify-center gap-2 py-16 text-center"
+                      className="flex flex-col items-center justify-center gap-3 py-16 text-center"
                     >
-                      <div className="flex size-12 items-center justify-center rounded-full bg-zinc-800">
-                        <Sparkles className="size-5 text-zinc-500" />
+                      <div className="flex size-16 items-center justify-center rounded-full border-2 border-dashed border-zinc-700 bg-zinc-800/50">
+                        <Sparkles className="size-8 text-zinc-400" />
                       </div>
-                      <p className="text-sm text-zinc-500">
-                        Your generated description will appear here
-                      </p>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-zinc-400">
+                          Your generated description will appear here
+                        </p>
+                        <p className="text-xs text-zinc-500">
+                          Upload a photo or fill in details to get started
+                        </p>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -263,8 +278,8 @@ export default function DescribePage() {
 
             {/* History */}
             {history.length > 0 && (
-              <Card className="border-zinc-800 bg-zinc-900">
-                <CardHeader>
+              <Card>
+                <CardHeader className="pb-0">
                   <CardTitle className="flex items-center gap-2">
                     <Clock className="size-4 text-zinc-500" />
                     Recent Generations

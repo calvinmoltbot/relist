@@ -76,14 +76,14 @@ function ToggleGroup<T extends string>({
   renderLabel?: (opt: { value: T; label: string }) => React.ReactNode;
 }) {
   return (
-    <div className="flex gap-1 rounded-lg bg-zinc-900 p-1">
+    <div className="flex gap-1 rounded-lg bg-zinc-800/50 p-1">
       {options.map((opt) => (
         <button
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
           className={cn(
-            "flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
+            "flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150",
             value === opt.value
               ? "bg-zinc-700 text-zinc-100 shadow-sm"
               : "text-zinc-400 hover:text-zinc-300"
@@ -110,20 +110,41 @@ export function ToneControls({
         <label className="mb-1.5 block text-xs font-medium text-zinc-400">
           AI Model
         </label>
-        <div className="space-y-1">
-          {models.map((m) => (
+        <div className="grid grid-cols-2 gap-1">
+          {models.filter((m) => m.tier !== "free").map((m) => (
             <button
               key={m.id}
               type="button"
               onClick={() => onModelChange(m.id)}
               className={cn(
-                "flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left transition-all",
+                "flex items-center justify-between rounded-lg border px-3 py-1.5 text-left transition-all duration-200",
                 model === m.id
                   ? "border-zinc-600 bg-zinc-800 text-zinc-100"
                   : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700 hover:text-zinc-300"
               )}
             >
               <span className="text-xs font-medium">{m.name}</span>
+              <Badge
+                variant="outline"
+                className={cn("text-[10px]", tierColors[m.tier])}
+              >
+                {m.cost}
+              </Badge>
+            </button>
+          ))}
+          {models.filter((m) => m.tier === "free").map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => onModelChange(m.id)}
+              className={cn(
+                "col-span-2 flex items-center justify-center gap-2 rounded-lg px-3 py-1 text-center transition-all duration-200",
+                model === m.id
+                  ? "text-violet-400"
+                  : "text-zinc-500 hover:text-zinc-400"
+              )}
+            >
+              <span className="text-xs">{m.name}</span>
               <Badge
                 variant="outline"
                 className={cn("text-[10px]", tierColors[m.tier])}
