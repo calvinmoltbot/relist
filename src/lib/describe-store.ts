@@ -61,22 +61,32 @@ const initialForm: FormState = {
  * Returns a compressed JPEG data URL suitable for API payloads.
  */
 function resizeImage(dataUrl: string, maxSize = 1024): Promise<string> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      let { width, height } = img;
-      if (width > maxSize || height > maxSize) {
-        const ratio = Math.min(maxSize / width, maxSize / height);
-        width = Math.round(width * ratio);
-        height = Math.round(height * ratio);
+      try {
+        let { width, height } = img;
+        if (width > maxSize || height > maxSize) {
+          const ratio = Math.min(maxSize / width, maxSize / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(dataUrl); // fallback to original
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const result = canvas.toDataURL("image/jpeg", 0.7);
+        resolve(result);
+      } catch {
+        resolve(dataUrl); // fallback to original on any error
       }
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL("image/jpeg", 0.8));
     };
+    img.onerror = () => resolve(dataUrl); // fallback if image can't load
     img.src = dataUrl;
   });
 }
@@ -93,8 +103,15 @@ export const useDescribeStore = create<DescribeState>()(
       setField: (key, value) =>
         set((state) => ({ form: { ...state.form, [key]: value } })),
 
-      setImage: (image) =>
-        set((state) => ({ form: { ...state.form, image } })),
+      setImage: async (image) => {
+        if (image) {
+          // Resize immediately on upload so form.image is always API-ready
+          const resized = await resizeImage(image, 1200);
+          set((state) => ({ form: { ...state.form, image: resized } }));
+        } else {
+          set((state) => ({ form: { ...state.form, image: null } }));
+        }
+      },
 
       setResult: (result) => set({ result }),
 
@@ -114,16 +131,11 @@ export const useDescribeStore = create<DescribeState>()(
         set({ loading: true, error: null });
 
         try {
-          // Resize image to keep payload under 1MB
-          const apiImage = form.image
-            ? await resizeImage(form.image, 1024)
-            : null;
-
           const res = await fetch("/api/describe", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              image: apiImage,
+              image: form.image, // already resized at upload time
               brand: form.brand || undefined,
               category: form.category || undefined,
               condition: form.condition || undefined,

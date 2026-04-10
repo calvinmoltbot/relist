@@ -222,11 +222,30 @@ export async function POST(req: NextRequest) {
       detected_brand: parsed.detected_brand || null,
       detected_category: parsed.detected_category || null,
     });
-  } catch (error) {
-    console.error("Describe API error:", error);
+  } catch (error: unknown) {
+    const err = error as { status?: number; message?: string; error?: { message?: string } };
+    console.error("Describe API error:", err.message, err.status, JSON.stringify(err.error ?? {}));
+
+    const status = err.status ?? 500;
+    const message = err.error?.message || err.message || "Failed to generate description";
+
+    // Provide helpful error messages
+    if (status === 413) {
+      return NextResponse.json(
+        { error: "Image too large — try a smaller photo" },
+        { status: 413 },
+      );
+    }
+    if (status === 429) {
+      return NextResponse.json(
+        { error: "Rate limited — try a different model or wait a moment" },
+        { status: 429 },
+      );
+    }
+
     return NextResponse.json(
-      { error: "Failed to generate description" },
-      { status: 500 }
+      { error: message },
+      { status },
     );
   }
 }
