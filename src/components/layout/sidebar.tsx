@@ -9,6 +9,7 @@ import {
   TrendingUp,
   Zap,
   Settings,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +20,7 @@ const navItems = [
   { label: "Profit", href: "/profit", icon: TrendingUp },
   { label: "Deals", href: "/deals", icon: Zap },
   { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Help", href: "/help", icon: HelpCircle },
 ];
 
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
