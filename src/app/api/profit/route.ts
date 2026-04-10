@@ -100,6 +100,34 @@ export async function GET() {
   const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
   const avgProfit = sold.length > 0 ? totalProfit / sold.length : 0;
 
+  // Revenue targets (Lily's goals)
+  const MONTHLY_TARGET = 3000;
+  const SIX_MONTH_TARGET = 1500;
+  const WEEKLY_HOURS = 25;
+
+  // Current month revenue
+  const now = new Date();
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const currentMonthItems = itemProfits.filter(
+    (ip) => ip.soldAt && ip.soldAt.startsWith(currentMonthKey),
+  );
+  const monthRevenue = currentMonthItems.reduce((sum, ip) => sum + ip.sold, 0);
+  const monthProfit = currentMonthItems.reduce((sum, ip) => sum + ip.profit, 0);
+  const monthItemsSold = currentMonthItems.length;
+
+  // Days elapsed / remaining in month
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const dayOfMonth = now.getDate();
+  const daysRemaining = daysInMonth - dayOfMonth;
+
+  // Projected monthly revenue (run rate)
+  const dailyRate = dayOfMonth > 0 ? monthRevenue / dayOfMonth : 0;
+  const projectedMonthRevenue = round(dailyRate * daysInMonth);
+
+  // Effective hourly rate (this month)
+  const hoursThisMonth = (dayOfMonth / 7) * WEEKLY_HOURS;
+  const effectiveHourlyRate = hoursThisMonth > 0 ? monthProfit / hoursThisMonth : 0;
+
   return NextResponse.json({
     summary: {
       totalRevenue: round(totalRevenue),
@@ -112,6 +140,21 @@ export async function GET() {
       itemsSourced: sourced.length,
       stockCost: round(stockCost),
       stockListedValue: round(stockListed),
+    },
+    targets: {
+      monthlyTarget: MONTHLY_TARGET,
+      sixMonthTarget: SIX_MONTH_TARGET,
+      weeklyHours: WEEKLY_HOURS,
+      currentMonth: currentMonthKey,
+      monthRevenue: round(monthRevenue),
+      monthProfit: round(monthProfit),
+      monthItemsSold,
+      projectedMonthRevenue,
+      daysRemaining,
+      revenueProgress: round((monthRevenue / MONTHLY_TARGET) * 100),
+      effectiveHourlyRate: round(effectiveHourlyRate),
+      targetHourlyRate: 18,
+      onTrack: projectedMonthRevenue >= MONTHLY_TARGET,
     },
     itemProfits: itemProfits.sort((a, b) => b.profit - a.profit),
     byCategory: Object.entries(byCategory)

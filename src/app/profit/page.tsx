@@ -74,8 +74,25 @@ interface MonthData {
   count: number;
 }
 
+interface Targets {
+  monthlyTarget: number;
+  sixMonthTarget: number;
+  weeklyHours: number;
+  currentMonth: string;
+  monthRevenue: number;
+  monthProfit: number;
+  monthItemsSold: number;
+  projectedMonthRevenue: number;
+  daysRemaining: number;
+  revenueProgress: number;
+  effectiveHourlyRate: number;
+  targetHourlyRate: number;
+  onTrack: boolean;
+}
+
 interface ProfitData {
   summary: ProfitSummary;
+  targets: Targets;
   itemProfits: ItemProfit[];
   byCategory: CategoryData[];
   bySource: SourceData[];
@@ -131,6 +148,48 @@ export default function ProfitPage() {
           Track your earnings, expenses, and margins
         </p>
       </div>
+
+      {/* Revenue target */}
+      <Card>
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-sm font-medium text-zinc-200">
+                Monthly Revenue — {formatMonthLabel(data.targets.currentMonth)}
+              </p>
+              <p className="text-xs text-zinc-500">
+                {data.targets.daysRemaining} days remaining
+              </p>
+            </div>
+            <div className="text-right">
+              <span className="text-2xl font-semibold text-zinc-100">
+                {"\u00A3"}{data.targets.monthRevenue.toFixed(0)}
+              </span>
+              <span className="text-sm text-zinc-500">
+                {" / \u00A3"}{data.targets.monthlyTarget.toLocaleString()}
+              </span>
+            </div>
+          </div>
+          <div className="h-3 rounded-full bg-zinc-800 overflow-hidden">
+            <div
+              className={cn(
+                "h-full rounded-full transition-all",
+                data.targets.onTrack ? "bg-emerald-500" : "bg-amber-500",
+              )}
+              style={{ width: `${Math.min(data.targets.revenueProgress, 100)}%` }}
+            />
+          </div>
+          <div className="mt-2 flex justify-between text-xs text-zinc-500">
+            <span>{data.targets.revenueProgress.toFixed(0)}% of target</span>
+            <span>
+              Projected: {"\u00A3"}{data.targets.projectedMonthRevenue.toLocaleString()}
+              {" \u00B7 "}
+              {"\u00A3"}{data.targets.effectiveHourlyRate.toFixed(2)}/hr
+              <span className="text-zinc-600"> (target {"\u00A3"}{data.targets.targetHourlyRate}/hr)</span>
+            </span>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -308,4 +367,10 @@ function MiniStat({ label, value }: { label: string; value: string }) {
       <p className="mt-1 text-sm font-semibold text-zinc-200">{value}</p>
     </div>
   );
+}
+
+function formatMonthLabel(monthKey: string): string {
+  const [year, m] = monthKey.split("-");
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${months[parseInt(m, 10) - 1]} ${year}`;
 }
