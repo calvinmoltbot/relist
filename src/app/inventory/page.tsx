@@ -8,6 +8,7 @@ import type { InventoryItem } from "@/lib/inventory-store";
 import { ItemCard } from "@/components/inventory/item-card";
 import { ItemFilters } from "@/components/inventory/item-filters";
 import { AddItemDialog } from "@/components/inventory/add-item-dialog";
+import { EditItemDialog } from "@/components/inventory/edit-item-dialog";
 
 // ---------------------------------------------------------------------------
 // Inventory Page
@@ -25,6 +26,8 @@ export default function InventoryPage() {
   } = useInventoryStore();
 
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [editItem, setEditItem] = useState<InventoryItem | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   // Fetch on mount and when filters change
   useEffect(() => {
@@ -72,9 +75,17 @@ export default function InventoryPage() {
     [updateItem],
   );
 
-  const handleEdit = useCallback((_item: InventoryItem) => {
-    // TODO: open edit dialog
+  const handleEdit = useCallback((item: InventoryItem) => {
+    setEditItem(item);
+    setEditOpen(true);
   }, []);
+
+  const handleEditSave = useCallback(
+    (id: string, data: Partial<InventoryItem>) => {
+      updateItem(id, data);
+    },
+    [updateItem],
+  );
 
   const handleDelete = useCallback(
     (id: string) => {
@@ -200,6 +211,14 @@ export default function InventoryPage() {
           ))}
         </div>
       )}
+
+      {/* Edit dialog */}
+      <EditItemDialog
+        item={editItem}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSave={handleEditSave}
+      />
     </div>
   );
 }

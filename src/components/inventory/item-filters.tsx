@@ -1,11 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { Search, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -52,6 +52,8 @@ export function ItemFilters({
   onSortChange,
   itemCounts,
 }: ItemFiltersProps) {
+  const [sortOpen, setSortOpen] = useState(false);
+
   return (
     <div className="flex flex-col gap-3">
       {/* Search + sort row */}
@@ -66,23 +68,28 @@ export function ItemFilters({
           />
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button variant="outline" size="sm" className="gap-1.5 text-zinc-400" />
-            }
+        {/* Sort dropdown — controlled open state, no render prop */}
+        <DropdownMenu open={sortOpen} onOpenChange={setSortOpen}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-zinc-400"
+            onClick={() => setSortOpen(true)}
           >
             <ArrowUpDown className="size-3" />
             <span className="hidden sm:inline">
               {SORT_OPTIONS.find((s) => s.value === sortBy)?.label ?? "Sort"}
             </span>
-          </DropdownMenuTrigger>
+          </Button>
           <DropdownMenuContent align="end" sideOffset={4}>
             <DropdownMenuLabel>Sort by</DropdownMenuLabel>
             {SORT_OPTIONS.map((opt) => (
               <DropdownMenuItem
                 key={opt.value}
-                onSelect={() => onSortChange(opt.value)}
+                onSelect={() => {
+                  onSortChange(opt.value);
+                  setSortOpen(false);
+                }}
               >
                 {opt.label}
               </DropdownMenuItem>

@@ -1,14 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { Package, ChevronDown, Pencil, Trash2, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import type { InventoryItem } from "@/lib/inventory-store";
@@ -52,6 +51,7 @@ interface ItemCardProps {
 }
 
 export function ItemCard({ item, onStatusChange, onEdit, onDelete }: ItemCardProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const statusCfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.sourced;
   const cost = item.costPrice ? parseFloat(item.costPrice) : null;
   const listed = item.listedPrice ? parseFloat(item.listedPrice) : null;
@@ -133,16 +133,17 @@ export function ItemCard({ item, onStatusChange, onEdit, onDelete }: ItemCardPro
 
       {/* Actions footer */}
       <div className="flex items-center justify-between border-t border-white/[0.06] px-3 py-2">
-        {/* Quick status change */}
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button variant="ghost" size="xs" className="gap-1 text-zinc-400 hover:text-zinc-200" />
-            }
+        {/* Quick status change — controlled open state, no render prop */}
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+          <Button
+            variant="ghost"
+            size="xs"
+            className="gap-1 text-zinc-400 hover:text-zinc-200"
+            onClick={() => setMenuOpen(true)}
           >
             {statusCfg.label}
             <ChevronDown className="size-3" />
-          </DropdownMenuTrigger>
+          </Button>
           <DropdownMenuContent align="start" sideOffset={4}>
             <DropdownMenuLabel>Change status</DropdownMenuLabel>
             {STATUS_ORDER.map((s) => {
@@ -151,7 +152,10 @@ export function ItemCard({ item, onStatusChange, onEdit, onDelete }: ItemCardPro
                 <DropdownMenuItem
                   key={s}
                   disabled={s === item.status}
-                  onSelect={() => onStatusChange(item.id, s)}
+                  onSelect={() => {
+                    onStatusChange(item.id, s);
+                    setMenuOpen(false);
+                  }}
                 >
                   <span className={cn("size-2 rounded-full", cfg.className.split(" ")[1])} />
                   {cfg.label}
