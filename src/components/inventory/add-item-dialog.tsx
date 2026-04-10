@@ -3,13 +3,13 @@
 import { useState, useCallback } from "react";
 import { Plus, Sparkles, RefreshCw } from "lucide-react";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,15 +20,7 @@ import { InventoryPhotoUpload } from "@/components/inventory/inventory-photo-upl
 // Presets
 // ---------------------------------------------------------------------------
 const CATEGORY_PRESETS = [
-  "jeans",
-  "tops",
-  "dresses",
-  "jackets",
-  "shoes",
-  "bags",
-  "accessories",
-  "books",
-  "other",
+  "jeans", "tops", "dresses", "jackets", "shoes", "bags", "accessories", "books", "other",
 ];
 
 const CONDITION_OPTIONS = [
@@ -69,17 +61,9 @@ export function AddItemDialog({ onAdd, label = "Add Item", buttonSize = "sm" }: 
   const [photos, setPhotos] = useState<string[]>([]);
 
   const reset = useCallback(() => {
-    setName("");
-    setBrand("");
-    setCategory("");
-    setCondition("");
-    setSize("");
-    setCostPrice("");
-    setListedPrice("");
-    setSourceType("");
-    setSourceLocation("");
-    setDescription("");
-    setPhotos([]);
+    setName(""); setBrand(""); setCategory(""); setCondition("");
+    setSize(""); setCostPrice(""); setListedPrice(""); setSourceType("");
+    setSourceLocation(""); setDescription(""); setPhotos([]);
   }, []);
 
   const handleSubmit = (e?: React.FormEvent | React.MouseEvent) => {
@@ -110,189 +94,190 @@ export function AddItemDialog({ onAdd, label = "Add Item", buttonSize = "sm" }: 
         <Plus className="size-3.5" />
         {label}
       </Button>
-      <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent side="right" className="overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>Add Item</SheetTitle>
-          <SheetDescription>
-            Add a new item to your inventory. Only name is required.
-          </SheetDescription>
-        </SheetHeader>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add Item</DialogTitle>
+            <DialogDescription>
+              Add a new item to your inventory. Only name is required.
+            </DialogDescription>
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5 px-4">
-          {/* Photos */}
-          <div className="flex flex-col gap-1.5">
-            <Label>Photos</Label>
-            <InventoryPhotoUpload photos={photos} onChange={setPhotos} />
-          </div>
-
-          {/* Name — required */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="item-name">
-              Name <span className="text-red-400">*</span>
-            </Label>
-            <Input
-              id="item-name"
-              placeholder="e.g. Vintage Levi's 501 Jeans"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="bg-zinc-900"
-              autoFocus
-            />
-          </div>
-
-          {/* Brand */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="item-brand">Brand</Label>
-            <Input
-              id="item-brand"
-              placeholder="e.g. Levi's, Nike, Zara"
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-              className="bg-zinc-900"
-            />
-          </div>
-
-          {/* Category presets */}
-          <div className="flex flex-col gap-1.5">
-            <Label>Category</Label>
-            <div className="flex flex-wrap gap-1.5">
-              {CATEGORY_PRESETS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setCategory(category === c ? "" : c)}
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                    category === c
-                      ? "bg-zinc-700 text-zinc-100"
-                      : "bg-zinc-800/60 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Condition */}
-          <div className="flex flex-col gap-1.5">
-            <Label>Condition</Label>
-            <div className="flex flex-wrap gap-1.5">
-              {CONDITION_OPTIONS.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  onClick={() => setCondition(condition === c.value ? "" : c.value)}
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                    condition === c.value
-                      ? "bg-zinc-700 text-zinc-100"
-                      : "bg-zinc-800/60 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
-                  }`}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Size */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="item-size">Size</Label>
-            <Input
-              id="item-size"
-              placeholder="e.g. M, UK 6, W32 L30"
-              value={size}
-              onChange={(e) => setSize(e.target.value)}
-              className="bg-zinc-900"
-            />
-          </div>
-
-          {/* Prices side by side */}
-          <div className="grid grid-cols-2 gap-3">
+          <form onSubmit={handleSubmit} className="grid gap-4">
+            {/* Photos */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="item-cost">Cost price</Label>
-              <Input
-                id="item-cost"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={costPrice}
-                onChange={(e) => setCostPrice(e.target.value)}
-                className="bg-zinc-900"
-              />
+              <Label>Photos</Label>
+              <InventoryPhotoUpload photos={photos} onChange={setPhotos} />
             </div>
+
+            {/* Two column grid for fields */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              {/* Name — required, full width */}
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <Label htmlFor="item-name">
+                  Name <span className="text-red-400">*</span>
+                </Label>
+                <Input
+                  id="item-name"
+                  placeholder="e.g. Vintage Levi's 501 Jeans"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="bg-zinc-900"
+                  autoFocus
+                />
+              </div>
+
+              {/* Brand */}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="item-brand">Brand</Label>
+                <Input
+                  id="item-brand"
+                  placeholder="e.g. Levi's, Nike, Zara"
+                  value={brand}
+                  onChange={(e) => setBrand(e.target.value)}
+                  className="bg-zinc-900"
+                />
+              </div>
+
+              {/* Size */}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="item-size">Size</Label>
+                <Input
+                  id="item-size"
+                  placeholder="e.g. M, UK 6, W32 L30"
+                  value={size}
+                  onChange={(e) => setSize(e.target.value)}
+                  className="bg-zinc-900"
+                />
+              </div>
+
+              {/* Prices */}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="item-cost">Cost price</Label>
+                <Input
+                  id="item-cost"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={costPrice}
+                  onChange={(e) => setCostPrice(e.target.value)}
+                  className="bg-zinc-900"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="item-listed">Listed price</Label>
+                <Input
+                  id="item-listed"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={listedPrice}
+                  onChange={(e) => setListedPrice(e.target.value)}
+                  className="bg-zinc-900"
+                />
+              </div>
+
+              {/* Source location */}
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <Label htmlFor="item-source-loc">Source location</Label>
+                <Input
+                  id="item-source-loc"
+                  placeholder="e.g. Oxfam Camden, Battersea car boot"
+                  value={sourceLocation}
+                  onChange={(e) => setSourceLocation(e.target.value)}
+                  className="bg-zinc-900"
+                />
+              </div>
+            </div>
+
+            {/* Category presets */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="item-listed">Listed price</Label>
-              <Input
-                id="item-listed"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={listedPrice}
-                onChange={(e) => setListedPrice(e.target.value)}
-                className="bg-zinc-900"
-              />
+              <Label>Category</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {CATEGORY_PRESETS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCategory(category === c ? "" : c)}
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                      category === c
+                        ? "bg-zinc-700 text-zinc-100"
+                        : "bg-zinc-800/60 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Source type */}
-          <div className="flex flex-col gap-1.5">
-            <Label>Source</Label>
-            <div className="flex flex-wrap gap-1.5">
-              {SOURCE_TYPES.map((s) => (
-                <button
-                  key={s.value}
-                  type="button"
-                  onClick={() => setSourceType(sourceType === s.value ? "" : s.value)}
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                    sourceType === s.value
-                      ? "bg-zinc-700 text-zinc-100"
-                      : "bg-zinc-800/60 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
+            {/* Condition */}
+            <div className="flex flex-col gap-1.5">
+              <Label>Condition</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {CONDITION_OPTIONS.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => setCondition(condition === c.value ? "" : c.value)}
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                      condition === c.value
+                        ? "bg-zinc-700 text-zinc-100"
+                        : "bg-zinc-800/60 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Source location */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="item-source-loc">Source location</Label>
-            <Input
-              id="item-source-loc"
-              placeholder="e.g. Oxfam Camden, Battersea car boot"
-              value={sourceLocation}
-              onChange={(e) => setSourceLocation(e.target.value)}
-              className="bg-zinc-900"
+            {/* Source type */}
+            <div className="flex flex-col gap-1.5">
+              <Label>Source</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {SOURCE_TYPES.map((s) => (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => setSourceType(sourceType === s.value ? "" : s.value)}
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                      sourceType === s.value
+                        ? "bg-zinc-700 text-zinc-100"
+                        : "bg-zinc-800/60 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Description with AI generate */}
+            <DescriptionField
+              description={description}
+              onDescriptionChange={setDescription}
+              image={photos[0] ?? null}
+              brand={brand}
+              category={category}
+              condition={condition}
+              itemSize={size}
             />
-          </div>
+          </form>
 
-          {/* Description with AI generate */}
-          <AddDescriptionField
-            description={description}
-            onDescriptionChange={setDescription}
-            image={photos[0] ?? null}
-            brand={brand}
-            category={category}
-            condition={condition}
-            itemSize={size}
-          />
-        </form>
-
-        <SheetFooter>
-          <Button
-            onClick={handleSubmit}
-            disabled={!name.trim()}
-            className="w-full"
-          >
-            Add Item
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+          <DialogFooter>
+            <Button
+              onClick={handleSubmit}
+              disabled={!name.trim()}
+              className="w-full sm:w-auto"
+            >
+              Add Item
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -300,7 +285,7 @@ export function AddItemDialog({ onAdd, label = "Add Item", buttonSize = "sm" }: 
 // ---------------------------------------------------------------------------
 // Description field with inline AI generate
 // ---------------------------------------------------------------------------
-function AddDescriptionField({
+function DescriptionField({
   description,
   onDescriptionChange,
   image,

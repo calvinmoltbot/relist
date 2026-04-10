@@ -3,13 +3,13 @@
 import { useState, useCallback, useEffect } from "react";
 import { Sparkles, RefreshCw } from "lucide-react";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,18 +17,10 @@ import type { InventoryItem } from "@/lib/inventory-store";
 import { InventoryPhotoUpload } from "@/components/inventory/inventory-photo-upload";
 
 // ---------------------------------------------------------------------------
-// Presets (shared with add-item-dialog)
+// Presets
 // ---------------------------------------------------------------------------
 const CATEGORY_PRESETS = [
-  "jeans",
-  "tops",
-  "dresses",
-  "jackets",
-  "shoes",
-  "bags",
-  "accessories",
-  "books",
-  "other",
+  "jeans", "tops", "dresses", "jackets", "shoes", "bags", "accessories", "books", "other",
 ];
 
 const CONDITION_OPTIONS = [
@@ -77,7 +69,6 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
   const [description, setDescription] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
 
-  // Populate form when item changes
   useEffect(() => {
     if (item) {
       setName(item.name ?? "");
@@ -123,16 +114,16 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
   );
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>Edit Item</SheetTitle>
-          <SheetDescription>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Item</DialogTitle>
+          <DialogDescription>
             Update item details. Only name is required.
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5 px-4">
+        <form onSubmit={handleSubmit} className="grid gap-4">
           {/* Status */}
           <div className="flex flex-col gap-1.5">
             <Label>Status</Label>
@@ -160,30 +151,96 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
             <InventoryPhotoUpload photos={photos} onChange={setPhotos} />
           </div>
 
-          {/* Name — required */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="edit-item-name">
-              Name <span className="text-red-400">*</span>
-            </Label>
-            <Input
-              id="edit-item-name"
-              placeholder="e.g. Vintage Levi's 501 Jeans"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="bg-zinc-900"
-            />
-          </div>
+          {/* Two column grid */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <Label htmlFor="edit-item-name">
+                Name <span className="text-red-400">*</span>
+              </Label>
+              <Input
+                id="edit-item-name"
+                placeholder="e.g. Vintage Levi's 501 Jeans"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="bg-zinc-900"
+              />
+            </div>
 
-          {/* Brand */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="edit-item-brand">Brand</Label>
-            <Input
-              id="edit-item-brand"
-              placeholder="e.g. Levi's, Nike, Zara"
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-              className="bg-zinc-900"
-            />
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="edit-item-brand">Brand</Label>
+              <Input
+                id="edit-item-brand"
+                placeholder="e.g. Levi's, Nike, Zara"
+                value={brand}
+                onChange={(e) => setBrand(e.target.value)}
+                className="bg-zinc-900"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="edit-item-size">Size</Label>
+              <Input
+                id="edit-item-size"
+                placeholder="e.g. M, UK 6, W32 L30"
+                value={size}
+                onChange={(e) => setSize(e.target.value)}
+                className="bg-zinc-900"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="edit-item-cost">Cost price</Label>
+              <Input
+                id="edit-item-cost"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={costPrice}
+                onChange={(e) => setCostPrice(e.target.value)}
+                className="bg-zinc-900"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="edit-item-listed">Listed price</Label>
+              <Input
+                id="edit-item-listed"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={listedPrice}
+                onChange={(e) => setListedPrice(e.target.value)}
+                className="bg-zinc-900"
+              />
+            </div>
+
+            {(status === "sold" || status === "shipped") && (
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <Label htmlFor="edit-item-sold">Sold price</Label>
+                <Input
+                  id="edit-item-sold"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={soldPrice}
+                  onChange={(e) => setSoldPrice(e.target.value)}
+                  className="bg-zinc-900"
+                />
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <Label htmlFor="edit-item-source-loc">Source location</Label>
+              <Input
+                id="edit-item-source-loc"
+                placeholder="e.g. Oxfam Camden, Battersea car boot"
+                value={sourceLocation}
+                onChange={(e) => setSourceLocation(e.target.value)}
+                className="bg-zinc-900"
+              />
+            </div>
           </div>
 
           {/* Category presets */}
@@ -228,65 +285,6 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
             </div>
           </div>
 
-          {/* Size */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="edit-item-size">Size</Label>
-            <Input
-              id="edit-item-size"
-              placeholder="e.g. M, UK 6, W32 L30"
-              value={size}
-              onChange={(e) => setSize(e.target.value)}
-              className="bg-zinc-900"
-            />
-          </div>
-
-          {/* Prices */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="edit-item-cost">Cost price</Label>
-              <Input
-                id="edit-item-cost"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={costPrice}
-                onChange={(e) => setCostPrice(e.target.value)}
-                className="bg-zinc-900"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="edit-item-listed">Listed price</Label>
-              <Input
-                id="edit-item-listed"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={listedPrice}
-                onChange={(e) => setListedPrice(e.target.value)}
-                className="bg-zinc-900"
-              />
-            </div>
-          </div>
-
-          {/* Sold price (only relevant for sold/shipped) */}
-          {(status === "sold" || status === "shipped") && (
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="edit-item-sold">Sold price</Label>
-              <Input
-                id="edit-item-sold"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={soldPrice}
-                onChange={(e) => setSoldPrice(e.target.value)}
-                className="bg-zinc-900"
-              />
-            </div>
-          )}
-
           {/* Source type */}
           <div className="flex flex-col gap-1.5">
             <Label>Source</Label>
@@ -308,19 +306,7 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
             </div>
           </div>
 
-          {/* Source location */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="edit-item-source-loc">Source location</Label>
-            <Input
-              id="edit-item-source-loc"
-              placeholder="e.g. Oxfam Camden, Battersea car boot"
-              value={sourceLocation}
-              onChange={(e) => setSourceLocation(e.target.value)}
-              className="bg-zinc-900"
-            />
-          </div>
-
-          {/* Description */}
+          {/* Description with AI generate */}
           <DescriptionField
             description={description}
             onDescriptionChange={setDescription}
@@ -332,17 +318,17 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
           />
         </form>
 
-        <SheetFooter>
+        <DialogFooter>
           <Button
             onClick={handleSubmit}
             disabled={!name.trim()}
-            className="w-full"
+            className="w-full sm:w-auto"
           >
             Save Changes
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -407,11 +393,9 @@ function DescriptionField({
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
         <Label htmlFor="edit-item-desc">Description</Label>
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
-          className="h-6 gap-1 text-[11px] text-violet-400 hover:text-violet-300"
+          className="flex items-center gap-1 text-[11px] font-medium text-violet-400 transition-colors hover:text-violet-300 disabled:opacity-50"
           disabled={generating || (!image && !brand && !category)}
           onClick={handleGenerate}
         >
@@ -421,7 +405,7 @@ function DescriptionField({
             <Sparkles className="size-3" />
           )}
           {generating ? "Generating..." : "AI Generate"}
-        </Button>
+        </button>
       </div>
       <textarea
         id="edit-item-desc"
