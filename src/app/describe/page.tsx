@@ -102,7 +102,7 @@ export default function DescribePage() {
               <img
                 src={form.image}
                 alt="Item"
-                className="w-full max-h-56 object-cover"
+                className="w-full max-h-72 object-contain bg-zinc-950"
               />
               <button
                 onClick={() => setImage(null)}
