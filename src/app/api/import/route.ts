@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { items } from "@/db/schema";
+import { ilike } from "drizzle-orm";
 import * as XLSX from "xlsx";
+
+// Check if an item with this name already exists (case-insensitive)
+async function itemExists(name: string): Promise<boolean> {
+  const existing = await db
+    .select({ id: items.id })
+    .from(items)
+    .where(ilike(items.name, name))
+    .limit(1);
+  return existing.length > 0;
+}
 
 // ---------------------------------------------------------------------------
 // POST /api/import — Import items from xlsx file OR JSON array
@@ -90,6 +101,11 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
+      if (await itemExists(nameStr)) {
+        skipped++;
+        continue;
+      }
+
       // Map condition values to our format
       const rawCondition = colMap.condition >= 0 ? String(row[colMap.condition] ?? "").trim() : "";
       const conditionMap: Record<string, string> = {
@@ -115,7 +131,7 @@ export async function POST(request: NextRequest) {
         size,
         costPrice: costPrice != null && costPrice !== "" ? String(costPrice) : null,
         soldPrice: soldPrice != null && soldPrice !== "" ? String(soldPrice) : null,
-        status: soldPrice ? "sold" : "sourced",
+        status: soldPrice ? "shipped" : "sourced",
         platform: "vinted",
       });
 
@@ -164,6 +180,8 @@ async function handleJsonImport(request: NextRequest) {
       const name = String(item.title ?? item.name ?? "").trim();
       if (!name) { skipped++; continue; }
 
+      if (await itemExists(name)) { skipped++; continue; }
+
       const rawCondition = String(item.condition ?? "").trim().toLowerCase();
       const condition = conditionMap[rawCondition] ?? (rawCondition || null);
 
@@ -177,7 +195,7 @@ async function handleJsonImport(request: NextRequest) {
         condition,
         size,
         soldPrice: price != null && price > 0 ? String(price) : null,
-        status: price && price > 0 ? "sold" : "sourced",
+        status: price && price > 0 ? "shipped" : "sourced",
         platform: "vinted",
       });
 
