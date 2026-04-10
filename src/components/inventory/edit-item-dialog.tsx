@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { InventoryItem } from "@/lib/inventory-store";
+import { InventoryPhotoUpload } from "@/components/inventory/inventory-photo-upload";
 
 // ---------------------------------------------------------------------------
 // Presets (shared with add-item-dialog)
@@ -73,6 +74,7 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
   const [sourceType, setSourceType] = useState("");
   const [sourceLocation, setSourceLocation] = useState("");
   const [description, setDescription] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
 
   // Populate form when item changes
   useEffect(() => {
@@ -89,6 +91,7 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
       setSourceType(item.sourceType ?? "");
       setSourceLocation(item.sourceLocation ?? "");
       setDescription(item.description ?? "");
+      setPhotos(item.photoUrls ?? []);
     }
   }, [item]);
 
@@ -110,11 +113,12 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
         sourceType: sourceType || null,
         sourceLocation: sourceLocation.trim() || null,
         description: description.trim() || null,
+        photoUrls: photos.length > 0 ? photos : null,
       });
 
       onOpenChange(false);
     },
-    [item, name, brand, category, condition, size, costPrice, listedPrice, soldPrice, status, sourceType, sourceLocation, description, onSave, onOpenChange],
+    [item, name, brand, category, condition, size, costPrice, listedPrice, soldPrice, status, sourceType, sourceLocation, description, photos, onSave, onOpenChange],
   );
 
   return (
@@ -147,6 +151,12 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Photos */}
+          <div className="flex flex-col gap-1.5">
+            <Label>Photos</Label>
+            <InventoryPhotoUpload photos={photos} onChange={setPhotos} />
           </div>
 
           {/* Name — required */}

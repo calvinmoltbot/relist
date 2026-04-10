@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
       description: body.description ?? null,
       sourceType: body.sourceType ?? null,
       sourceLocation: body.sourceLocation ?? null,
+      photoUrls: body.photoUrls ?? null,
     })
     .returning();
 

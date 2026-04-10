@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { ImagePlus, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { NewInventoryItem } from "@/lib/inventory-store";
+import { InventoryPhotoUpload } from "@/components/inventory/inventory-photo-upload";
 
 // ---------------------------------------------------------------------------
 // Presets
@@ -65,6 +66,7 @@ export function AddItemDialog({ onAdd, label = "Add Item", buttonSize = "sm" }: 
   const [sourceType, setSourceType] = useState("");
   const [sourceLocation, setSourceLocation] = useState("");
   const [description, setDescription] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
 
   const reset = useCallback(() => {
     setName("");
@@ -77,6 +79,7 @@ export function AddItemDialog({ onAdd, label = "Add Item", buttonSize = "sm" }: 
     setSourceType("");
     setSourceLocation("");
     setDescription("");
+    setPhotos([]);
   }, []);
 
   const handleSubmit = (e?: React.FormEvent | React.MouseEvent) => {
@@ -94,6 +97,7 @@ export function AddItemDialog({ onAdd, label = "Add Item", buttonSize = "sm" }: 
       sourceType: sourceType || undefined,
       sourceLocation: sourceLocation.trim() || undefined,
       description: description.trim() || undefined,
+      photoUrls: photos.length > 0 ? photos : undefined,
     });
 
     reset();
@@ -116,12 +120,10 @@ export function AddItemDialog({ onAdd, label = "Add Item", buttonSize = "sm" }: 
         </SheetHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5 px-4">
-          {/* Photo placeholder */}
-          <div className="flex h-32 cursor-pointer items-center justify-center rounded-lg border border-dashed border-zinc-700 bg-zinc-800/30 transition-colors hover:border-zinc-600 hover:bg-zinc-800/50">
-            <div className="flex flex-col items-center gap-1.5 text-zinc-500">
-              <ImagePlus className="size-6" />
-              <span className="text-xs">Add photos (coming soon)</span>
-            </div>
+          {/* Photos */}
+          <div className="flex flex-col gap-1.5">
+            <Label>Photos</Label>
+            <InventoryPhotoUpload photos={photos} onChange={setPhotos} />
           </div>
 
           {/* Name — required */}

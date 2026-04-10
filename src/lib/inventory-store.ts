@@ -37,6 +37,7 @@ export interface NewInventoryItem {
   description?: string;
   sourceType?: string;
   sourceLocation?: string;
+  photoUrls?: string[];
 }
 
 export type ItemStatus = "all" | "sourced" | "listed" | "sold" | "shipped";
@@ -104,7 +105,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       soldPrice: null,
       status: "sourced",
       platform: "vinted",
-      photoUrls: null,
+      photoUrls: item.photoUrls ?? null,
       description: item.description ?? null,
       sourceType: item.sourceType ?? null,
       sourceLocation: item.sourceLocation ?? null,
