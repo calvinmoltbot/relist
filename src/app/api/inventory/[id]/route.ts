@@ -45,16 +45,21 @@ export async function PATCH(
     return NextResponse.json({ error: "Item not found" }, { status: 404 });
   }
 
-  // Auto-set timestamps based on status changes
+  // Convert date strings to Date objects if provided
+  if (body.soldAt) body.soldAt = new Date(body.soldAt);
+  if (body.listedAt) body.listedAt = new Date(body.listedAt);
+  if (body.shippedAt) body.shippedAt = new Date(body.shippedAt);
+
+  // Auto-set timestamps based on status changes (only if not explicitly provided)
   const updates: Record<string, unknown> = { ...body, updatedAt: now };
 
-  if (body.status === "listed" && existing.status !== "listed") {
+  if (body.status === "listed" && existing.status !== "listed" && !body.listedAt) {
     updates.listedAt = now;
   }
-  if (body.status === "sold" && existing.status !== "sold") {
+  if (body.status === "sold" && existing.status !== "sold" && !body.soldAt) {
     updates.soldAt = now;
   }
-  if (body.status === "shipped" && existing.status !== "shipped") {
+  if (body.status === "shipped" && existing.status !== "shipped" && !body.shippedAt) {
     updates.shippedAt = now;
   }
 
@@ -79,8 +84,16 @@ export async function PATCH(
       shippingCost: String(shippingCost),
       platformFees: String(platformFees),
       profit: String(profit),
-      completedAt: now,
+      completedAt: updated.soldAt ?? now,
     });
+  }
+
+  // If soldAt was explicitly changed on an already-sold item, update the transaction date too
+  if (body.soldAt && (existing.status === "sold" || existing.status === "shipped")) {
+    await db
+      .update(transactions)
+      .set({ completedAt: new Date(body.soldAt) })
+      .where(eq(transactions.itemId, id));
   }
 
   return NextResponse.json({ item: updated });

@@ -1,7 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useCallback, useState } from "react";
-import { Package, LayoutGrid, List, Upload } from "lucide-react";
+import { Package, LayoutGrid, List, Upload, CalendarDays } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useInventoryStore } from "@/lib/inventory-store";
 import type { InventoryItem } from "@/lib/inventory-store";
@@ -29,6 +39,7 @@ export default function InventoryPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [editItem, setEditItem] = useState<InventoryItem | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [bulkDateOpen, setBulkDateOpen] = useState(false);
 
   // Fetch on mount and when filters change
   useEffect(() => {
@@ -134,6 +145,15 @@ export default function InventoryPage() {
             </button>
           </div>
 
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setBulkDateOpen(true)}
+            className="gap-1.5"
+          >
+            <CalendarDays className="size-3.5" />
+            <span className="hidden sm:inline">Bulk Dates</span>
+          </Button>
           <ImportButton onImported={fetchItems} />
           <AddItemDialog onAdd={addItem} />
         </div>
@@ -221,6 +241,14 @@ export default function InventoryPage() {
         onOpenChange={setEditOpen}
         onSave={handleEditSave}
       />
+
+      {/* Bulk date update dialog */}
+      <BulkDateDialog
+        open={bulkDateOpen}
+        onOpenChange={setBulkDateOpen}
+        items={items}
+        onDone={fetchItems}
+      />
     </div>
   );
 }
@@ -251,6 +279,130 @@ function StatCard({
         )}
       </p>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Bulk date update dialog
+// ---------------------------------------------------------------------------
+function BulkDateDialog({
+  open,
+  onOpenChange,
+  items,
+  onDone,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  items: InventoryItem[];
+  onDone: () => void;
+}) {
+  const [date, setDate] = useState("");
+  const [scope, setScope] = useState<"all_sold" | "no_date">("all_sold");
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  const soldItems = items.filter(
+    (i) => i.status === "sold" || i.status === "shipped"
+  );
+  const noDateItems = soldItems.filter((i) => !i.soldAt);
+
+  const targetItems = scope === "no_date" ? noDateItems : soldItems;
+
+  async function handleApply() {
+    if (!date || targetItems.length === 0) return;
+    setSaving(true);
+    setResult(null);
+    try {
+      const res = await fetch("/api/inventory/bulk", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: targetItems.map((i) => i.id),
+          updates: { soldAt: date },
+        }),
+      });
+      const data = await res.json();
+      setResult(`Updated ${data.updated} items`);
+      onDone();
+    } catch {
+      setResult("Failed to update");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Bulk Update Sold Date</DialogTitle>
+          <DialogDescription>
+            Set the sold date for multiple items at once. Useful for imported items that are all showing the wrong date.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="flex flex-col gap-1.5">
+            <Label>Which items?</Label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setScope("all_sold")}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                  scope === "all_sold"
+                    ? "bg-zinc-700 text-zinc-100"
+                    : "bg-zinc-800/60 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                }`}
+              >
+                All sold/shipped ({soldItems.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setScope("no_date")}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                  scope === "no_date"
+                    ? "bg-zinc-700 text-zinc-100"
+                    : "bg-zinc-800/60 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                }`}
+              >
+                Missing date only ({noDateItems.length})
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="bulk-date">Set sold date to</Label>
+            <Input
+              id="bulk-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="bg-zinc-900 max-w-[200px]"
+            />
+          </div>
+
+          {targetItems.length > 0 && date && (
+            <p className="text-xs text-zinc-500">
+              This will update <span className="text-zinc-300 font-medium">{targetItems.length}</span> items
+              to <span className="text-zinc-300 font-medium">{date}</span>
+            </p>
+          )}
+
+          {result && (
+            <p className="text-xs text-emerald-400">{result}</p>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button
+            onClick={handleApply}
+            disabled={!date || targetItems.length === 0 || saving}
+          >
+            {saving ? "Updating..." : `Update ${targetItems.length} items`}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

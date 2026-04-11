@@ -68,6 +68,7 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
   const [sourceLocation, setSourceLocation] = useState("");
   const [description, setDescription] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
+  const [soldAt, setSoldAt] = useState("");
 
   useEffect(() => {
     if (item) {
@@ -84,6 +85,7 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
       setSourceLocation(item.sourceLocation ?? "");
       setDescription(item.description ?? "");
       setPhotos(item.photoUrls ?? []);
+      setSoldAt(item.soldAt ? item.soldAt.substring(0, 10) : "");
     }
   }, [item]);
 
@@ -106,11 +108,12 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
         sourceLocation: sourceLocation.trim() || null,
         description: description.trim() || null,
         photoUrls: photos.length > 0 ? photos : null,
+        ...(soldAt ? { soldAt } : {}),
       });
 
       onOpenChange(false);
     },
-    [item, name, brand, category, condition, size, costPrice, listedPrice, soldPrice, status, sourceType, sourceLocation, description, photos, onSave, onOpenChange],
+    [item, name, brand, category, condition, size, costPrice, listedPrice, soldPrice, soldAt, status, sourceType, sourceLocation, description, photos, onSave, onOpenChange],
   );
 
   return (
@@ -216,19 +219,31 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
             </div>
 
             {(status === "sold" || status === "shipped") && (
-              <div className="flex flex-col gap-1.5 sm:col-span-2">
-                <Label htmlFor="edit-item-sold">Sold price</Label>
-                <Input
-                  id="edit-item-sold"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={soldPrice}
-                  onChange={(e) => setSoldPrice(e.target.value)}
-                  className="bg-zinc-900"
-                />
-              </div>
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="edit-item-sold">Sold price</Label>
+                  <Input
+                    id="edit-item-sold"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={soldPrice}
+                    onChange={(e) => setSoldPrice(e.target.value)}
+                    className="bg-zinc-900"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="edit-item-sold-at">Date sold</Label>
+                  <Input
+                    id="edit-item-sold-at"
+                    type="date"
+                    value={soldAt}
+                    onChange={(e) => setSoldAt(e.target.value)}
+                    className="bg-zinc-900"
+                  />
+                </div>
+              </>
             )}
 
             <div className="flex flex-col gap-1.5 sm:col-span-2">
