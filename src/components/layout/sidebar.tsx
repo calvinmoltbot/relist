@@ -17,7 +17,7 @@ const navItems = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Inventory", href: "/inventory", icon: Package },
   { label: "Describe", href: "/describe", icon: Sparkles },
-  { label: "Profit", href: "/profit", icon: TrendingUp },
+  { label: "Financials", href: "/profit", icon: TrendingUp },
   { label: "Deals", href: "/deals", icon: Zap },
   { label: "Settings", href: "/settings", icon: Settings },
   { label: "Help", href: "/help", icon: HelpCircle },

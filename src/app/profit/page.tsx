@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   TrendingUp,
   TrendingDown,
@@ -8,6 +9,9 @@ import {
   Package,
   BarChart3,
   Percent,
+  Zap,
+  ArrowUpRight,
+  ArrowDownRight,
 } from "lucide-react";
 import {
   Card,
@@ -16,113 +20,179 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ProfitChart } from "@/components/profit/profit-chart";
 import { CategoryBreakdown } from "@/components/profit/category-breakdown";
 import { SourceBreakdown } from "@/components/profit/source-breakdown";
 import { TopItems } from "@/components/profit/top-items";
+import {
+  DateRangePicker,
+  type DatePreset,
+} from "@/components/profit/date-range-picker";
+import { InventoryHealth } from "@/components/profit/inventory-health";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-interface ProfitSummary {
-  totalRevenue: number;
-  totalCost: number;
-  totalProfit: number;
-  avgMargin: number;
-  avgProfitPerItem: number;
-  itemsSold: number;
-  itemsListed: number;
-  itemsSourced: number;
-  stockCost: number;
-  stockListedValue: number;
-}
-
-interface ItemProfit {
-  id: string;
-  name: string;
-  brand: string | null;
-  category: string | null;
-  cost: number;
-  sold: number;
-  profit: number;
-  soldAt: string | null;
-  sourceType: string | null;
-}
-
-interface CategoryData {
-  category: string;
-  revenue: number;
-  cost: number;
-  profit: number;
-  count: number;
-}
-
-interface SourceData {
-  source: string;
-  revenue: number;
-  cost: number;
-  profit: number;
-  count: number;
-}
-
-interface MonthData {
-  month: string;
-  revenue: number;
-  cost: number;
-  profit: number;
-  count: number;
-}
-
-interface Targets {
-  monthlyTarget: number;
-  sixMonthTarget: number;
-  weeklyHours: number;
-  currentMonth: string;
-  monthRevenue: number;
-  monthProfit: number;
-  monthItemsSold: number;
-  projectedMonthRevenue: number;
-  daysRemaining: number;
-  revenueProgress: number;
-  effectiveHourlyRate: number;
-  targetHourlyRate: number;
-  onTrack: boolean;
-}
-
 interface ProfitData {
-  summary: ProfitSummary;
-  targets: Targets;
-  itemProfits: ItemProfit[];
-  byCategory: CategoryData[];
-  bySource: SourceData[];
-  byMonth: MonthData[];
+  summary: {
+    totalRevenue: number;
+    totalCost: number;
+    grossProfit: number;
+    netProfit: number;
+    totalShipping: number;
+    totalFees: number;
+    avgMargin: number;
+    avgProfitPerItem: number;
+    itemsSold: number;
+    itemsListed: number;
+    itemsSourced: number;
+    stockCost: number;
+    stockListedValue: number;
+    sellThroughRate: number;
+    avgDaysToSell: number | null;
+  };
+  comparison: {
+    revenueDelta: number | null;
+    profitDelta: number | null;
+    itemsSoldDelta: number | null;
+  };
+  targets: {
+    monthlyTarget: number;
+    weeklyHours: number;
+    marginTarget: number;
+    currentMonth: string;
+    monthRevenue: number;
+    monthProfit: number;
+    monthItemsSold: number;
+    projectedMonthRevenue: number;
+    daysRemaining: number;
+    revenueProgress: number;
+    effectiveHourlyRate: number;
+    targetHourlyRate: number;
+    onTrack: boolean;
+  };
+  weeklyPulse: {
+    itemsSold: number;
+    revenue: number;
+    revenueDelta: number | null;
+  };
+  inventoryHealth: {
+    agingBuckets: Record<string, number>;
+    agingValues: Record<string, number>;
+    deadStock: {
+      id: string;
+      name: string;
+      brand: string | null;
+      listedPrice: number;
+      daysListed: number;
+    }[];
+    totalUnsold: number;
+    inventoryTurnover: number;
+    stockAtRisk: number;
+  };
+  itemProfits: {
+    id: string;
+    name: string;
+    brand: string | null;
+    category: string | null;
+    cost: number;
+    sold: number;
+    profit: number;
+    netProfit: number;
+    soldAt: string | null;
+    sourceType: string | null;
+  }[];
+  byCategory: {
+    category: string;
+    revenue: number;
+    cost: number;
+    profit: number;
+    count: number;
+  }[];
+  bySource: {
+    source: string;
+    revenue: number;
+    cost: number;
+    profit: number;
+    count: number;
+  }[];
+  byMonth: {
+    month: string;
+    revenue: number;
+    cost: number;
+    profit: number;
+    count: number;
+  }[];
 }
 
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
-export default function ProfitPage() {
+export default function FinancialsPageWrapper() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+          <div>
+            <h1 className="text-xl font-semibold text-zinc-100">Financials</h1>
+            <p className="text-sm text-zinc-500">Track your earnings, expenses, and business health</p>
+          </div>
+          <div className="flex items-center justify-center py-20 text-zinc-500">
+            <div className="size-6 animate-spin rounded-full border-2 border-zinc-700 border-t-zinc-400" />
+          </div>
+        </div>
+      }
+    >
+      <FinancialsPage />
+    </Suspense>
+  );
+}
+
+function FinancialsPage() {
   const [data, setData] = useState<ProfitData | null>(null);
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const preset = (searchParams.get("preset") as DatePreset) || "all_time";
+
+  const fetchData = useCallback(
+    (p: DatePreset) => {
+      setLoading(true);
+      const url = p === "all_time" ? "/api/profit" : `/api/profit?preset=${p}`;
+      fetch(url)
+        .then((r) => r.json())
+        .then(setData)
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    },
+    []
+  );
 
   useEffect(() => {
-    fetch("/api/profit")
-      .then((r) => r.json())
-      .then(setData)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+    fetchData(preset);
+  }, [preset, fetchData]);
 
-  if (loading) {
+  function handlePresetChange(p: DatePreset) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (p === "all_time") {
+      params.delete("preset");
+    } else {
+      params.set("preset", p);
+    }
+    router.replace(`/profit?${params.toString()}`);
+  }
+
+  if (loading && !data) {
     return (
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <div>
-          <h1 className="text-xl font-semibold text-zinc-100">
-            Profit Dashboard
-          </h1>
+          <h1 className="text-xl font-semibold text-zinc-100">Financials</h1>
           <p className="text-sm text-zinc-500">
-            Track your earnings, expenses, and margins
+            Track your earnings, expenses, and business health
           </p>
         </div>
         <div className="flex items-center justify-center py-20 text-zinc-500">
@@ -134,39 +204,39 @@ export default function ProfitPage() {
 
   if (!data) return null;
 
-  const { summary } = data;
-  const hasData = summary.itemsSold > 0;
+  const { summary, targets, comparison, weeklyPulse } = data;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold text-zinc-100">
-          Profit Dashboard
-        </h1>
-        <p className="text-sm text-zinc-500">
-          Track your earnings, expenses, and margins
-        </p>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+      {/* Header + Date Picker */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-zinc-100">Financials</h1>
+          <p className="text-sm text-zinc-500">
+            Track your earnings, expenses, and business health
+          </p>
+        </div>
+        <DateRangePicker preset={preset} onPresetChange={handlePresetChange} />
       </div>
 
-      {/* Revenue target */}
-      <Card>
+      {/* Revenue target bar — always current month, above tabs */}
+      <Card className="border-zinc-800 bg-zinc-900/50">
         <CardContent className="py-4">
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-sm font-medium text-zinc-200">
-                Monthly Revenue — {formatMonthLabel(data.targets.currentMonth)}
+                Monthly Revenue — {formatMonthLabel(targets.currentMonth)}
               </p>
               <p className="text-xs text-zinc-500">
-                {data.targets.daysRemaining} days remaining
+                {targets.daysRemaining} days remaining
               </p>
             </div>
             <div className="text-right">
               <span className="text-2xl font-semibold text-zinc-100">
-                {"\u00A3"}{data.targets.monthRevenue.toFixed(0)}
+                £{targets.monthRevenue.toFixed(0)}
               </span>
               <span className="text-sm text-zinc-500">
-                {" / \u00A3"}{data.targets.monthlyTarget.toLocaleString()}
+                {" / £"}{targets.monthlyTarget.toLocaleString()}
               </span>
             </div>
           </div>
@@ -174,138 +244,231 @@ export default function ProfitPage() {
             <div
               className={cn(
                 "h-full rounded-full transition-all",
-                data.targets.onTrack ? "bg-emerald-500" : "bg-amber-500",
+                targets.onTrack ? "bg-emerald-500" : "bg-amber-500"
               )}
-              style={{ width: `${Math.min(data.targets.revenueProgress, 100)}%` }}
+              style={{
+                width: `${Math.min(targets.revenueProgress, 100)}%`,
+              }}
             />
           </div>
           <div className="mt-2 flex justify-between text-xs text-zinc-500">
-            <span>{data.targets.revenueProgress.toFixed(0)}% of target</span>
+            <span>{targets.revenueProgress.toFixed(0)}% of target</span>
             <span>
-              Projected: {"\u00A3"}{data.targets.projectedMonthRevenue.toLocaleString()}
-              {" \u00B7 "}
-              {"\u00A3"}{data.targets.effectiveHourlyRate.toFixed(2)}/hr
-              <span className="text-zinc-600"> (target {"\u00A3"}{data.targets.targetHourlyRate}/hr)</span>
+              Projected: £{targets.projectedMonthRevenue.toLocaleString()}
+              {" · "}
+              £{targets.effectiveHourlyRate.toFixed(2)}/hr
+              <span className="text-zinc-600">
+                {" "}(target £{targets.targetHourlyRate}/hr)
+              </span>
             </span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard
-          label="Total Profit"
-          value={`\u00A3${summary.totalProfit.toFixed(2)}`}
-          icon={summary.totalProfit >= 0 ? TrendingUp : TrendingDown}
-          accent={summary.totalProfit >= 0 ? "emerald" : "red"}
-        />
-        <StatCard
-          label="Revenue"
-          value={`\u00A3${summary.totalRevenue.toFixed(2)}`}
-          icon={DollarSign}
-          accent="blue"
-        />
-        <StatCard
-          label="Avg Margin"
-          value={`${summary.avgMargin.toFixed(1)}%`}
-          icon={Percent}
-          accent={summary.avgMargin >= 65 ? "emerald" : summary.avgMargin >= 40 ? "amber" : "red"}
-          subtitle="Target: 65%"
-        />
-        <StatCard
-          label="Items Sold"
-          value={summary.itemsSold}
-          icon={Package}
-          accent="violet"
-          subtitle={`${summary.itemsListed} listed, ${summary.itemsSourced} sourced`}
-        />
-      </div>
+      {/* Tabs */}
+      <Tabs defaultValue="overview">
+        <TabsList variant="line" className="mb-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="breakdown">Breakdown</TabsTrigger>
+          <TabsTrigger value="inventory">
+            Inventory Health
+            {data.inventoryHealth.deadStock.length > 0 && (
+              <Badge
+                variant="secondary"
+                className="ml-1.5 bg-red-500/10 text-red-400 text-[10px] px-1.5 py-0"
+              >
+                {data.inventoryHealth.deadStock.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Secondary stats */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <MiniStat label="Avg profit/item" value={`\u00A3${summary.avgProfitPerItem.toFixed(2)}`} />
-        <MiniStat label="Total cost" value={`\u00A3${summary.totalCost.toFixed(2)}`} />
-        <MiniStat label="Stock cost" value={`\u00A3${summary.stockCost.toFixed(2)}`} />
-        <MiniStat
-          label="Stock listed value"
-          value={`\u00A3${summary.stockListedValue.toFixed(2)}`}
-        />
-      </div>
-
-      {!hasData ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex size-16 items-center justify-center rounded-2xl bg-zinc-900 ring-1 ring-white/[0.06]">
-              <BarChart3 className="size-7 text-zinc-600" />
-            </div>
-            <h3 className="mt-4 text-sm font-medium text-zinc-300">
-              No sales data yet
-            </h3>
-            <p className="mt-1 max-w-xs text-sm text-zinc-500">
-              Mark items as sold in your inventory to see profit analytics here.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          {/* Monthly chart */}
-          {data.byMonth.length > 0 && (
-            <Card>
-              <CardHeader className="pb-0">
-                <CardTitle>Monthly Profit</CardTitle>
-                <CardDescription>Revenue, cost, and profit over time</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ProfitChart data={data.byMonth} />
+        {/* ── Overview Tab ─────────────────────────────────────── */}
+        <TabsContent value="overview">
+          <div className="space-y-5">
+            {/* Weekly pulse */}
+            <Card className="border-zinc-800 bg-zinc-900/50">
+              <CardContent className="flex items-center gap-4 py-3">
+                <Zap className="size-4 text-amber-400 shrink-0" />
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="text-zinc-300">
+                    <span className="font-semibold text-zinc-100">
+                      {weeklyPulse.itemsSold}
+                    </span>{" "}
+                    sold this week
+                  </span>
+                  <span className="text-zinc-500">·</span>
+                  <span className="text-zinc-300">
+                    £
+                    <span className="font-semibold text-zinc-100">
+                      {weeklyPulse.revenue.toFixed(0)}
+                    </span>{" "}
+                    revenue
+                  </span>
+                  {weeklyPulse.revenueDelta != null && (
+                    <>
+                      <span className="text-zinc-500">·</span>
+                      <DeltaBadge value={weeklyPulse.revenueDelta} label="vs last week" />
+                    </>
+                  )}
+                </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* Breakdowns */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            {data.byCategory.length > 0 && (
-              <Card>
+            {/* Summary cards */}
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <StatCard
+                label="Net Profit"
+                value={`£${summary.netProfit.toFixed(2)}`}
+                icon={summary.netProfit >= 0 ? TrendingUp : TrendingDown}
+                accent={summary.netProfit >= 0 ? "emerald" : "red"}
+                delta={comparison.profitDelta}
+              />
+              <StatCard
+                label="Revenue"
+                value={`£${summary.totalRevenue.toFixed(2)}`}
+                icon={DollarSign}
+                accent="blue"
+                delta={comparison.revenueDelta}
+              />
+              <StatCard
+                label="Avg Margin"
+                value={`${summary.avgMargin.toFixed(1)}%`}
+                icon={Percent}
+                accent={
+                  summary.avgMargin >= 65
+                    ? "emerald"
+                    : summary.avgMargin >= 40
+                      ? "amber"
+                      : "red"
+                }
+                subtitle={`Target: ${data.targets.marginTarget}%`}
+              />
+              <StatCard
+                label="Items Sold"
+                value={summary.itemsSold}
+                icon={Package}
+                accent="violet"
+                delta={comparison.itemsSoldDelta}
+                subtitle={`${summary.itemsListed} listed · ${summary.itemsSourced} sourced`}
+              />
+            </div>
+
+            {/* Secondary stats */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <MiniStat label="Avg profit/item" value={`£${summary.avgProfitPerItem.toFixed(2)}`} />
+              <MiniStat label="Sell-through rate" value={`${summary.sellThroughRate.toFixed(1)}%`} />
+              <MiniStat label="Stock cost" value={`£${summary.stockCost.toFixed(2)}`} />
+              <MiniStat label="Stock listed value" value={`£${summary.stockListedValue.toFixed(2)}`} />
+            </div>
+
+            {/* Monthly chart */}
+            {summary.itemsSold > 0 && data.byMonth.length > 0 && (
+              <Card className="border-zinc-800 bg-zinc-900/50">
                 <CardHeader className="pb-0">
-                  <CardTitle>By Category</CardTitle>
-                  <CardDescription>Which categories are most profitable</CardDescription>
+                  <CardTitle className="text-sm">Monthly Profit</CardTitle>
+                  <CardDescription>
+                    Revenue, cost, and profit over time
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <CategoryBreakdown data={data.byCategory} />
+                  <ProfitChart data={data.byMonth} />
                 </CardContent>
               </Card>
             )}
 
-            {data.bySource.length > 0 && (
-              <Card>
-                <CardHeader className="pb-0">
-                  <CardTitle>By Source</CardTitle>
-                  <CardDescription>Which sourcing channels perform best</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <SourceBreakdown data={data.bySource} />
+            {summary.itemsSold === 0 && (
+              <Card className="border-zinc-800 bg-zinc-900/50">
+                <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="flex size-16 items-center justify-center rounded-2xl bg-zinc-900 ring-1 ring-white/[0.06]">
+                    <BarChart3 className="size-7 text-zinc-600" />
+                  </div>
+                  <h3 className="mt-4 text-sm font-medium text-zinc-300">
+                    No sales data{preset !== "all_time" ? " in this period" : " yet"}
+                  </h3>
+                  <p className="mt-1 max-w-xs text-sm text-zinc-500">
+                    {preset !== "all_time"
+                      ? "Try a different date range or mark items as sold."
+                      : "Mark items as sold in your inventory to see profit analytics here."}
+                  </p>
                 </CardContent>
               </Card>
             )}
           </div>
+        </TabsContent>
 
-          {/* Top items */}
-          <Card>
-            <CardHeader className="pb-0">
-              <CardTitle>Item Performance</CardTitle>
-              <CardDescription>Profit per item, sorted by most profitable</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TopItems data={data.itemProfits} />
-            </CardContent>
-          </Card>
-        </>
-      )}
+        {/* ── Breakdown Tab ────────────────────────────────────── */}
+        <TabsContent value="breakdown">
+          <div className="space-y-6">
+            {summary.itemsSold === 0 ? (
+              <Card className="border-zinc-800 bg-zinc-900/50">
+                <CardContent className="py-12 text-center text-sm text-zinc-500">
+                  No sales data{preset !== "all_time" ? " in this period" : ""} to break down.
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <div className="grid gap-6 lg:grid-cols-2">
+                  {data.byCategory.length > 0 && (
+                    <Card className="border-zinc-800 bg-zinc-900/50">
+                      <CardHeader className="pb-0">
+                        <CardTitle className="text-sm">By Category</CardTitle>
+                        <CardDescription>
+                          Which categories are most profitable
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <CategoryBreakdown data={data.byCategory} />
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {data.bySource.length > 0 && (
+                    <Card className="border-zinc-800 bg-zinc-900/50">
+                      <CardHeader className="pb-0">
+                        <CardTitle className="text-sm">By Source</CardTitle>
+                        <CardDescription>
+                          Which sourcing channels perform best
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <SourceBreakdown data={data.bySource} />
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+
+                <Card className="border-zinc-800 bg-zinc-900/50">
+                  <CardHeader className="pb-0">
+                    <CardTitle className="text-sm">Item Performance</CardTitle>
+                    <CardDescription>
+                      Profit per item, sorted by most profitable
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <TopItems data={data.itemProfits} />
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* ── Inventory Health Tab ─────────────────────────────── */}
+        <TabsContent value="inventory">
+          <InventoryHealth
+            data={data.inventoryHealth}
+            sellThroughRate={summary.sellThroughRate}
+            avgDaysToSell={summary.avgDaysToSell}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Stat cards
+// Shared components
 // ---------------------------------------------------------------------------
 type Accent = "emerald" | "blue" | "amber" | "red" | "violet";
 
@@ -331,12 +494,14 @@ function StatCard({
   icon: Icon,
   accent,
   subtitle,
+  delta,
 }: {
   label: string;
   value: string | number;
   icon: React.ComponentType<{ className?: string }>;
   accent: Accent;
   subtitle?: string;
+  delta?: number | null;
 }) {
   return (
     <div className="rounded-xl bg-zinc-900 p-4 ring-1 ring-white/[0.06]">
@@ -344,16 +509,24 @@ function StatCard({
         <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
           {label}
         </p>
-        <div className={cn("flex size-7 items-center justify-center rounded-lg", accentBg[accent])}>
+        <div
+          className={cn(
+            "flex size-7 items-center justify-center rounded-lg",
+            accentBg[accent]
+          )}
+        >
           <Icon className={cn("size-3.5", accentColors[accent])} />
         </div>
       </div>
       <p className={cn("mt-2 text-2xl font-semibold", accentColors[accent])}>
         {value}
       </p>
-      {subtitle && (
-        <p className="mt-0.5 text-[11px] text-zinc-500">{subtitle}</p>
-      )}
+      <div className="mt-0.5 flex items-center gap-2">
+        {delta != null && <DeltaBadge value={delta} />}
+        {subtitle && (
+          <p className="text-[11px] text-zinc-500">{subtitle}</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -369,8 +542,31 @@ function MiniStat({ label, value }: { label: string; value: string }) {
   );
 }
 
+function DeltaBadge({ value, label }: { value: number; label?: string }) {
+  const positive = value >= 0;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-0.5 text-[11px] font-medium",
+        positive ? "text-emerald-400" : "text-red-400"
+      )}
+    >
+      {positive ? (
+        <ArrowUpRight className="size-3" />
+      ) : (
+        <ArrowDownRight className="size-3" />
+      )}
+      {Math.abs(value).toFixed(0)}%
+      {label && <span className="text-zinc-500 font-normal ml-0.5">{label}</span>}
+    </span>
+  );
+}
+
 function formatMonthLabel(monthKey: string): string {
   const [year, m] = monthKey.split("-");
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const months = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  ];
   return `${months[parseInt(m, 10) - 1]} ${year}`;
 }

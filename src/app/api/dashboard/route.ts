@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { items } from "@/db/schema";
 import { desc } from "drizzle-orm";
+import { getTargets } from "@/lib/settings";
 
 // ---------------------------------------------------------------------------
 // GET /api/dashboard — Morning dashboard data
@@ -69,9 +70,10 @@ export async function GET() {
     0,
   );
 
-  // Revenue targets
-  const MONTHLY_TARGET = 3000;
-  const WEEKLY_HOURS = 25;
+  // Revenue targets (from DB settings)
+  const targets = await getTargets();
+  const MONTHLY_TARGET = targets.monthlyRevenueTarget;
+  const WEEKLY_HOURS = targets.weeklyHours;
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const dayOfMonth = now.getDate();
   const dailyRate = dayOfMonth > 0 ? monthRevenue / dayOfMonth : 0;
@@ -118,7 +120,7 @@ export async function GET() {
       itemsSold: weekSold.length,
     },
     hourlyRate: round(hourlyRate),
-    targetHourlyRate: 18,
+    targetHourlyRate: targets.targetHourlyRate,
     actions: {
       needsListing,
       needsShipping,

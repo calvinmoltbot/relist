@@ -33,6 +33,7 @@ export const items = pgTable(
     sourceLocation: text("source_location"),
     listedAt: timestamp("listed_at"),
     soldAt: timestamp("sold_at"),
+    buyerPaidShipping: boolean("buyer_paid_shipping").default(true),
     shippedAt: timestamp("shipped_at"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
@@ -132,6 +133,36 @@ export const dealAlerts = pgTable("deal_alerts", {
 });
 
 // ---------------------------------------------------------------------------
+// Expenses (business-wide costs: packaging, promotions, supplies)
+// ---------------------------------------------------------------------------
+export const expenses = pgTable(
+  "expenses",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    category: text("category").notNull(), // shipping_supplies | packaging | promotion | platform_fee | other
+    description: text("description"),
+    amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+    itemId: uuid("item_id").references(() => items.id),
+    incurredAt: timestamp("incurred_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    index("expenses_incurred_at_idx").on(table.incurredAt),
+    index("expenses_category_idx").on(table.category),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// User Settings (configurable targets, key-value pairs)
+// ---------------------------------------------------------------------------
+export const userSettings = pgTable("user_settings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // TypeScript types
 // ---------------------------------------------------------------------------
 export type Item = InferSelectModel<typeof items>;
@@ -148,3 +179,9 @@ export type NewPriceStat = InferInsertModel<typeof priceStats>;
 
 export type DealAlert = InferSelectModel<typeof dealAlerts>;
 export type NewDealAlert = InferInsertModel<typeof dealAlerts>;
+
+export type Expense = InferSelectModel<typeof expenses>;
+export type NewExpense = InferInsertModel<typeof expenses>;
+
+export type UserSetting = InferSelectModel<typeof userSettings>;
+export type NewUserSetting = InferInsertModel<typeof userSettings>;

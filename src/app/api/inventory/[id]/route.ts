@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { items } from "@/db/schema";
+import { items, transactions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 // ---------------------------------------------------------------------------
@@ -63,6 +63,25 @@ export async function PATCH(
     .set(updates)
     .where(eq(items.id, id))
     .returning();
+
+  // Auto-create transaction when item is marked as sold
+  if (body.status === "sold" && existing.status !== "sold") {
+    const grossPrice = Number(updated.soldPrice ?? 0);
+    const costPrice = Number(updated.costPrice ?? 0);
+    const shippingCost = Number(body.shippingCost ?? 0);
+    const platformFees = Number(body.platformFees ?? 0);
+    const profit = grossPrice - costPrice - shippingCost - platformFees;
+
+    await db.insert(transactions).values({
+      itemId: id,
+      transactionType: "sell",
+      grossPrice: String(grossPrice),
+      shippingCost: String(shippingCost),
+      platformFees: String(platformFees),
+      profit: String(profit),
+      completedAt: now,
+    });
+  }
 
   return NextResponse.json({ item: updated });
 }
