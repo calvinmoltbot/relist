@@ -28,7 +28,7 @@ export default function InventoryPage() {
     setFilters,
   } = useInventoryStore();
 
-  const [viewMode, setViewMode] = useState<"grid" | "list" | "table">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "table">("table");
   const [editItem, setEditItem] = useState<InventoryItem | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
