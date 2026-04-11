@@ -516,14 +516,11 @@
   // Also flush on page unload
   window.addEventListener("beforeunload", flushBatch);
 
-  // Track URL changes for SPA navigation
+  // Track URL changes for SPA navigation — use both polling and MutationObserver
+  // because Vinted is an SPA and neither method alone is reliable
   let lastUrl = window.location.href;
 
-  // Watch for DOM mutations (Vinted is SPA-like)
-  const observer = new MutationObserver(() => {
-    extractListings();
-
-    // Detect SPA navigation
+  function checkNavigation() {
     if (window.location.href !== lastUrl) {
       lastUrl = window.location.href;
       if (isItemDetailPage()) {
@@ -532,6 +529,16 @@
         removeSendButton();
       }
     }
+  }
+
+  // Poll for URL changes every 500ms — catches SPA navigations that
+  // don't trigger DOM mutations (e.g. History API pushState)
+  setInterval(checkNavigation, 500);
+
+  // Also watch DOM mutations as a faster fallback
+  const observer = new MutationObserver(() => {
+    extractListings();
+    checkNavigation();
   });
   observer.observe(document.body, { childList: true, subtree: true });
 })();
