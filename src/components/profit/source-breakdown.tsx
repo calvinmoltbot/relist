@@ -30,13 +30,13 @@ export function SourceBreakdown({ data }: { data: SourceData[] }) {
 
         return (
           <div key={row.source} className="space-y-1">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-zinc-200">
+            <div className="flex items-center justify-between gap-2 text-sm">
+              <span className="font-medium text-zinc-200 truncate shrink-0">
                 {SOURCE_LABELS[row.source] ?? row.source}
               </span>
-              <div className="flex items-center gap-3 text-xs text-zinc-400">
-                <span>{row.count} sold</span>
-                <span>{"\u00A3"}{avgProfit.toFixed(2)}/item</span>
+              <div className="flex items-center gap-2 sm:gap-3 text-xs text-zinc-400 shrink-0">
+                <span className="hidden sm:inline">{row.count} sold</span>
+                <span className="hidden sm:inline">{"\u00A3"}{avgProfit.toFixed(2)}/item</span>
                 <span className={cn("font-medium", row.profit >= 0 ? "text-emerald-400" : "text-red-400")}>
                   {"\u00A3"}{row.profit.toFixed(2)}
                 </span>

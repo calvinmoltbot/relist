@@ -162,7 +162,7 @@ export default function FinancialsPage() {
             Track your earnings, expenses, and business health
           </p>
         </div>
-        <div className="flex items-center justify-center py-20 text-zinc-500">
+        <div className="flex items-center justify-center py-16 sm:py-20 text-zinc-500">
           <div className="size-6 animate-spin rounded-full border-2 border-zinc-700 border-t-zinc-400" />
         </div>
       </div>
@@ -174,7 +174,7 @@ export default function FinancialsPage() {
   const { summary, targets, comparison, weeklyPulse } = data;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:gap-5">
       {/* Header + Date Picker */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -188,8 +188,8 @@ export default function FinancialsPage() {
 
       {/* Revenue target bar — always current month, above tabs */}
       <Card className="border-zinc-800 bg-zinc-900/50">
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between mb-3">
+        <CardContent className="py-3 sm:py-4">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-3">
             <div>
               <p className="text-sm font-medium text-zinc-200">
                 Monthly Revenue — {formatMonthLabel(targets.currentMonth)}
@@ -198,8 +198,8 @@ export default function FinancialsPage() {
                 {targets.daysRemaining} days remaining
               </p>
             </div>
-            <div className="text-right">
-              <span className="text-2xl font-semibold text-zinc-100">
+            <div className="sm:text-right">
+              <span className="text-xl sm:text-2xl font-semibold text-zinc-100">
                 £{targets.monthRevenue.toFixed(0)}
               </span>
               <span className="text-sm text-zinc-500">
@@ -218,13 +218,13 @@ export default function FinancialsPage() {
               }}
             />
           </div>
-          <div className="mt-2 flex justify-between text-xs text-zinc-500">
+          <div className="mt-2 flex flex-col gap-0.5 text-xs text-zinc-500 sm:flex-row sm:justify-between">
             <span>{targets.revenueProgress.toFixed(0)}% of target</span>
             <span>
               Projected: £{targets.projectedMonthRevenue.toLocaleString()}
               {" · "}
               £{targets.effectiveHourlyRate.toFixed(2)}/hr
-              <span className="text-zinc-600">
+              <span className="text-zinc-600 hidden sm:inline">
                 {" "}(target £{targets.targetHourlyRate}/hr)
               </span>
             </span>
@@ -234,10 +234,10 @@ export default function FinancialsPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="overview">
-        <TabsList variant="line" className="mb-4">
+        <TabsList variant="line" className="mb-4 overflow-x-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="breakdown">Breakdown</TabsTrigger>
-          <TabsTrigger value="inventory">
+          <TabsTrigger value="inventory" className="whitespace-nowrap">
             Inventory Health
             {data.inventoryHealth.deadStock.length > 0 && (
               <Badge
@@ -252,19 +252,19 @@ export default function FinancialsPage() {
 
         {/* ── Overview Tab ─────────────────────────────────────── */}
         <TabsContent value="overview">
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-5">
             {/* Weekly pulse */}
             <Card className="border-zinc-800 bg-zinc-900/50">
-              <CardContent className="flex items-center gap-4 py-3">
+              <CardContent className="flex items-center gap-3 sm:gap-4 py-3">
                 <Zap className="size-4 text-amber-400 shrink-0" />
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:gap-x-4 text-sm">
                   <span className="text-zinc-300">
                     <span className="font-semibold text-zinc-100">
                       {weeklyPulse.itemsSold}
                     </span>{" "}
                     sold this week
                   </span>
-                  <span className="text-zinc-500">·</span>
+                  <span className="text-zinc-500 hidden sm:inline">·</span>
                   <span className="text-zinc-300">
                     £
                     <span className="font-semibold text-zinc-100">
@@ -274,7 +274,7 @@ export default function FinancialsPage() {
                   </span>
                   {weeklyPulse.revenueDelta != null && (
                     <>
-                      <span className="text-zinc-500">·</span>
+                      <span className="text-zinc-500 hidden sm:inline">·</span>
                       <DeltaBadge value={weeklyPulse.revenueDelta} label="vs last week" />
                     </>
                   )}
@@ -471,7 +471,7 @@ function StatCard({
   delta?: number | null;
 }) {
   return (
-    <div className="rounded-xl bg-zinc-900 p-4 ring-1 ring-white/[0.06]">
+    <div className="rounded-xl bg-zinc-900 p-3 sm:p-4 ring-1 ring-white/[0.06]">
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
           {label}
@@ -485,7 +485,7 @@ function StatCard({
           <Icon className={cn("size-3.5", accentColors[accent])} />
         </div>
       </div>
-      <p className={cn("mt-2 text-2xl font-semibold", accentColors[accent])}>
+      <p className={cn("mt-1.5 sm:mt-2 text-xl sm:text-2xl font-semibold", accentColors[accent])}>
         {value}
       </p>
       <div className="mt-0.5 flex items-center gap-2">
@@ -500,8 +500,8 @@ function StatCard({
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-zinc-900 px-4 py-3 ring-1 ring-white/[0.06]">
-      <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+    <div className="rounded-xl bg-zinc-900 px-3 py-2.5 sm:px-4 sm:py-3 ring-1 ring-white/[0.06]">
+      <p className="text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-zinc-500">
         {label}
       </p>
       <p className="mt-1 text-sm font-semibold text-zinc-200">{value}</p>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useCallback, useState } from "react";
-import { Package, LayoutGrid, List, Upload, CalendarDays } from "lucide-react";
+import { Package, LayoutGrid, List, Table2, CalendarDays } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,8 @@ import { ItemFilters } from "@/components/inventory/item-filters";
 import { AddItemDialog } from "@/components/inventory/add-item-dialog";
 import { EditItemDialog } from "@/components/inventory/edit-item-dialog";
 import { ImportButton } from "@/components/inventory/import-button";
+import { InventoryTable } from "@/components/inventory/inventory-table";
+import { BulkActionBar } from "@/components/inventory/bulk-action-bar";
 
 // ---------------------------------------------------------------------------
 // Inventory Page
@@ -36,15 +38,21 @@ export default function InventoryPage() {
     setFilters,
   } = useInventoryStore();
 
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "table">("grid");
   const [editItem, setEditItem] = useState<InventoryItem | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [bulkDateOpen, setBulkDateOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Fetch on mount and when filters change
   useEffect(() => {
     fetchItems();
   }, [fetchItems, filters]);
+
+  // Clear selection when items change (e.g. after filter change)
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [filters]);
 
   // ---------------------------------------------------------------------------
   // Computed stats
@@ -63,7 +71,15 @@ export default function InventoryPage() {
     const sold = all.filter((i) => i.status === "sold").length;
     const shipped = all.filter((i) => i.status === "shipped").length;
 
-    return { total: all.length, totalCost, totalListed, sourced, listed, sold, shipped };
+    return {
+      total: all.length,
+      totalCost,
+      totalListed,
+      sourced,
+      listed,
+      sold,
+      shipped,
+    };
   }, [items]);
 
   const itemCounts = useMemo(
@@ -107,6 +123,99 @@ export default function InventoryPage() {
   );
 
   // ---------------------------------------------------------------------------
+  // Inline edit handler (table view)
+  // ---------------------------------------------------------------------------
+  const handleInlineEdit = useCallback(
+    (id: string, field: string, value: string) => {
+      updateItem(id, { [field]: value } as Partial<InventoryItem>);
+    },
+    [updateItem],
+  );
+
+  // ---------------------------------------------------------------------------
+  // Bulk action handlers
+  // ---------------------------------------------------------------------------
+  const selectedCount = selectedIds.size;
+
+  const handleBulkMarkShipped = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    await fetch("/api/inventory/bulk", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ids,
+        updates: { status: "shipped", shippedAt: new Date().toISOString() },
+      }),
+    });
+    setSelectedIds(new Set());
+    fetchItems();
+  }, [selectedIds, fetchItems]);
+
+  const handleBulkMarkSold = useCallback(
+    async (date: string, soldPrice?: string) => {
+      const ids = Array.from(selectedIds);
+      const updates: Record<string, unknown> = {
+        status: "sold",
+        soldAt: date,
+      };
+      if (soldPrice) updates.soldPrice = soldPrice;
+      await fetch("/api/inventory/bulk", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, updates }),
+      });
+      setSelectedIds(new Set());
+      fetchItems();
+    },
+    [selectedIds, fetchItems],
+  );
+
+  const handleBulkSetDate = useCallback(
+    async (field: "soldAt" | "shippedAt", date: string) => {
+      const ids = Array.from(selectedIds);
+      await fetch("/api/inventory/bulk", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids,
+          updates: { [field]: date },
+        }),
+      });
+      setSelectedIds(new Set());
+      fetchItems();
+    },
+    [selectedIds, fetchItems],
+  );
+
+  const handleBulkSetPrice = useCallback(
+    async (price: string) => {
+      const ids = Array.from(selectedIds);
+      await fetch("/api/inventory/bulk", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids,
+          updates: { listedPrice: price },
+        }),
+      });
+      setSelectedIds(new Set());
+      fetchItems();
+    },
+    [selectedIds, fetchItems],
+  );
+
+  const handleBulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    await fetch("/api/inventory/bulk", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    });
+    setSelectedIds(new Set());
+    fetchItems();
+  }, [selectedIds, fetchItems]);
+
+  // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
   return (
@@ -130,6 +239,7 @@ export default function InventoryPage() {
                   ? "bg-zinc-800 text-zinc-200"
                   : "text-zinc-500 hover:text-zinc-300"
               }`}
+              title="Grid view"
             >
               <LayoutGrid className="size-3.5" />
             </button>
@@ -140,8 +250,20 @@ export default function InventoryPage() {
                   ? "bg-zinc-800 text-zinc-200"
                   : "text-zinc-500 hover:text-zinc-300"
               }`}
+              title="List view"
             >
               <List className="size-3.5" />
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`rounded-md p-1.5 transition-colors ${
+                viewMode === "table"
+                  ? "bg-zinc-800 text-zinc-200"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+              title="Table view"
+            >
+              <Table2 className="size-3.5" />
             </button>
           </div>
 
@@ -188,7 +310,20 @@ export default function InventoryPage() {
         itemCounts={itemCounts}
       />
 
-      {/* Item grid / list */}
+      {/* Bulk action bar (shown in table view when items selected) */}
+      {viewMode === "table" && selectedCount > 0 && (
+        <BulkActionBar
+          selectedCount={selectedCount}
+          onMarkShipped={handleBulkMarkShipped}
+          onMarkSold={handleBulkMarkSold}
+          onSetDate={handleBulkSetDate}
+          onSetPrice={handleBulkSetPrice}
+          onDelete={handleBulkDelete}
+          onClearSelection={() => setSelectedIds(new Set())}
+        />
+      )}
+
+      {/* Item grid / list / table */}
       {loading && items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
           <div className="size-6 animate-spin rounded-full border-2 border-zinc-700 border-t-zinc-400" />
@@ -208,6 +343,14 @@ export default function InventoryPage() {
           </p>
           <AddItemDialog onAdd={addItem} label="Add your first item" />
         </div>
+      ) : viewMode === "table" ? (
+        <InventoryTable
+          items={items}
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
+          onInlineEdit={handleInlineEdit}
+          onEdit={handleEdit}
+        />
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {items.map((item) => (
@@ -302,7 +445,7 @@ function BulkDateDialog({
   const [result, setResult] = useState<string | null>(null);
 
   const soldItems = items.filter(
-    (i) => i.status === "sold" || i.status === "shipped"
+    (i) => i.status === "sold" || i.status === "shipped",
   );
   const noDateItems = soldItems.filter((i) => !i.soldAt);
 
@@ -337,7 +480,8 @@ function BulkDateDialog({
         <DialogHeader>
           <DialogTitle>Bulk Update Sold Date</DialogTitle>
           <DialogDescription>
-            Set the sold date for multiple items at once. Useful for imported items that are all showing the wrong date.
+            Set the sold date for multiple items at once. Useful for imported
+            items that are all showing the wrong date.
           </DialogDescription>
         </DialogHeader>
 
@@ -377,20 +521,22 @@ function BulkDateDialog({
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="bg-zinc-900 max-w-[200px]"
+              className="max-w-[200px] bg-zinc-900"
             />
           </div>
 
           {targetItems.length > 0 && date && (
             <p className="text-xs text-zinc-500">
-              This will update <span className="text-zinc-300 font-medium">{targetItems.length}</span> items
-              to <span className="text-zinc-300 font-medium">{date}</span>
+              This will update{" "}
+              <span className="font-medium text-zinc-300">
+                {targetItems.length}
+              </span>{" "}
+              items to{" "}
+              <span className="font-medium text-zinc-300">{date}</span>
             </p>
           )}
 
-          {result && (
-            <p className="text-xs text-emerald-400">{result}</p>
-          )}
+          {result && <p className="text-xs text-emerald-400">{result}</p>}
         </div>
 
         <DialogFooter>
@@ -432,7 +578,7 @@ function ListRow({
 
   return (
     <div
-      className="flex items-center gap-3 rounded-xl bg-zinc-900 px-4 py-3 ring-1 ring-white/[0.06] transition-all hover:ring-white/[0.12] cursor-pointer"
+      className="flex cursor-pointer items-center gap-3 rounded-xl bg-zinc-900 px-4 py-3 ring-1 ring-white/[0.06] transition-all hover:ring-white/[0.12]"
       onClick={() => onEdit(item)}
     >
       {/* Status dot */}
@@ -451,20 +597,31 @@ function ListRow({
           {item.name}
         </p>
         <p className="truncate text-xs text-zinc-500">
-          {[item.brand, item.category, item.size].filter(Boolean).join(" \u00B7 ")}
+          {[item.brand, item.category, item.size]
+            .filter(Boolean)
+            .join(" \u00B7 ")}
         </p>
       </div>
 
       {/* Prices */}
       <div className="hidden text-right text-xs sm:block">
         {cost != null && (
-          <span className="text-zinc-500">{"\u00A3"}{cost.toFixed(2)}</span>
+          <span className="text-zinc-500">
+            {"\u00A3"}
+            {cost.toFixed(2)}
+          </span>
         )}
         {listed != null && (
-          <span className="ml-2 text-blue-400">{"\u00A3"}{listed.toFixed(2)}</span>
+          <span className="ml-2 text-blue-400">
+            {"\u00A3"}
+            {listed.toFixed(2)}
+          </span>
         )}
         {sold != null && (
-          <span className="ml-2 text-emerald-400">{"\u00A3"}{sold.toFixed(2)}</span>
+          <span className="ml-2 text-emerald-400">
+            {"\u00A3"}
+            {sold.toFixed(2)}
+          </span>
         )}
       </div>
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { items } from "@/db/schema";
 import { desc, asc, ilike, eq, or, sql } from "drizzle-orm";
+import sharp from "sharp";
 
 // ---------------------------------------------------------------------------
 // GET /api/inventory
@@ -56,6 +57,37 @@ export async function GET(request: NextRequest) {
 }
 
 // ---------------------------------------------------------------------------
+// Download and resize a photo from an external URL
+// Returns a data URI (base64-encoded JPEG)
+// ---------------------------------------------------------------------------
+async function downloadAndResizePhoto(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      },
+    });
+
+    if (!response.ok) return null;
+
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const resized = await sharp(buffer)
+      .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 70 })
+      .toBuffer();
+
+    const base64 = resized.toString("base64");
+    return `data:image/jpeg;base64,${base64}`;
+  } catch (error) {
+    console.error("[ReList] Failed to download photo:", url, error);
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // POST /api/inventory
 // ---------------------------------------------------------------------------
 export async function POST(request: NextRequest) {
@@ -66,6 +98,28 @@ export async function POST(request: NextRequest) {
       { error: "Name is required" },
       { status: 400 },
     );
+  }
+
+  // If externalPhotoUrls are provided (from extension), download and resize them
+  let photoUrls = body.photoUrls ?? null;
+
+  if (
+    body.externalPhotoUrls &&
+    Array.isArray(body.externalPhotoUrls) &&
+    body.externalPhotoUrls.length > 0
+  ) {
+    const downloadResults = await Promise.all(
+      body.externalPhotoUrls.map((url: string) =>
+        downloadAndResizePhoto(url),
+      ),
+    );
+    const successfulDownloads = downloadResults.filter(
+      (r): r is string => r !== null,
+    );
+
+    if (successfulDownloads.length > 0) {
+      photoUrls = successfulDownloads;
+    }
   }
 
   const [item] = await db
@@ -81,7 +135,8 @@ export async function POST(request: NextRequest) {
       description: body.description ?? null,
       sourceType: body.sourceType ?? null,
       sourceLocation: body.sourceLocation ?? null,
-      photoUrls: body.photoUrls ?? null,
+      vintedUrl: body.vintedUrl ?? null,
+      photoUrls,
     })
     .returning();
 

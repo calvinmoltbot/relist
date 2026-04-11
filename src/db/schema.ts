@@ -31,6 +31,7 @@ export const items = pgTable(
     description: text("description"),
     sourceType: text("source_type"), // charity_shop | car_boot | online | other
     sourceLocation: text("source_location"),
+    vintedUrl: text("vinted_url"),
     listedAt: timestamp("listed_at"),
     soldAt: timestamp("sold_at"),
     buyerPaidShipping: boolean("buyer_paid_shipping").default(true),

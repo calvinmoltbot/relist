@@ -26,21 +26,23 @@ export function ProfitChart({ data }: { data: MonthData[] }) {
   }));
 
   return (
-    <div className="h-72">
+    <div className="h-56 sm:h-72">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={formatted} barGap={2}>
           <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
           <XAxis
             dataKey="label"
-            tick={{ fill: "#71717a", fontSize: 12 }}
+            tick={{ fill: "#71717a", fontSize: 11 }}
             axisLine={{ stroke: "#27272a" }}
             tickLine={false}
+            interval="preserveStartEnd"
           />
           <YAxis
-            tick={{ fill: "#71717a", fontSize: 12 }}
+            tick={{ fill: "#71717a", fontSize: 11 }}
             axisLine={false}
             tickLine={false}
             tickFormatter={(v) => `\u00A3${v}`}
+            width={50}
           />
           <Tooltip
             contentStyle={{

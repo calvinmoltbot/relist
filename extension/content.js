@@ -220,11 +220,311 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Item Detail Page — "Send to ReList" floating button
+  // ---------------------------------------------------------------------------
+  const ITEM_URL_PATTERN = /\/items\/(\d+)-/;
+  let sendButtonInjected = false;
+
+  function isItemDetailPage() {
+    return ITEM_URL_PATTERN.test(window.location.pathname);
+  }
+
+  function extractItemDetailData() {
+    const data = {};
+
+    // Vinted ID from URL
+    const idMatch = window.location.pathname.match(/\/items\/(\d+)/);
+    data.vintedId = idMatch ? idMatch[1] : null;
+    data.vintedUrl = window.location.href;
+
+    // Title — Vinted uses h1 or an element with itemprop="name"
+    const titleEl =
+      document.querySelector('[data-testid="item-title"]') ||
+      document.querySelector('[itemprop="name"]') ||
+      document.querySelector("h1") ||
+      document.querySelector(".ItemDetails_itemTitle__P5VTe");
+    data.title = titleEl?.textContent?.trim() ?? null;
+
+    // Price
+    const priceEl =
+      document.querySelector('[data-testid="item-price"]') ||
+      document.querySelector('[itemprop="price"]') ||
+      document.querySelector(".ItemPrice_price__QDKGJ") ||
+      findTextElement(document.body, /^[£€]\s*[\d,.]+/);
+    if (priceEl) {
+      const priceText = priceEl.textContent.trim();
+      const priceMatch = priceText.match(/[\d,.]+/);
+      data.price = priceMatch
+        ? parseFloat(priceMatch[0].replace(",", ""))
+        : null;
+    }
+
+    // Brand — look in details section
+    const brandEl =
+      document.querySelector('[data-testid="item-details-brand"]') ||
+      document.querySelector('[itemprop="brand"]') ||
+      document.querySelector(
+        '.ItemDetails_brand__IdCZQ, .details-list__item-value--brand',
+      );
+    if (brandEl) {
+      data.brand = brandEl.textContent.trim();
+    } else {
+      // Fallback: scan detail rows for "Brand" label
+      data.brand = findDetailValue(["Brand", "brand"]);
+    }
+
+    // Size
+    const sizeEl =
+      document.querySelector('[data-testid="item-details-size"]') ||
+      document.querySelector('[itemprop="size"]');
+    if (sizeEl) {
+      data.size = sizeEl.textContent.trim();
+    } else {
+      data.size = findDetailValue(["Size", "size"]);
+    }
+
+    // Condition — map Vinted terms to ReList values
+    const conditionEl = document.querySelector(
+      '[data-testid="item-details-condition"]',
+    );
+    let rawCondition = conditionEl?.textContent?.trim();
+    if (!rawCondition) {
+      rawCondition = findDetailValue(["Condition", "condition"]);
+    }
+    data.condition = mapCondition(rawCondition);
+
+    // Category — from breadcrumbs
+    const breadcrumbs = document.querySelectorAll(
+      '[data-testid="breadcrumbs"] a, nav[aria-label="Breadcrumbs"] a, .Breadcrumbs_link__V_PvK',
+    );
+    if (breadcrumbs.length > 0) {
+      const lastCrumb = breadcrumbs[breadcrumbs.length - 1];
+      data.category = lastCrumb?.textContent?.trim() ?? null;
+    } else {
+      data.category = null;
+    }
+
+    // Description
+    const descEl =
+      document.querySelector('[data-testid="item-description"]') ||
+      document.querySelector('[itemprop="description"]') ||
+      document.querySelector(
+        '.ItemDescription_description__LVNXi, .ItemDescription_content__FVWGE',
+      );
+    data.description = descEl?.textContent?.trim() ?? null;
+
+    // Photos — collect all gallery images
+    const photoEls = document.querySelectorAll(
+      '[data-testid="item-photo"] img, .ItemGallery_image__LGwjU, .item-photos img, [class*="ItemPhoto"] img, .web_ui__Image__content',
+    );
+    const photoUrls = new Set();
+    for (const img of photoEls) {
+      const src = img.src || img.getAttribute("src");
+      if (src && src.startsWith("http") && !src.includes("favicon")) {
+        // Try to get the highest resolution version by removing size params
+        const highRes = src.replace(/\?.*$/, "");
+        photoUrls.add(highRes);
+      }
+    }
+    // Also check for background images in gallery
+    const galleryItems = document.querySelectorAll(
+      '[class*="Gallery"] [style*="background-image"], [class*="gallery"] [style*="background-image"]',
+    );
+    for (const el of galleryItems) {
+      const style = el.getAttribute("style") || "";
+      const urlMatch = style.match(/url\(["']?(https?:\/\/[^"')]+)["']?\)/);
+      if (urlMatch) {
+        photoUrls.add(urlMatch[1].replace(/\?.*$/, ""));
+      }
+    }
+    data.photoUrls = [...photoUrls];
+
+    return data;
+  }
+
+  // Search detail rows (key-value pairs) for a specific label
+  function findDetailValue(labels) {
+    // Look for detail list items (Vinted uses various patterns)
+    const detailContainers = document.querySelectorAll(
+      '.details-list__item, [class*="ItemDetail"], [data-testid*="item-details"]',
+    );
+    for (const container of detailContainers) {
+      const text = container.textContent || "";
+      for (const label of labels) {
+        if (text.toLowerCase().includes(label.toLowerCase())) {
+          // The value is usually in a sibling or child element
+          const valueEl = container.querySelector(
+            ".details-list__item-value, [class*='value'], a, span:last-child",
+          );
+          if (valueEl) return valueEl.textContent.trim();
+          // Fallback: remove the label from the text
+          return text.replace(new RegExp(label + ":?\\s*", "i"), "").trim();
+        }
+      }
+    }
+    return null;
+  }
+
+  // Map Vinted condition strings to ReList enum values
+  function mapCondition(raw) {
+    if (!raw) return null;
+    const lower = raw.toLowerCase();
+    if (lower.includes("new with tag") || lower.includes("new with label"))
+      return "new";
+    if (lower.includes("new without") || lower.includes("new")) return "new";
+    if (lower.includes("very good") || lower.includes("like new"))
+      return "like_new";
+    if (lower.includes("good")) return "good";
+    if (lower.includes("satisfactory") || lower.includes("fair")) return "fair";
+    return "good"; // Default fallback
+  }
+
+  // Inject floating "Send to ReList" button on item detail pages
+  function injectSendButton() {
+    if (sendButtonInjected) return;
+    if (!isItemDetailPage()) return;
+
+    sendButtonInjected = true;
+
+    const btn = document.createElement("button");
+    btn.id = "relist-send-btn";
+    btn.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+      <span>Send to ReList</span>
+    `;
+    btn.addEventListener("click", handleSendToReList);
+    document.body.appendChild(btn);
+  }
+
+  // Remove the button when navigating away from item detail pages
+  function removeSendButton() {
+    const existing = document.getElementById("relist-send-btn");
+    if (existing) {
+      existing.remove();
+      sendButtonInjected = false;
+    }
+  }
+
+  // Handle the send action
+  async function handleSendToReList() {
+    const btn = document.getElementById("relist-send-btn");
+    if (!btn) return;
+
+    // Loading state
+    btn.classList.add("relist-send-loading");
+    btn.innerHTML = `
+      <svg class="relist-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"></circle>
+      </svg>
+      <span>Sending...</span>
+    `;
+    btn.disabled = true;
+
+    try {
+      const data = extractItemDetailData();
+
+      if (!data.title) {
+        throw new Error("Could not extract item title from page");
+      }
+
+      // Send to background script which will forward to the API
+      const response = await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(
+          { type: "SEND_TO_RELIST", data },
+          (resp) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else if (resp?.error) {
+              reject(new Error(resp.error));
+            } else {
+              resolve(resp);
+            }
+          },
+        );
+      });
+
+      // Success state
+      btn.classList.remove("relist-send-loading");
+      btn.classList.add("relist-send-success");
+      btn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span>Sent!</span>
+      `;
+
+      // Store in recent items
+      chrome.storage.local.get(["recentSentItems"], (result) => {
+        const recent = result.recentSentItems || [];
+        recent.unshift({
+          title: data.title,
+          vintedUrl: data.vintedUrl,
+          timestamp: Date.now(),
+        });
+        // Keep only last 5
+        chrome.storage.local.set({
+          recentSentItems: recent.slice(0, 5),
+        });
+      });
+
+      // Reset after 3 seconds
+      setTimeout(() => {
+        if (btn) {
+          btn.classList.remove("relist-send-success");
+          btn.disabled = false;
+          btn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            <span>Send to ReList</span>
+          `;
+        }
+      }, 3000);
+    } catch (error) {
+      // Error state
+      btn.classList.remove("relist-send-loading");
+      btn.classList.add("relist-send-error");
+      btn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+        <span>Failed — Retry</span>
+      `;
+      btn.disabled = false;
+
+      // Reset error state after 5 seconds
+      setTimeout(() => {
+        if (btn && btn.classList.contains("relist-send-error")) {
+          btn.classList.remove("relist-send-error");
+          btn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            <span>Send to ReList</span>
+          `;
+        }
+      }, 5000);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Lifecycle
   // ---------------------------------------------------------------------------
   // Initial scrape
   extractListings();
   loadStats();
+
+  // Check if we're on an item detail page and inject button
+  if (isItemDetailPage()) {
+    injectSendButton();
+  }
 
   // Re-scrape periodically (handles infinite scroll)
   setInterval(extractListings, SCRAPE_INTERVAL);
@@ -235,9 +535,22 @@
   // Also flush on page unload
   window.addEventListener("beforeunload", flushBatch);
 
+  // Track URL changes for SPA navigation
+  let lastUrl = window.location.href;
+
   // Watch for DOM mutations (Vinted is SPA-like)
   const observer = new MutationObserver(() => {
     extractListings();
+
+    // Detect SPA navigation
+    if (window.location.href !== lastUrl) {
+      lastUrl = window.location.href;
+      if (isItemDetailPage()) {
+        injectSendButton();
+      } else {
+        removeSendButton();
+      }
+    }
   });
   observer.observe(document.body, { childList: true, subtree: true });
 })();

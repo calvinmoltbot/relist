@@ -30,7 +30,57 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     sendResponse({ count: todayCount });
     return false;
   }
+
+  if (message.type === "SEND_TO_RELIST") {
+    sendToReList(message.data)
+      .then((result) => sendResponse(result))
+      .catch((error) => sendResponse({ error: error.message }));
+    return true; // Will respond async
+  }
+
+  if (message.type === "GET_RECENT_SENT") {
+    chrome.storage.local.get(["recentSentItems"], (result) => {
+      sendResponse({ items: result.recentSentItems || [] });
+    });
+    return true;
+  }
 });
+
+// ---------------------------------------------------------------------------
+// Send item to ReList inventory
+// ---------------------------------------------------------------------------
+async function sendToReList(data) {
+  const { apiBase } = await chrome.storage.sync.get(["apiBase"]);
+  const base = apiBase || API_BASE;
+
+  const payload = {
+    name: data.title,
+    brand: data.brand || null,
+    category: data.category || null,
+    condition: data.condition || null,
+    size: data.size || null,
+    costPrice: data.price ? String(data.price) : null,
+    description: data.description || null,
+    sourceType: "online",
+    sourceLocation: "Vinted",
+    vintedUrl: data.vintedUrl || null,
+    externalPhotoUrls: data.photoUrls || [],
+  };
+
+  const response = await fetch(`${base}/api/inventory`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`API error ${response.status}: ${errorBody}`);
+  }
+
+  const result = await response.json();
+  return { success: true, item: result.item };
+}
 
 // ---------------------------------------------------------------------------
 // Ingest batch to API

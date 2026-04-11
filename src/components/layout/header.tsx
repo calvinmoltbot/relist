@@ -10,7 +10,7 @@ export function Header({ onMenuToggle }: { onMenuToggle: () => void }) {
         variant="ghost"
         size="icon"
         onClick={onMenuToggle}
-        className="text-zinc-400 hover:text-white"
+        className="text-zinc-400 hover:text-white min-w-[44px] min-h-[44px]"
       >
         <Menu className="size-5" />
         <span className="sr-only">Toggle menu</span>

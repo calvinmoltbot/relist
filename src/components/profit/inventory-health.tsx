@@ -44,7 +44,7 @@ export function InventoryHealth({ data, sellThroughRate, avgDaysToSell }: Invent
   const totalValue = Object.values(data.agingValues).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Key metrics */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <MiniStat
@@ -209,14 +209,14 @@ function MiniStat({
   };
 
   return (
-    <div className="rounded-xl bg-zinc-900 px-4 py-3 ring-1 ring-white/[0.06]">
+    <div className="rounded-xl bg-zinc-900 px-3 py-2.5 sm:px-4 sm:py-3 ring-1 ring-white/[0.06]">
       <div className="flex items-center gap-1.5">
         <Icon className="size-3 text-zinc-500" />
-        <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+        <p className="text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-zinc-500">
           {label}
         </p>
       </div>
-      <p className={cn("mt-1 text-lg font-semibold", accentColors[accent])}>
+      <p className={cn("mt-1 text-base sm:text-lg font-semibold", accentColors[accent])}>
         {value}
       </p>
     </div>

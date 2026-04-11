@@ -77,7 +77,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:gap-6">
         <div className="h-8 w-48 animate-pulse rounded bg-zinc-800" />
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
@@ -97,7 +97,7 @@ export default function DashboardPage() {
     actions.staleListings.length;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:gap-6">
       {/* Greeting */}
       <div>
         <h1 className="text-xl font-semibold text-zinc-100">
@@ -112,15 +112,15 @@ export default function DashboardPage() {
 
       {/* Revenue target progress */}
       <Card>
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between mb-3">
+        <CardContent className="py-3 sm:py-4">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-3">
             <div className="flex items-center gap-2">
               <Target className="size-4 text-violet-400" />
               <span className="text-sm font-medium text-zinc-200">
                 Monthly Revenue Target
               </span>
             </div>
-            <div className="text-right">
+            <div className="sm:text-right">
               <span className="text-lg font-semibold text-zinc-100">
                 {"\u00A3"}{month.revenue.toFixed(0)}
               </span>
@@ -136,7 +136,7 @@ export default function DashboardPage() {
               style={{ width: `${Math.min(month.progress, 100)}%` }}
             />
           </div>
-          <div className="mt-2 flex items-center justify-between text-xs text-zinc-500">
+          <div className="mt-2 flex flex-col gap-0.5 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
             <span>{month.progress.toFixed(0)}% of target</span>
             <span>
               {month.onTrack ? (
@@ -341,7 +341,7 @@ function StatCard({
   accent: Accent;
 }) {
   return (
-    <div className="rounded-xl bg-zinc-900 p-4 ring-1 ring-white/[0.06]">
+    <div className="rounded-xl bg-zinc-900 p-3 sm:p-4 ring-1 ring-white/[0.06]">
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
           {label}
@@ -350,7 +350,7 @@ function StatCard({
           <Icon className={cn("size-3.5", accentColors[accent])} />
         </div>
       </div>
-      <p className={cn("mt-2 text-xl font-semibold", accentColors[accent])}>
+      <p className={cn("mt-1.5 sm:mt-2 text-lg sm:text-xl font-semibold", accentColors[accent])}>
         {value}
       </p>
       <p className="mt-0.5 text-[11px] text-zinc-500">{subtitle}</p>
@@ -391,7 +391,7 @@ function ActionCard({
 
 function ActionRow({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 hover:bg-zinc-800/50">
+    <div className="flex items-center justify-between gap-2 rounded-lg px-2 py-2 sm:py-1.5 hover:bg-zinc-800/50 min-h-[44px] sm:min-h-0">
       {children}
     </div>
   );
@@ -408,7 +408,7 @@ function QuickLink({
 }) {
   return (
     <Link href={href}>
-      <div className="flex items-center justify-between rounded-xl bg-zinc-900 px-4 py-3 ring-1 ring-white/[0.06] transition-all hover:ring-white/[0.12] hover:bg-zinc-800/50">
+      <div className="flex items-center justify-between rounded-xl bg-zinc-900 px-4 py-3.5 sm:py-3 ring-1 ring-white/[0.06] transition-all hover:ring-white/[0.12] hover:bg-zinc-800/50 min-h-[44px]">
         <div className="flex items-center gap-2">
           <Icon className="size-4 text-zinc-400" />
           <span className="text-sm font-medium text-zinc-300">{label}</span>

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppShell } from "@/components/layout/app-shell";
 import { HelpProvider } from "@/context/help-context";
+import { QuickLog } from "@/components/quick-log/quick-log";
 import "./globals.css";
 
 const inter = Inter({
@@ -26,6 +27,7 @@ export default function RootLayout({
         <TooltipProvider>
           <HelpProvider>
             <AppShell>{children}</AppShell>
+            <QuickLog />
           </HelpProvider>
         </TooltipProvider>
       </body>

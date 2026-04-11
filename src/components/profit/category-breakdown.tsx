@@ -21,14 +21,14 @@ export function CategoryBreakdown({ data }: { data: CategoryData[] }) {
 
         return (
           <div key={row.category} className="space-y-1">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium capitalize text-zinc-200">
+            <div className="flex items-center justify-between gap-2 text-sm">
+              <span className="font-medium capitalize text-zinc-200 truncate shrink-0">
                 {row.category}
               </span>
-              <div className="flex items-center gap-3 text-xs text-zinc-400">
-                <span>{row.count} sold</span>
+              <div className="flex items-center gap-2 sm:gap-3 text-xs text-zinc-400 shrink-0">
+                <span className="hidden sm:inline">{row.count} sold</span>
                 <span className={cn(margin >= 0 ? "text-emerald-400" : "text-red-400")}>
-                  {margin.toFixed(0)}% margin
+                  {margin.toFixed(0)}%
                 </span>
                 <span className={cn("font-medium", row.profit >= 0 ? "text-emerald-400" : "text-red-400")}>
                   {"\u00A3"}{row.profit.toFixed(2)}

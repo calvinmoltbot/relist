@@ -3,7 +3,7 @@
   "name": "ReList — Vinted Price Intelligence",
   "version": "0.1.0",
   "description": "Passively collects Vinted listing data to power price intelligence and deal finding.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": ["*://*.vinted.co.uk/*"],
   "content_scripts": [
     {
