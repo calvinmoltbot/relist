@@ -23,7 +23,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     id: "navigation",
     title: "Navigating the App",
     description:
-      "Use the sidebar on desktop or the menu icon on mobile. Dashboard is your home page — Inventory, Describe, and Profit are your main tools.",
+      "Use the sidebar on desktop or the menu icon on mobile. Dashboard is your home page — Inventory, Describe, and Financials are your main tools.",
     category: "tip",
     group: "Getting Started",
   },
@@ -40,9 +40,9 @@ export const HELP_ENTRIES: HelpEntry[] = [
   },
   {
     id: "dashboard-actions",
-    title: "Action Cards",
+    title: "Your Day — Daily Planner",
     description:
-      "The coloured cards highlight items that need action: Ship Now (sold items to post), Ready to List (sourced items to photograph and list), and Consider Relisting (items that have been listed a while).",
+      "The Kanban board at the top of your Dashboard shows today's priorities in three columns: Ship (sold items to post), Update (items missing details like cost or category), and Review (stale listings that might need relisting). Complete tasks to fill the progress bar.",
     category: "feature",
     group: "Dashboard",
     context: "/",
@@ -114,9 +114,9 @@ export const HELP_ENTRIES: HelpEntry[] = [
   },
   {
     id: "inventory-views",
-    title: "Grid & List Views",
+    title: "Grid, List & Table Views",
     description:
-      "Toggle between grid view (photo cards) and list view (compact rows) using the icons next to the search bar. Grid is better for browsing, list is better for quick scanning.",
+      "Toggle between three views using the icons next to the search bar: Grid (photo cards for browsing), List (compact rows for quick scanning), and Table (spreadsheet-style with inline editing and bulk selection).",
     category: "tip",
     group: "Inventory",
     context: "/inventory",
@@ -135,6 +135,15 @@ export const HELP_ENTRIES: HelpEntry[] = [
     title: "Editing Items",
     description:
       "Click any item in grid or list view to open the edit dialog. Update prices, status, photos, or any other details. Changes save when you click Save.",
+    category: "feature",
+    group: "Inventory",
+    context: "/inventory",
+  },
+  {
+    id: "inventory-bulk-actions",
+    title: "Bulk Actions",
+    description:
+      "Select multiple items using the checkboxes in Table view, then use the bulk action bar to update dates, set prices, mark as shipped/sold, or delete items in one go.",
     category: "feature",
     group: "Inventory",
     context: "/inventory",
@@ -205,14 +214,14 @@ export const HELP_ENTRIES: HelpEntry[] = [
     context: "/describe",
   },
 
-  // ── Profit ───────────────────────────────────────────────────
+  // ── Financials ────────────────────────────────────────────────
   {
     id: "profit-overview",
     title: "Profit Dashboard",
     description:
       "See your financial performance at a glance: total profit, revenue, average margin, and items sold. Data comes from your inventory — mark items as Sold with a sale price to see stats here.",
     category: "feature",
-    group: "Profit",
+    group: "Financials",
     context: "/profit",
   },
   {
@@ -221,7 +230,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     description:
       "Shows how close you are to your monthly revenue target, how many days are left, and whether your current pace will get you there.",
     category: "feature",
-    group: "Profit",
+    group: "Financials",
     context: "/profit",
   },
   {
@@ -230,7 +239,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     description:
       "Average margin is colour-coded: green (65%+) means you're hitting target, amber (40-65%) is okay, red (below 40%) means your costs might be too high relative to selling prices.",
     category: "tip",
-    group: "Profit",
+    group: "Financials",
     context: "/profit",
   },
   {
@@ -239,8 +248,28 @@ export const HELP_ENTRIES: HelpEntry[] = [
     description:
       "The monthly chart shows revenue vs costs over time. Category and source breakdowns show which types of items and sourcing channels are most profitable.",
     category: "feature",
-    group: "Profit",
+    group: "Financials",
     context: "/profit",
+  },
+
+  // ── Settings ──────────────────────────────────────────────────
+  {
+    id: "settings-overview",
+    title: "Your Settings",
+    description:
+      "Configure your revenue target, weekly hours, hourly rate target, and margin target. These numbers drive the colour-coding and progress bars across the Dashboard and Financials pages.",
+    category: "feature",
+    group: "Settings",
+    context: "/settings",
+  },
+  {
+    id: "settings-targets",
+    title: "How Targets Work",
+    description:
+      "Your monthly revenue target sets the goal shown on the Dashboard progress bar. Weekly hours and hourly rate target are used to calculate whether your time is paying off. Margin target colours your average margin green, amber, or red.",
+    category: "tip",
+    group: "Settings",
+    context: "/settings",
   },
 
   // ── Chrome Extension ─────────────────────────────────────────
@@ -293,7 +322,8 @@ export const GROUP_ORDER = [
   "Dashboard",
   "Inventory",
   "Describe",
-  "Profit",
+  "Financials",
+  "Settings",
   "Chrome Extension",
   "Vinted Scraper",
 ];

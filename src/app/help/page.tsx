@@ -15,6 +15,7 @@ import {
   BookOpen,
   ChevronRight,
   ArrowRight,
+  Settings2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -53,11 +54,17 @@ const GROUP_META: Record<
     bgColor: "bg-violet-400/10",
     description: "Generate beautiful Vinted descriptions with AI from a single photo.",
   },
-  Profit: {
+  Financials: {
     icon: TrendingUp,
     color: "text-green-400",
     bgColor: "bg-green-400/10",
     description: "Monitor margins, revenue targets, and financial performance.",
+  },
+  Settings: {
+    icon: Settings2,
+    color: "text-zinc-300",
+    bgColor: "bg-zinc-400/10",
+    description: "Set your revenue, hours, and margin targets that drive the whole app.",
   },
   "Chrome Extension": {
     icon: Globe,
