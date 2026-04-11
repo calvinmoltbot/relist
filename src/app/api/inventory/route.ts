@@ -122,6 +122,9 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  const status = body.status ?? "sourced";
+  const now = new Date();
+
   const [item] = await db
     .insert(items)
     .values({
@@ -137,6 +140,8 @@ export async function POST(request: NextRequest) {
       sourceLocation: body.sourceLocation ?? null,
       vintedUrl: body.vintedUrl ?? null,
       photoUrls,
+      status,
+      listedAt: status === "listed" ? now : null,
     })
     .returning();
 
