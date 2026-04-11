@@ -80,7 +80,7 @@ async function sendToReList(data) {
   }
 
   const result = await response.json();
-  return { success: true, item: result.item };
+  return { success: true, item: result.item, updated: result.updated === true };
 }
 
 // ---------------------------------------------------------------------------

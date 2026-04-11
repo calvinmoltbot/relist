@@ -429,11 +429,12 @@
       // Success state
       btn.classList.remove("relist-send-loading");
       btn.classList.add("relist-send-success");
+      const wasUpdated = response?.updated === true;
       btn.innerHTML = `
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
           <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
-        <span>Sent!</span>
+        <span>${wasUpdated ? "Updated!" : "Sent!"}</span>
       `;
 
       // Store in recent items

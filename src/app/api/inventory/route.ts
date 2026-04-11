@@ -100,6 +100,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Check for duplicates by vintedUrl (most reliable) or exact name match
+  let existing: typeof items.$inferSelect | null = null;
+
+  if (body.vintedUrl) {
+    const [match] = await db
+      .select()
+      .from(items)
+      .where(eq(items.vintedUrl, body.vintedUrl))
+      .limit(1);
+    existing = match ?? null;
+  }
+
+  if (!existing) {
+    const [match] = await db
+      .select()
+      .from(items)
+      .where(ilike(items.name, body.name.trim()))
+      .limit(1);
+    existing = match ?? null;
+  }
+
   // If externalPhotoUrls are provided (from extension), download and resize them
   let photoUrls = body.photoUrls ?? null;
 
@@ -122,6 +143,34 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // If duplicate found, update it instead of creating a new one
+  if (existing) {
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
+
+    // Update fields that are missing on the existing item but provided now
+    if (!existing.brand && body.brand) updates.brand = body.brand;
+    if (!existing.category && body.category) updates.category = body.category;
+    if (!existing.condition && body.condition) updates.condition = body.condition;
+    if (!existing.size && body.size) updates.size = body.size;
+    if (!existing.listedPrice && body.listedPrice) updates.listedPrice = body.listedPrice;
+    if (!existing.description && body.description) updates.description = body.description;
+    if (!existing.vintedUrl && body.vintedUrl) updates.vintedUrl = body.vintedUrl;
+
+    // Always update photos if new ones were downloaded and existing has none
+    if (photoUrls && (!existing.photoUrls || existing.photoUrls.length === 0)) {
+      updates.photoUrls = photoUrls;
+    }
+
+    const [updated] = await db
+      .update(items)
+      .set(updates)
+      .where(eq(items.id, existing.id))
+      .returning();
+
+    return NextResponse.json({ item: updated, updated: true }, { status: 200 });
+  }
+
+  // Create new item
   const status = body.status ?? "sourced";
   const now = new Date();
 
