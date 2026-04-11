@@ -252,6 +252,34 @@ export const HELP_ENTRIES: HelpEntry[] = [
     context: "/profit",
   },
 
+  {
+    id: "expenses-overview",
+    title: "Tracking Expenses",
+    description:
+      "Log business costs like shipping supplies, packaging, and Vinted promotions on the Expenses tab. These reduce your net profit and are included in your tax summary as allowable deductions.",
+    category: "feature",
+    group: "Financials",
+    context: "/profit",
+  },
+  {
+    id: "tax-overview",
+    title: "Tax & Export",
+    description:
+      "The Tax & Export tab shows your UK tax position: whether you're within the £1,000 trading allowance, whether Vinted will auto-report to HMRC (above £1,700), and your net taxable profit after all expenses. Export a CSV summary for Self Assessment.",
+    category: "feature",
+    group: "Financials",
+    context: "/profit",
+  },
+  {
+    id: "tax-trading-allowance",
+    title: "£1,000 Trading Allowance",
+    description:
+      "If your total revenue is under £1,000 in a tax year, you don't need to file Self Assessment for this income. Once you exceed it, you'll need to declare it but can deduct allowable expenses.",
+    category: "tip",
+    group: "Financials",
+    context: "/profit",
+  },
+
   // ── Settings ──────────────────────────────────────────────────
   {
     id: "settings-overview",

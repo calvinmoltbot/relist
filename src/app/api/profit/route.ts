@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { items, transactions } from "@/db/schema";
+import { items, transactions, expenses } from "@/db/schema";
 import { eq, and, gte, lte, or, sql } from "drizzle-orm";
 import { getTargets } from "@/lib/settings";
 
@@ -107,7 +107,25 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const netProfit = grossProfit - totalShipping - totalFees;
+  // ── Load business expenses ────────────────────────────────────
+  const expenseConditions = [];
+  if (from) expenseConditions.push(gte(expenses.incurredAt, from));
+  if (to) expenseConditions.push(lte(expenses.incurredAt, to));
+
+  const allExpenses = await db
+    .select()
+    .from(expenses)
+    .where(expenseConditions.length ? and(...expenseConditions) : undefined);
+
+  let totalExpenses = 0;
+  const byExpenseCategory: Record<string, number> = {};
+  for (const exp of allExpenses) {
+    const amt = parseFloat(exp.amount);
+    totalExpenses += amt;
+    byExpenseCategory[exp.category] = (byExpenseCategory[exp.category] ?? 0) + amt;
+  }
+
+  const netProfit = grossProfit - totalShipping - totalFees - totalExpenses;
 
   // ── Stock value (always current, not date-filtered) ──────────
   let stockCost = 0;
@@ -236,6 +254,7 @@ export async function GET(request: NextRequest) {
       netProfit: round(netProfit),
       totalShipping: round(totalShipping),
       totalFees: round(totalFees),
+      totalExpenses: round(totalExpenses),
       avgMargin: round(avgMargin),
       avgProfitPerItem: round(avgProfit),
       itemsSold: sold.length,
@@ -282,6 +301,9 @@ export async function GET(request: NextRequest) {
     bySource: Object.entries(bySource)
       .map(([source, data]) => ({ source, ...roundObj(data) }))
       .sort((a, b) => b.profit - a.profit),
+    byExpenseCategory: Object.entries(byExpenseCategory)
+      .map(([category, amount]) => ({ category, amount: round(amount) }))
+      .sort((a, b) => b.amount - a.amount),
     byMonth: Object.entries(byMonth)
       .filter(([k]) => k !== "unknown")
       .map(([month, data]) => ({ month, ...roundObj(data) }))

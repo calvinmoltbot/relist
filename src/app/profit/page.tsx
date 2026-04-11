@@ -31,6 +31,8 @@ import {
   type DatePreset,
 } from "@/components/profit/date-range-picker";
 import { InventoryHealth } from "@/components/profit/inventory-health";
+import { ExpensesTab } from "@/components/profit/expenses-tab";
+import { TaxExportTab } from "@/components/profit/tax-export-tab";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -43,6 +45,7 @@ interface ProfitData {
     netProfit: number;
     totalShipping: number;
     totalFees: number;
+    totalExpenses: number;
     avgMargin: number;
     avgProfitPerItem: number;
     itemsSold: number;
@@ -117,6 +120,10 @@ interface ProfitData {
     cost: number;
     profit: number;
     count: number;
+  }[];
+  byExpenseCategory: {
+    category: string;
+    amount: number;
   }[];
   byMonth: {
     month: string;
@@ -248,6 +255,8 @@ export default function FinancialsPage() {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="expenses">Expenses</TabsTrigger>
+          <TabsTrigger value="tax" className="whitespace-nowrap">Tax &amp; Export</TabsTrigger>
         </TabsList>
 
         {/* ── Overview Tab ─────────────────────────────────────── */}
@@ -427,6 +436,23 @@ export default function FinancialsPage() {
             data={data.inventoryHealth}
             sellThroughRate={summary.sellThroughRate}
             avgDaysToSell={summary.avgDaysToSell}
+          />
+        </TabsContent>
+
+        <TabsContent value="expenses">
+          <ExpensesTab
+            preset={preset}
+            totalExpenses={summary.totalExpenses}
+            byExpenseCategory={data.byExpenseCategory}
+            onExpenseAdded={() => fetchData(preset)}
+          />
+        </TabsContent>
+
+        <TabsContent value="tax">
+          <TaxExportTab
+            summary={summary}
+            totalExpenses={summary.totalExpenses}
+            byExpenseCategory={data.byExpenseCategory}
           />
         </TabsContent>
       </Tabs>
