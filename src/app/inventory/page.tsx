@@ -137,28 +137,25 @@ export default function InventoryPage() {
   // ---------------------------------------------------------------------------
   const selectedCount = selectedIds.size;
 
-  const handleBulkMarkShipped = useCallback(async () => {
-    const ids = Array.from(selectedIds);
-    await fetch("/api/inventory/bulk", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ids,
-        updates: { status: "shipped", shippedAt: new Date().toISOString() },
-      }),
-    });
-    setSelectedIds(new Set());
-    fetchItems();
-  }, [selectedIds, fetchItems]);
+  const selectedSoldCount = useMemo(() => {
+    return items.filter(
+      (i) => selectedIds.has(i.id) && (i.status === "sold" || i.status === "shipped"),
+    ).length;
+  }, [items, selectedIds]);
 
-  const handleBulkMarkSold = useCallback(
-    async (date: string, soldPrice?: string) => {
+  const handleBulkSetStatus = useCallback(
+    async (
+      status: string,
+      extras?: { soldAt?: string; soldPrice?: string },
+    ) => {
       const ids = Array.from(selectedIds);
-      const updates: Record<string, unknown> = {
-        status: "sold",
-        soldAt: date,
-      };
-      if (soldPrice) updates.soldPrice = soldPrice;
+      const updates: Record<string, unknown> = { status };
+      if (status === "shipped") {
+        updates.shippedAt = new Date().toISOString();
+      }
+      if (extras?.soldAt) updates.soldAt = extras.soldAt;
+      if (extras?.soldPrice) updates.soldPrice = extras.soldPrice;
+
       await fetch("/api/inventory/bulk", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -197,6 +194,20 @@ export default function InventoryPage() {
           ids,
           updates: { listedPrice: price },
         }),
+      });
+      setSelectedIds(new Set());
+      fetchItems();
+    },
+    [selectedIds, fetchItems],
+  );
+
+  const handleBulkSetFees = useCallback(
+    async (fees: { shippingCost?: string; platformFees?: string }) => {
+      const ids = Array.from(selectedIds);
+      await fetch("/api/transactions/bulk", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemIds: ids, updates: fees }),
       });
       setSelectedIds(new Set());
       fetchItems();
@@ -314,10 +325,11 @@ export default function InventoryPage() {
       {viewMode === "table" && selectedCount > 0 && (
         <BulkActionBar
           selectedCount={selectedCount}
-          onMarkShipped={handleBulkMarkShipped}
-          onMarkSold={handleBulkMarkSold}
+          selectedSoldCount={selectedSoldCount}
+          onSetStatus={handleBulkSetStatus}
           onSetDate={handleBulkSetDate}
           onSetPrice={handleBulkSetPrice}
+          onSetFees={handleBulkSetFees}
           onDelete={handleBulkDelete}
           onClearSelection={() => setSelectedIds(new Set())}
         />

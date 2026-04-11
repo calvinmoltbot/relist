@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { items, transactions } from "@/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, and } from "drizzle-orm";
+
+// Statuses that have an associated sell transaction
+const SOLD_STATUSES = new Set(["sold", "shipped"]);
 
 // ---------------------------------------------------------------------------
 // PATCH /api/inventory/bulk — Update multiple items at once
@@ -42,18 +45,25 @@ export async function PATCH(request: NextRequest) {
     updates.listedAt = now;
   }
 
+  // When reverting to sourced/listed, clear sold/shipped timestamps
+  if (updates.status === "sourced" || updates.status === "listed") {
+    if (updates.soldAt === undefined) updates.soldAt = null;
+    if (updates.shippedAt === undefined) updates.shippedAt = null;
+    if (updates.soldPrice === undefined) updates.soldPrice = null;
+  }
+
   updates.updatedAt = now;
 
-  // If status is changing to "sold", we need the current items to check
-  // which ones are actually transitioning (to avoid duplicate transactions)
-  let previousItems: { id: string; status: string; costPrice: string | null }[] =
+  // Fetch previous state for all items when status is changing
+  let previousItems: { id: string; status: string; costPrice: string | null; soldPrice: string | null }[] =
     [];
-  if (updates.status === "sold") {
+  if (updates.status) {
     previousItems = await db
       .select({
         id: items.id,
         status: items.status,
         costPrice: items.costPrice,
+        soldPrice: items.soldPrice,
       })
       .from(items)
       .where(inArray(items.id, ids));
@@ -66,8 +76,8 @@ export async function PATCH(request: NextRequest) {
     .where(inArray(items.id, ids))
     .returning();
 
-  // If soldAt was changed, update transaction dates too
-  if (updates.soldAt) {
+  // If soldAt was changed (and not cleared), update transaction dates too
+  if (updates.soldAt && updates.soldAt instanceof Date) {
     await db
       .update(transactions)
       .set({ completedAt: updates.soldAt as Date })
@@ -77,7 +87,7 @@ export async function PATCH(request: NextRequest) {
   // Auto-create transaction records when status changes to "sold"
   if (updates.status === "sold" && previousItems.length > 0) {
     const newlyTransitioned = previousItems.filter(
-      (prev) => prev.status !== "sold",
+      (prev) => !SOLD_STATUSES.has(prev.status),
     );
 
     if (newlyTransitioned.length > 0) {
@@ -99,6 +109,46 @@ export async function PATCH(request: NextRequest) {
       });
 
       await db.insert(transactions).values(transactionValues);
+    }
+  }
+
+  // Credit transactions when reverting from sold/shipped to sourced/listed
+  if (
+    updates.status &&
+    !SOLD_STATUSES.has(updates.status as string) &&
+    previousItems.length > 0
+  ) {
+    const reversedItems = previousItems.filter((prev) =>
+      SOLD_STATUSES.has(prev.status),
+    );
+
+    if (reversedItems.length > 0) {
+      const reversedIds = reversedItems.map((r) => r.id);
+
+      // Fetch existing sell transactions to create credits
+      const existingTx = await db
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            inArray(transactions.itemId, reversedIds),
+            eq(transactions.transactionType, "sell"),
+          ),
+        );
+
+      if (existingTx.length > 0) {
+        const creditValues = existingTx.map((tx) => ({
+          itemId: tx.itemId,
+          transactionType: "credit" as const,
+          grossPrice: String(-Number(tx.grossPrice ?? 0)),
+          shippingCost: String(-Number(tx.shippingCost ?? 0)),
+          platformFees: String(-Number(tx.platformFees ?? 0)),
+          profit: String(-Number(tx.profit ?? 0)),
+          completedAt: now,
+        }));
+
+        await db.insert(transactions).values(creditValues);
+      }
     }
   }
 

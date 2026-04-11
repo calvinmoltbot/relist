@@ -134,7 +134,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     id: "inventory-edit",
     title: "Editing Items",
     description:
-      "Click any item in grid or list view to open the edit dialog. Update prices, status, photos, or any other details. Changes save when you click Save.",
+      "Click any item in grid or list view to open the edit dialog. Update prices, status, photos, or any other details. For sold/shipped items, you can also edit shipping costs and platform fees — profit is recalculated automatically. Changes save when you click Save.",
     category: "feature",
     group: "Inventory",
     context: "/inventory",
@@ -143,7 +143,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     id: "inventory-bulk-actions",
     title: "Bulk Actions",
     description:
-      "Select multiple items using the checkboxes in Table view, then use the bulk action bar to update dates, set prices, mark as shipped/sold, or delete items in one go.",
+      "Select multiple items using the checkboxes in Table view, then use the bulk action bar to change status (including reverting sold/shipped items back to sourced or listed), update dates, set prices, set shipping costs and platform fees, or delete items in one go.",
     category: "feature",
     group: "Inventory",
     context: "/inventory",

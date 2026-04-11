@@ -73,6 +73,9 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
   const [fetchingVinted, setFetchingVinted] = useState(false);
   const [vintedError, setVintedError] = useState<string | null>(null);
   const [vintedSuccess, setVintedSuccess] = useState<string | null>(null);
+  // Transaction fields
+  const [shippingCost, setShippingCost] = useState("");
+  const [platformFees, setPlatformFees] = useState("");
 
   useEffect(() => {
     if (item) {
@@ -93,6 +96,21 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
       setVintedUrl(item.vintedUrl ?? "");
       setVintedError(null);
       setVintedSuccess(null);
+      setShippingCost("");
+      setPlatformFees("");
+
+      // Fetch transaction data for sold/shipped items
+      if (item.status === "sold" || item.status === "shipped") {
+        fetch(`/api/inventory/${item.id}`)
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.transaction) {
+              setShippingCost(data.transaction.shippingCost ?? "0");
+              setPlatformFees(data.transaction.platformFees ?? "0");
+            }
+          })
+          .catch(() => {});
+      }
     }
   }, [item]);
 
@@ -117,11 +135,18 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
         photoUrls: photos.length > 0 ? photos : null,
         vintedUrl: vintedUrl.trim() || null,
         ...(soldAt ? { soldAt } : {}),
-      });
+        // Transaction fields (API will route these to the transactions table)
+        ...(status === "sold" || status === "shipped"
+          ? {
+              shippingCost: shippingCost || "0",
+              platformFees: platformFees || "0",
+            }
+          : {}),
+      } as Partial<InventoryItem> & { shippingCost?: string; platformFees?: string });
 
       onOpenChange(false);
     },
-    [item, name, brand, category, condition, size, costPrice, listedPrice, soldPrice, soldAt, status, sourceType, sourceLocation, description, photos, vintedUrl, onSave, onOpenChange],
+    [item, name, brand, category, condition, size, costPrice, listedPrice, soldPrice, soldAt, status, sourceType, sourceLocation, description, photos, vintedUrl, shippingCost, platformFees, onSave, onOpenChange],
   );
 
   return (
@@ -262,6 +287,32 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
                     type="date"
                     value={soldAt}
                     onChange={(e) => setSoldAt(e.target.value)}
+                    className="bg-zinc-900"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="edit-item-shipping">Shipping cost</Label>
+                  <Input
+                    id="edit-item-shipping"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={shippingCost}
+                    onChange={(e) => setShippingCost(e.target.value)}
+                    className="bg-zinc-900"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="edit-item-fees">Platform fees</Label>
+                  <Input
+                    id="edit-item-fees"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={platformFees}
+                    onChange={(e) => setPlatformFees(e.target.value)}
                     className="bg-zinc-900"
                   />
                 </div>
