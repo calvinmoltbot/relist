@@ -288,6 +288,24 @@ export const HELP_ENTRIES: HelpEntry[] = [
   },
 ];
 
+export const GROUP_ORDER = [
+  "Getting Started",
+  "Dashboard",
+  "Inventory",
+  "Describe",
+  "Profit",
+  "Chrome Extension",
+  "Vinted Scraper",
+];
+
+export function slugify(name: string): string {
+  return name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+}
+
+export function groupFromSlug(slug: string): string | undefined {
+  return GROUP_ORDER.find((g) => slugify(g) === slug);
+}
+
 export function getEntriesByGroup(): Record<string, HelpEntry[]> {
   return HELP_ENTRIES.reduce(
     (acc, entry) => {
