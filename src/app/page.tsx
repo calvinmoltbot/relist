@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { PlanMyDay } from "@/components/daily-plan/plan-my-day";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -109,6 +110,9 @@ export default function DashboardPage() {
             : "You\u2019re all caught up today"}
         </p>
       </div>
+
+      {/* Plan My Day */}
+      <PlanMyDay />
 
       {/* Revenue target progress */}
       <Card>

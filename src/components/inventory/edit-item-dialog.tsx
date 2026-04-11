@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Sparkles, RefreshCw } from "lucide-react";
+import { Sparkles, RefreshCw, ExternalLink, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -69,6 +69,10 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
   const [description, setDescription] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const [soldAt, setSoldAt] = useState("");
+  const [vintedUrl, setVintedUrl] = useState("");
+  const [fetchingVinted, setFetchingVinted] = useState(false);
+  const [vintedError, setVintedError] = useState<string | null>(null);
+  const [vintedSuccess, setVintedSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (item) {
@@ -86,6 +90,9 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
       setDescription(item.description ?? "");
       setPhotos(item.photoUrls ?? []);
       setSoldAt(item.soldAt ? item.soldAt.substring(0, 10) : "");
+      setVintedUrl(item.vintedUrl ?? "");
+      setVintedError(null);
+      setVintedSuccess(null);
     }
   }, [item]);
 
@@ -108,12 +115,13 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
         sourceLocation: sourceLocation.trim() || null,
         description: description.trim() || null,
         photoUrls: photos.length > 0 ? photos : null,
+        vintedUrl: vintedUrl.trim() || null,
         ...(soldAt ? { soldAt } : {}),
       });
 
       onOpenChange(false);
     },
-    [item, name, brand, category, condition, size, costPrice, listedPrice, soldPrice, soldAt, status, sourceType, sourceLocation, description, photos, onSave, onOpenChange],
+    [item, name, brand, category, condition, size, costPrice, listedPrice, soldPrice, soldAt, status, sourceType, sourceLocation, description, photos, vintedUrl, onSave, onOpenChange],
   );
 
   return (
@@ -153,6 +161,20 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
             <Label>Photos</Label>
             <InventoryPhotoUpload photos={photos} onChange={setPhotos} />
           </div>
+
+          {/* Fetch from Vinted URL */}
+          <FetchFromVinted
+            itemId={item?.id ?? ""}
+            vintedUrl={vintedUrl}
+            onVintedUrlChange={setVintedUrl}
+            fetching={fetchingVinted}
+            onFetchingChange={setFetchingVinted}
+            error={vintedError}
+            onErrorChange={setVintedError}
+            success={vintedSuccess}
+            onSuccessChange={setVintedSuccess}
+            onPhotosAdded={(newPhotos) => setPhotos((prev) => [...prev, ...newPhotos])}
+          />
 
           {/* Two column grid */}
           <div className="grid gap-3 sm:grid-cols-2">
@@ -344,6 +366,116 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Fetch from Vinted URL
+// ---------------------------------------------------------------------------
+function FetchFromVinted({
+  itemId,
+  vintedUrl,
+  onVintedUrlChange,
+  fetching,
+  onFetchingChange,
+  error,
+  onErrorChange,
+  success,
+  onSuccessChange,
+  onPhotosAdded,
+}: {
+  itemId: string;
+  vintedUrl: string;
+  onVintedUrlChange: (v: string) => void;
+  fetching: boolean;
+  onFetchingChange: (v: boolean) => void;
+  error: string | null;
+  onErrorChange: (v: string | null) => void;
+  success: string | null;
+  onSuccessChange: (v: string | null) => void;
+  onPhotosAdded: (photos: string[]) => void;
+}) {
+  const handleFetch = useCallback(async () => {
+    if (!vintedUrl.trim() || !itemId) return;
+
+    onFetchingChange(true);
+    onErrorChange(null);
+    onSuccessChange(null);
+
+    try {
+      const res = await fetch(`/api/inventory/${itemId}/fetch-vinted`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: vintedUrl.trim() }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        onErrorChange(data.error || "Failed to fetch from Vinted");
+        return;
+      }
+
+      onSuccessChange(`Added ${data.photosAdded} photo${data.photosAdded === 1 ? "" : "s"} from Vinted`);
+
+      // Update photos in the parent form
+      if (data.item?.photoUrls) {
+        onPhotosAdded(
+          data.item.photoUrls.slice(-(data.photosAdded as number)),
+        );
+      }
+    } catch {
+      onErrorChange("Failed to fetch from Vinted");
+    } finally {
+      onFetchingChange(false);
+    }
+  }, [itemId, vintedUrl, onFetchingChange, onErrorChange, onSuccessChange, onPhotosAdded]);
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label>Vinted URL</Label>
+      <div className="flex gap-2">
+        <Input
+          placeholder="https://www.vinted.co.uk/items/..."
+          value={vintedUrl}
+          onChange={(e) => onVintedUrlChange(e.target.value)}
+          className="flex-1 bg-zinc-900 text-sm"
+        />
+        {vintedUrl.trim() && (
+          <a
+            href={vintedUrl.trim()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center rounded-md border border-zinc-800 px-2 text-zinc-500 transition-colors hover:border-zinc-700 hover:text-zinc-300"
+            title="Open in new tab"
+          >
+            <ExternalLink className="size-3.5" />
+          </a>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1.5 text-xs"
+          disabled={fetching || !vintedUrl.trim()}
+          onClick={handleFetch}
+        >
+          {fetching ? (
+            <RefreshCw className="size-3 animate-spin" />
+          ) : (
+            <Download className="size-3" />
+          )}
+          {fetching ? "Fetching..." : "Fetch Photos"}
+        </Button>
+        <span className="text-[11px] text-zinc-600">
+          Attempts to download photos from the listing
+        </span>
+      </div>
+      {error && <p className="text-xs text-amber-400">{error}</p>}
+      {success && <p className="text-xs text-emerald-400">{success}</p>}
+    </div>
   );
 }
 

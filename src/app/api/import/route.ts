@@ -69,10 +69,26 @@ export async function POST(request: NextRequest) {
       condition: headers.findIndex((h) => h.includes("condition")),
       size: headers.findIndex((h) => h.includes("size")),
       salePrice: headers.findIndex((h) => h.includes("sale price") || h.includes("price")),
-      link: headers.findIndex((h) => h.includes("link") || h.includes("url")),
+      link: headers.findIndex((h) =>
+        h.includes("link") || h === "url" || h.includes("item url") || h.includes("vinted url"),
+      ),
       costPrice: headers.findIndex((h) => h.includes("cost")),
       category: headers.findIndex((h) => h.includes("category")),
     };
+
+    // If named column wasn't found, scan for a column that contains Vinted URLs
+    if (colMap.link === -1) {
+      const firstDataRow = rows[headerIdx + 1];
+      if (Array.isArray(firstDataRow)) {
+        for (let c = 0; c < firstDataRow.length; c++) {
+          const val = String(firstDataRow[c] ?? "");
+          if (val.includes("vinted.co.uk/items/") || val.includes("vinted.com/items/")) {
+            colMap.link = c;
+            break;
+          }
+        }
+      }
+    }
 
     if (colMap.title === -1) {
       return NextResponse.json(
@@ -85,6 +101,7 @@ export async function POST(request: NextRequest) {
     const dataRows = rows.slice(headerIdx + 1);
     let imported = 0;
     let skipped = 0;
+    let withUrls = 0;
 
     for (const row of dataRows) {
       if (!Array.isArray(row)) continue;
@@ -123,6 +140,17 @@ export async function POST(request: NextRequest) {
       const size = colMap.size >= 0 ? String(row[colMap.size] ?? "").trim() || null : null;
       const category = colMap.category >= 0 ? String(row[colMap.category] ?? "").trim() || null : null;
 
+      // Extract Vinted URL
+      let vintedUrl: string | null = null;
+      if (colMap.link >= 0) {
+        const rawUrl = String(row[colMap.link] ?? "").trim();
+        if (rawUrl && (rawUrl.includes("vinted.co.uk/items/") || rawUrl.includes("vinted.com/items/") || rawUrl.startsWith("http"))) {
+          vintedUrl = rawUrl;
+        }
+      }
+
+      if (vintedUrl) withUrls++;
+
       await db.insert(items).values({
         name: nameStr,
         brand,
@@ -133,12 +161,13 @@ export async function POST(request: NextRequest) {
         soldPrice: soldPrice != null && soldPrice !== "" ? String(soldPrice) : null,
         status: soldPrice ? "shipped" : "sourced",
         platform: "vinted",
+        vintedUrl,
       });
 
       imported++;
     }
 
-    return NextResponse.json({ imported, skipped, total: dataRows.length });
+    return NextResponse.json({ imported, skipped, total: dataRows.length, withUrls });
   } catch (error) {
     console.error("Import error:", error);
     return NextResponse.json(
@@ -175,6 +204,7 @@ async function handleJsonImport(request: NextRequest) {
 
     let imported = 0;
     let skipped = 0;
+    let withUrls = 0;
 
     for (const item of list) {
       const name = String(item.title ?? item.name ?? "").trim();
@@ -189,6 +219,11 @@ async function handleJsonImport(request: NextRequest) {
       const brand = String(item.brand ?? "").trim() || null;
       const size = String(item.size ?? "").trim() || null;
 
+      // Extract Vinted URL
+      const rawUrl = String(item.url ?? item.link ?? item.vintedUrl ?? "").trim();
+      const vintedUrl = rawUrl && (rawUrl.includes("vinted.") || rawUrl.startsWith("http")) ? rawUrl : null;
+      if (vintedUrl) withUrls++;
+
       await db.insert(items).values({
         name,
         brand,
@@ -197,12 +232,13 @@ async function handleJsonImport(request: NextRequest) {
         soldPrice: price != null && price > 0 ? String(price) : null,
         status: price && price > 0 ? "shipped" : "sourced",
         platform: "vinted",
+        vintedUrl,
       });
 
       imported++;
     }
 
-    return NextResponse.json({ imported, skipped, total: list.length });
+    return NextResponse.json({ imported, skipped, total: list.length, withUrls });
   } catch (error) {
     console.error("JSON import error:", error);
     return NextResponse.json(

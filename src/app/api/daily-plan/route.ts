@@ -1,0 +1,135 @@
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { items } from "@/db/schema";
+import { desc } from "drizzle-orm";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+interface DailyTask {
+  id: string;
+  type: "ship" | "update" | "reprice" | "photo";
+  priority: number;
+  title: string;
+  subtitle: string;
+  itemId: string;
+  itemName: string;
+  action: string;
+  estimatedMinutes: number;
+  icon: "package" | "edit" | "tag" | "camera";
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/daily-plan — Generate a prioritised daily task list
+// ---------------------------------------------------------------------------
+export async function GET() {
+  const allItems = await db.select().from(items).orderBy(desc(items.createdAt));
+
+  const now = new Date();
+  const tasks: DailyTask[] = [];
+
+  // Priority 1: Ship items — sold but not yet shipped
+  const soldItems = allItems.filter((i) => i.status === "sold");
+  for (const item of soldItems) {
+    const soldPrice = item.soldPrice
+      ? `\u00A3${parseFloat(item.soldPrice).toFixed(0)}`
+      : "";
+    tasks.push({
+      id: `ship-${item.id}`,
+      type: "ship",
+      priority: 1,
+      title: "Ship to buyer",
+      subtitle: `${item.name}${soldPrice ? ` \u2014 sold for ${soldPrice}` : ""}`,
+      itemId: item.id,
+      itemName: item.name,
+      action: "Mark Shipped",
+      estimatedMinutes: 2,
+      icon: "package",
+    });
+  }
+
+  // Priority 2: Quick updates — items missing cost price, category, or brand
+  const incompleteItems = allItems.filter(
+    (i) =>
+      i.status !== "shipped" &&
+      (!i.costPrice || !i.category || !i.brand),
+  );
+  for (const item of incompleteItems) {
+    const missing: string[] = [];
+    if (!item.costPrice) missing.push("cost price");
+    if (!item.category) missing.push("category");
+    if (!item.brand) missing.push("brand");
+
+    tasks.push({
+      id: `update-${item.id}`,
+      type: "update",
+      priority: 2,
+      title: "Update details",
+      subtitle: `${item.name} \u2014 missing ${missing.join(", ")}`,
+      itemId: item.id,
+      itemName: item.name,
+      action: "Update Details",
+      estimatedMinutes: 1,
+      icon: "edit",
+    });
+  }
+
+  // Priority 3: Stale listings — listed more than 14 days ago
+  const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
+  const staleItems = allItems.filter(
+    (i) =>
+      i.status === "listed" &&
+      i.listedAt &&
+      now.getTime() - i.listedAt.getTime() > fourteenDaysMs,
+  );
+  for (const item of staleItems) {
+    const daysListed = Math.floor(
+      (now.getTime() - (item.listedAt?.getTime() ?? now.getTime())) /
+        (24 * 60 * 60 * 1000),
+    );
+    const price = item.listedPrice
+      ? `\u00A3${parseFloat(item.listedPrice).toFixed(0)}`
+      : "";
+    tasks.push({
+      id: `reprice-${item.id}`,
+      type: "reprice",
+      priority: 3,
+      title: "Review pricing",
+      subtitle: `${item.name}${price ? ` \u2014 listed at ${price}` : ""} \u00B7 ${daysListed}d`,
+      itemId: item.id,
+      itemName: item.name,
+      action: "Review Price",
+      estimatedMinutes: 2,
+      icon: "tag",
+    });
+  }
+
+  // Priority 4: Photo check — listed items with no photos
+  const noPhotoItems = allItems.filter(
+    (i) =>
+      i.status === "listed" &&
+      (!i.photoUrls || i.photoUrls.length === 0),
+  );
+  for (const item of noPhotoItems) {
+    tasks.push({
+      id: `photo-${item.id}`,
+      type: "photo",
+      priority: 4,
+      title: "Add photos",
+      subtitle: `${item.name} \u2014 no photos yet`,
+      itemId: item.id,
+      itemName: item.name,
+      action: "Add Photos",
+      estimatedMinutes: 3,
+      icon: "camera",
+    });
+  }
+
+  // Sort by priority, then by name within same priority
+  tasks.sort((a, b) => a.priority - b.priority || a.itemName.localeCompare(b.itemName));
+
+  return NextResponse.json({
+    tasks,
+    totalEstimatedMinutes: tasks.reduce((sum, t) => sum + t.estimatedMinutes, 0),
+  });
+}

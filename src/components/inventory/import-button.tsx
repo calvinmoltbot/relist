@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
-import { Upload, ClipboardPaste, X } from "lucide-react";
+import { Upload, ClipboardPaste, Download, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,8 +21,10 @@ export function ImportButton({ onImported }: ImportButtonProps) {
   const [importing, setImporting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [jsonText, setJsonText] = useState("");
-  const [result, setResult] = useState<{ imported: number; skipped: number } | null>(null);
+  const [result, setResult] = useState<{ imported: number; skipped: number; withUrls?: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fetchingPhotos, setFetchingPhotos] = useState(false);
+  const [photoResult, setPhotoResult] = useState<{ succeeded: number; blocked: number; failed: number } | null>(null);
 
   const handleFileImport = useCallback(
     async (file: File) => {
@@ -45,7 +47,7 @@ export function ImportButton({ onImported }: ImportButtonProps) {
         }
 
         const data = await res.json();
-        setResult({ imported: data.imported, skipped: data.skipped });
+        setResult({ imported: data.imported, skipped: data.skipped, withUrls: data.withUrls ?? 0 });
         onImported();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Import failed");
@@ -78,7 +80,7 @@ export function ImportButton({ onImported }: ImportButtonProps) {
       }
 
       const data = await res.json();
-      setResult({ imported: data.imported, skipped: data.skipped });
+      setResult({ imported: data.imported, skipped: data.skipped, withUrls: data.withUrls ?? 0 });
       setJsonText("");
       onImported();
     } catch (err) {
@@ -111,6 +113,7 @@ export function ImportButton({ onImported }: ImportButtonProps) {
           if (!open) {
             setResult(null);
             setError(null);
+            setPhotoResult(null);
           }
         }}
       >
@@ -179,9 +182,83 @@ export function ImportButton({ onImported }: ImportButtonProps) {
 
             {/* Result / error */}
             {result && (
-              <p className="text-sm text-emerald-400">
-                Imported {result.imported} items{result.skipped > 0 ? ` (${result.skipped} skipped)` : ""}
-              </p>
+              <div className="space-y-2">
+                <p className="text-sm text-emerald-400">
+                  Imported {result.imported} items{result.skipped > 0 ? ` (${result.skipped} skipped)` : ""}
+                </p>
+                {result.withUrls && result.withUrls > 0 && !photoResult && (
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                    <p className="text-sm text-zinc-300">
+                      {result.withUrls} item{result.withUrls === 1 ? " has" : "s have"} Vinted URLs — fetch photos?
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      This will try to download photos from each Vinted listing. Anti-bot protection may block some requests.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 gap-1.5"
+                      disabled={fetchingPhotos}
+                      onClick={async () => {
+                        setFetchingPhotos(true);
+                        try {
+                          // Fetch all items that have a vintedUrl but no photos
+                          const invRes = await fetch("/api/inventory?status=all");
+                          const invData = await invRes.json();
+                          const targetIds = invData.items
+                            .filter((i: Record<string, unknown>) =>
+                              i.vintedUrl && (!i.photoUrls || (i.photoUrls as string[]).length === 0),
+                            )
+                            .map((i: Record<string, unknown>) => i.id);
+
+                          if (targetIds.length === 0) {
+                            setPhotoResult({ succeeded: 0, blocked: 0, failed: 0 });
+                            return;
+                          }
+
+                          const res = await fetch("/api/inventory/fetch-photos", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ itemIds: targetIds }),
+                          });
+                          const data = await res.json();
+                          setPhotoResult({
+                            succeeded: data.succeeded ?? 0,
+                            blocked: data.blocked ?? 0,
+                            failed: data.failed ?? 0,
+                          });
+                          onImported();
+                        } catch {
+                          setPhotoResult({ succeeded: 0, blocked: 0, failed: 0 });
+                        } finally {
+                          setFetchingPhotos(false);
+                        }
+                      }}
+                    >
+                      {fetchingPhotos ? (
+                        <RefreshCw className="size-3 animate-spin" />
+                      ) : (
+                        <Download className="size-3.5" />
+                      )}
+                      {fetchingPhotos ? "Fetching photos..." : "Fetch Photos"}
+                    </Button>
+                  </div>
+                )}
+                {photoResult && (
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                    <p className="text-sm text-zinc-300">
+                      Photos: {photoResult.succeeded} fetched
+                      {photoResult.blocked > 0 && `, ${photoResult.blocked} blocked by anti-bot`}
+                      {photoResult.failed > 0 && `, ${photoResult.failed} failed`}
+                    </p>
+                    {photoResult.blocked > 0 && (
+                      <p className="mt-1 text-xs text-zinc-500">
+                        For blocked items, open each item and use the "Fetch Photos" button, or visit the Vinted URL with the browser extension active.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
             {error && (
               <p className="text-sm text-red-400">{error}</p>

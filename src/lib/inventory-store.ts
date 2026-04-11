@@ -19,6 +19,7 @@ export interface InventoryItem {
   description: string | null;
   sourceType: string | null;
   sourceLocation: string | null;
+  vintedUrl: string | null;
   listedAt: string | null;
   soldAt: string | null;
   shippedAt: string | null;
@@ -109,6 +110,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       description: item.description ?? null,
       sourceType: item.sourceType ?? null,
       sourceLocation: item.sourceLocation ?? null,
+      vintedUrl: null,
       listedAt: null,
       soldAt: null,
       shippedAt: null,
