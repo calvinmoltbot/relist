@@ -272,12 +272,41 @@ export const HELP_ENTRIES: HelpEntry[] = [
     context: "/settings",
   },
 
+  // ── Deal Finder ──────────────────────────────────────────────
+  {
+    id: "deals-overview",
+    title: "Deal Finder",
+    description:
+      "Track items you're watching for a good flip. When you spot something on Vinted that could be worth reselling, use the extension's 'Watch for Flip' button to save it here.",
+    category: "feature",
+    group: "Deal Finder",
+    context: "/deals",
+  },
+  {
+    id: "deals-watch",
+    title: "Watching Items",
+    description:
+      "Items you're watching show their current Vinted price alongside an estimated resale value (based on what similar items sell for). The margin badge tells you the potential profit percentage.",
+    category: "feature",
+    group: "Deal Finder",
+    context: "/deals",
+  },
+  {
+    id: "deals-convert",
+    title: "Bought It — Converting to Inventory",
+    description:
+      "When you buy a watched item, click 'Bought it' and enter what you paid. The item moves to your Inventory as a sourced item, ready to list. You'll find it on the Inventory page.",
+    category: "tip",
+    group: "Deal Finder",
+    context: "/deals",
+  },
+
   // ── Chrome Extension ─────────────────────────────────────────
   {
     id: "extension-overview",
     title: "Chrome Extension",
     description:
-      "The ReList Chrome extension runs quietly while you browse Vinted, collecting price data on items you view. This builds your personal price database for the Deal Finder and Price Estimator.",
+      "The ReList Chrome extension runs quietly while you browse Vinted. It collects price data, shows a smart button on item pages to add to inventory or watch for flips, and builds your price database automatically.",
     category: "feature",
     group: "Chrome Extension",
   },
@@ -295,6 +324,14 @@ export const HELP_ENTRIES: HelpEntry[] = [
     description:
       "The extension passively watches pages you visit on Vinted. It doesn't scrape or automate anything — it just saves price and item data from pages you naturally browse. No risk to your Vinted account.",
     category: "tip",
+    group: "Chrome Extension",
+  },
+  {
+    id: "extension-smart-button",
+    title: "Smart Button on Item Pages",
+    description:
+      "When you view an item on Vinted, a floating button appears. It changes based on context: green 'Add to ReList' for new items, blue 'Update' for items already in your inventory, and amber 'Watching' for items on your flip watch list. Click the dropdown arrow for more options like 'Watch for Flip'.",
+    category: "feature",
     group: "Chrome Extension",
   },
 
@@ -324,6 +361,7 @@ export const GROUP_ORDER = [
   "Describe",
   "Financials",
   "Settings",
+  "Deal Finder",
   "Chrome Extension",
   "Vinted Scraper",
 ];

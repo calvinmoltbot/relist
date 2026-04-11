@@ -15,6 +15,13 @@
       "when": 1775906442467,
       "tag": "0001_rapid_natasha_romanoff",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775930530800,
+      "tag": "0002_uneven_blue_shield",
+      "breakpoints": true
     }
   ]
 }

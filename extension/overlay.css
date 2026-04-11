@@ -13,39 +13,114 @@
 }
 
 /* ---------------------------------------------------------------------------
-   "Send to ReList" floating button — item detail pages only
+   Context-aware floating button — item detail pages
    --------------------------------------------------------------------------- */
-#relist-send-btn {
+#relist-btn-container {
   position: fixed;
   bottom: 24px;
   right: 24px;
   z-index: 999999;
   display: flex;
+  align-items: stretch;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Main button — shared base styles */
+#relist-send-btn {
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 20px;
+  gap: 6px;
+  padding: 10px 16px;
   border: none;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  border-radius: 10px 0 0 10px;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 24px rgba(16, 185, 129, 0.35), 0 0 0 1px rgba(16, 185, 129, 0.2);
-  transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
   line-height: 1;
   letter-spacing: -0.01em;
+  transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
-#relist-send-btn:hover {
+/* Dropdown toggle */
+#relist-dropdown-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border: none;
+  border-left: 1px solid rgba(255,255,255,0.15);
+  border-radius: 0 10px 10px 0;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+/* Shared hover for container */
+#relist-btn-container:hover {
   transform: translateY(-2px);
-  background: linear-gradient(135deg, #34d399, #10b981);
-  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.45), 0 0 0 1px rgba(16, 185, 129, 0.3);
+}
+#relist-btn-container:active {
+  transform: translateY(0);
 }
 
-#relist-send-btn:active {
-  transform: translateY(0);
+/* --- Mode: Checking (neutral gray pulse) --- */
+.relist-btn-checking {
+  background: #27272a;
+  color: #a1a1aa;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  animation: relist-pulse 1.5s ease-in-out infinite;
+}
+
+/* --- Mode: Add (green) --- */
+.relist-btn-add {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  box-shadow: 0 4px 24px rgba(16, 185, 129, 0.35), 0 0 0 1px rgba(16, 185, 129, 0.2);
+}
+.relist-btn-add:hover {
+  background: linear-gradient(135deg, #34d399, #10b981);
+  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.45);
+}
+
+/* --- Mode: Update (blue) --- */
+.relist-btn-update {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #ffffff;
+  box-shadow: 0 4px 24px rgba(59, 130, 246, 0.35), 0 0 0 1px rgba(59, 130, 246, 0.2);
+}
+.relist-btn-update:hover {
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.45);
+}
+
+/* --- Mode: Watching (amber) --- */
+.relist-btn-watching {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+  box-shadow: 0 4px 24px rgba(245, 158, 11, 0.35), 0 0 0 1px rgba(245, 158, 11, 0.2);
+}
+.relist-btn-watching:hover {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 8px 30px rgba(245, 158, 11, 0.45);
+}
+
+/* --- Transient states --- */
+.relist-send-loading {
+  background: #18181b;
+  color: #a1a1aa;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.relist-send-success {
+  background: #065f46 !important;
+  color: #10b981 !important;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2), 0 0 0 1px rgba(16, 185, 129, 0.3) !important;
+}
+
+.relist-send-error {
+  background: #450a0a !important;
+  color: #ef4444 !important;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2), 0 0 0 1px rgba(239, 68, 68, 0.3) !important;
 }
 
 #relist-send-btn:disabled {
@@ -53,16 +128,52 @@
   opacity: 0.85;
 }
 
-/* Loading state */
-#relist-send-btn.relist-send-loading {
+/* --- Dropdown menu --- */
+#relist-dropdown {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 6px;
+  min-width: 180px;
   background: #18181b;
-  color: #a1a1aa;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08);
+  overflow: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.relist-dropdown-hidden {
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+}
+.relist-dropdown-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.relist-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: #e4e4e7;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-family: inherit;
+}
+.relist-dropdown-item:hover {
+  background: rgba(255,255,255,0.06);
 }
 
 /* Spinner animation */
 .relist-spinner {
   animation: relist-spin 1s linear infinite;
-  margin-right: 6px;
 }
 
 @keyframes relist-spin {
@@ -70,16 +181,7 @@
   to { transform: rotate(360deg); }
 }
 
-/* Success state */
-#relist-send-btn.relist-send-success {
-  background: #065f46;
-  color: #10b981;
-  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2), 0 0 0 1px rgba(16, 185, 129, 0.3);
-}
-
-/* Error state */
-#relist-send-btn.relist-send-error {
-  background: #450a0a;
-  color: #ef4444;
-  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2), 0 0 0 1px rgba(239, 68, 68, 0.3);
+@keyframes relist-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }

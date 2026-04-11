@@ -359,139 +359,295 @@
     return "good"; // Default fallback
   }
 
-  // Inject floating "Send to ReList" button on item detail pages
+  // ---------------------------------------------------------------------------
+  // Context-aware floating button — adapts based on inventory/watch status
+  // ---------------------------------------------------------------------------
+  const ICON_SEND = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
+  const ICON_UPDATE = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`;
+  const ICON_WATCH = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+  const ICON_CHECK = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const ICON_SPIN = `<svg class="relist-spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"/></svg>`;
+  const ICON_ERROR = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+  const ICON_CHEVRON = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+
+  let currentMode = null; // "add" | "update" | "watching"
+  let currentCheckResult = null;
+  let dropdownOpen = false;
+
   function injectSendButton() {
     if (sendButtonInjected) return;
     if (!isItemDetailPage()) return;
-
     sendButtonInjected = true;
 
+    // Create container
+    const container = document.createElement("div");
+    container.id = "relist-btn-container";
+
+    // Main button
     const btn = document.createElement("button");
     btn.id = "relist-send-btn";
-    btn.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-        <line x1="22" y1="2" x2="11" y2="13"></line>
-        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-      </svg>
-      <span>Send to ReList</span>
-    `;
-    btn.addEventListener("click", handleSendToReList);
-    document.body.appendChild(btn);
+    btn.className = "relist-btn-checking";
+    btn.innerHTML = `${ICON_SPIN} <span>Checking...</span>`;
+
+    // Dropdown toggle
+    const toggle = document.createElement("button");
+    toggle.id = "relist-dropdown-toggle";
+    toggle.className = "relist-btn-checking";
+    toggle.innerHTML = ICON_CHEVRON;
+    toggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleDropdown();
+    });
+
+    // Dropdown menu
+    const dropdown = document.createElement("div");
+    dropdown.id = "relist-dropdown";
+    dropdown.className = "relist-dropdown-hidden";
+
+    container.appendChild(btn);
+    container.appendChild(toggle);
+    container.appendChild(dropdown);
+    document.body.appendChild(container);
+
+    // Close dropdown on outside click
+    document.addEventListener("click", () => {
+      if (dropdownOpen) toggleDropdown();
+    });
+
+    // Check inventory status
+    chrome.runtime.sendMessage(
+      { type: "CHECK_INVENTORY", vintedUrl: window.location.href },
+      (result) => {
+        if (chrome.runtime.lastError || !result) {
+          setButtonMode("add");
+          return;
+        }
+        currentCheckResult = result;
+        if (result.inInventory) {
+          setButtonMode("update");
+        } else if (result.watched) {
+          setButtonMode("watching");
+        } else {
+          setButtonMode("add");
+        }
+      },
+    );
   }
 
-  // Remove the button when navigating away from item detail pages
-  function removeSendButton() {
-    const existing = document.getElementById("relist-send-btn");
-    if (existing) {
-      existing.remove();
-      sendButtonInjected = false;
+  function setButtonMode(mode) {
+    currentMode = mode;
+    const btn = document.getElementById("relist-send-btn");
+    const toggle = document.getElementById("relist-dropdown-toggle");
+    const dropdown = document.getElementById("relist-dropdown");
+    if (!btn || !toggle || !dropdown) return;
+
+    // Reset classes
+    btn.className = "";
+    toggle.className = "";
+    btn.disabled = false;
+
+    if (mode === "add") {
+      btn.className = "relist-btn-add";
+      toggle.className = "relist-btn-add";
+      btn.innerHTML = `${ICON_SEND} <span>Add to ReList</span>`;
+      btn.onclick = handleAddToInventory;
+      toggle.style.display = "";
+      dropdown.innerHTML = `
+        <button class="relist-dropdown-item" data-action="watch">
+          ${ICON_WATCH} <span>Watch for Flip</span>
+        </button>`;
+      dropdown.querySelectorAll("[data-action]").forEach((el) => {
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggleDropdown();
+          if (el.dataset.action === "watch") handleWatchItem();
+        });
+      });
+    } else if (mode === "update") {
+      btn.className = "relist-btn-update";
+      toggle.className = "relist-btn-update";
+      btn.innerHTML = `${ICON_UPDATE} <span>Update in ReList</span>`;
+      btn.onclick = handleAddToInventory; // Same endpoint, dedup handles update
+      toggle.style.display = "none";
+      dropdown.innerHTML = "";
+    } else if (mode === "watching") {
+      btn.className = "relist-btn-watching";
+      toggle.className = "relist-btn-watching";
+      btn.innerHTML = `${ICON_WATCH} <span>Watching</span>`;
+      btn.onclick = null; // Main button is informational
+      toggle.style.display = "";
+      dropdown.innerHTML = `
+        <button class="relist-dropdown-item" data-action="convert">
+          ${ICON_SEND} <span>Mark as Bought</span>
+        </button>
+        <button class="relist-dropdown-item" data-action="pass">
+          ${ICON_ERROR} <span>Pass</span>
+        </button>`;
+      dropdown.querySelectorAll("[data-action]").forEach((el) => {
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggleDropdown();
+          if (el.dataset.action === "convert") handleConvertWatchItem();
+          if (el.dataset.action === "pass") handlePassWatchItem();
+        });
+      });
     }
   }
 
-  // Handle the send action
-  async function handleSendToReList() {
-    const btn = document.getElementById("relist-send-btn");
-    if (!btn) return;
+  function toggleDropdown() {
+    const dropdown = document.getElementById("relist-dropdown");
+    if (!dropdown) return;
+    dropdownOpen = !dropdownOpen;
+    dropdown.className = dropdownOpen ? "relist-dropdown-visible" : "relist-dropdown-hidden";
+  }
 
-    // Loading state
-    btn.classList.add("relist-send-loading");
-    btn.innerHTML = `
-      <svg class="relist-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"></circle>
-      </svg>
-      <span>Sending...</span>
-    `;
+  function removeSendButton() {
+    const existing = document.getElementById("relist-btn-container");
+    if (existing) {
+      existing.remove();
+      sendButtonInjected = false;
+      currentMode = null;
+      currentCheckResult = null;
+      dropdownOpen = false;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Action handlers
+  // ---------------------------------------------------------------------------
+  async function handleAddToInventory() {
+    const btn = document.getElementById("relist-send-btn");
+    if (!btn || btn.disabled) return;
     btn.disabled = true;
+    const prevClass = btn.className;
+    btn.className = "relist-send-loading";
+    btn.innerHTML = `${ICON_SPIN} <span>Sending...</span>`;
 
     try {
       const data = extractItemDetailData();
+      if (!data.title) throw new Error("Could not extract item title");
 
-      if (!data.title) {
-        throw new Error("Could not extract item title from page");
-      }
-
-      // Send to background script which will forward to the API
       const response = await new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(
-          { type: "SEND_TO_RELIST", data },
-          (resp) => {
-            if (chrome.runtime.lastError) {
-              reject(new Error(chrome.runtime.lastError.message));
-            } else if (resp?.error) {
-              reject(new Error(resp.error));
-            } else {
-              resolve(resp);
-            }
-          },
-        );
+        chrome.runtime.sendMessage({ type: "SEND_TO_RELIST", data }, (resp) => {
+          if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+          else if (resp?.error) reject(new Error(resp.error));
+          else resolve(resp);
+        });
       });
 
-      // Success state
-      btn.classList.remove("relist-send-loading");
-      btn.classList.add("relist-send-success");
-      const wasUpdated = response?.updated === true;
-      btn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-        <span>${wasUpdated ? "Updated!" : "Sent!"}</span>
-      `;
+      // Success
+      btn.className = "relist-send-success";
+      btn.innerHTML = `${ICON_CHECK} <span>${response?.updated ? "Updated!" : "Added!"}</span>`;
 
       // Store in recent items
       chrome.storage.local.get(["recentSentItems"], (result) => {
         const recent = result.recentSentItems || [];
-        recent.unshift({
-          title: data.title,
-          vintedUrl: data.vintedUrl,
-          timestamp: Date.now(),
-        });
-        // Keep only last 5
-        chrome.storage.local.set({
-          recentSentItems: recent.slice(0, 5),
+        recent.unshift({ title: data.title, vintedUrl: data.vintedUrl, timestamp: Date.now() });
+        chrome.storage.local.set({ recentSentItems: recent.slice(0, 5) });
+      });
+
+      // Switch to update mode after 2s
+      setTimeout(() => setButtonMode("update"), 2000);
+    } catch {
+      btn.className = "relist-send-error";
+      btn.innerHTML = `${ICON_ERROR} <span>Failed — Retry</span>`;
+      btn.disabled = false;
+      btn.onclick = handleAddToInventory;
+      setTimeout(() => { if (currentMode !== "update") setButtonMode(prevClass.includes("update") ? "update" : "add"); }, 4000);
+    }
+  }
+
+  async function handleWatchItem() {
+    const btn = document.getElementById("relist-send-btn");
+    if (!btn) return;
+    btn.disabled = true;
+    btn.className = "relist-send-loading";
+    btn.innerHTML = `${ICON_SPIN} <span>Saving...</span>`;
+
+    try {
+      const data = extractItemDetailData();
+      if (!data.title) throw new Error("Could not extract item title");
+
+      const response = await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({ type: "WATCH_ITEM", data }, (resp) => {
+          if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+          else if (resp?.error) reject(new Error(resp.error));
+          else resolve(resp);
         });
       });
 
-      // Reset after 3 seconds
-      setTimeout(() => {
-        if (btn) {
-          btn.classList.remove("relist-send-success");
-          btn.disabled = false;
-          btn.innerHTML = `
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-            <span>Send to ReList</span>
-          `;
-        }
-      }, 3000);
-    } catch (error) {
-      // Error state
-      btn.classList.remove("relist-send-loading");
-      btn.classList.add("relist-send-error");
-      btn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="15" y1="9" x2="9" y2="15"></line>
-          <line x1="9" y1="9" x2="15" y2="15"></line>
-        </svg>
-        <span>Failed — Retry</span>
-      `;
-      btn.disabled = false;
+      currentCheckResult = { watched: true, watchItemId: response?.watchItem?.id };
 
-      // Reset error state after 5 seconds
-      setTimeout(() => {
-        if (btn && btn.classList.contains("relist-send-error")) {
-          btn.classList.remove("relist-send-error");
-          btn.innerHTML = `
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-            <span>Send to ReList</span>
-          `;
-        }
-      }, 5000);
+      btn.className = "relist-send-success";
+      btn.innerHTML = `${ICON_CHECK} <span>Watching!</span>`;
+      setTimeout(() => setButtonMode("watching"), 2000);
+    } catch {
+      btn.className = "relist-send-error";
+      btn.innerHTML = `${ICON_ERROR} <span>Failed</span>`;
+      setTimeout(() => setButtonMode("add"), 3000);
+    }
+  }
+
+  async function handleConvertWatchItem() {
+    const watchItemId = currentCheckResult?.watchItemId;
+    if (!watchItemId) return;
+
+    const buyPrice = prompt("What did you pay for this item? (£)");
+    if (buyPrice === null) return; // Cancelled
+
+    const btn = document.getElementById("relist-send-btn");
+    if (!btn) return;
+    btn.disabled = true;
+    btn.className = "relist-send-loading";
+    btn.innerHTML = `${ICON_SPIN} <span>Converting...</span>`;
+
+    try {
+      await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(
+          { type: "CONVERT_WATCH_ITEM", watchItemId, buyPrice: parseFloat(buyPrice) || 0 },
+          (resp) => {
+            if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+            else if (resp?.error) reject(new Error(resp.error));
+            else resolve(resp);
+          },
+        );
+      });
+
+      btn.className = "relist-send-success";
+      btn.innerHTML = `${ICON_CHECK} <span>Added to inventory!</span>`;
+      setTimeout(() => setButtonMode("update"), 2000);
+    } catch {
+      btn.className = "relist-send-error";
+      btn.innerHTML = `${ICON_ERROR} <span>Failed</span>`;
+      setTimeout(() => setButtonMode("watching"), 3000);
+    }
+  }
+
+  async function handlePassWatchItem() {
+    const watchItemId = currentCheckResult?.watchItemId;
+    if (!watchItemId) return;
+
+    const btn = document.getElementById("relist-send-btn");
+    if (!btn) return;
+    btn.disabled = true;
+
+    try {
+      const { apiBase } = await new Promise((resolve) =>
+        chrome.storage.sync.get(["apiBase"], resolve),
+      );
+      const base = apiBase || "http://100.90.11.37:3002";
+
+      await fetch(`${base}/api/watch-items/${watchItemId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "passed" }),
+      });
+
+      btn.className = "relist-send-success";
+      btn.innerHTML = `${ICON_CHECK} <span>Passed</span>`;
+      setTimeout(() => setButtonMode("add"), 2000);
+    } catch {
+      setButtonMode("watching");
     }
   }
 

@@ -46,6 +46,7 @@ export const items = pgTable(
     index("items_created_at_idx").on(table.createdAt),
     index("items_listed_at_idx").on(table.listedAt),
     index("items_sold_at_idx").on(table.soldAt),
+    index("items_vinted_url_idx").on(table.vintedUrl),
   ],
 );
 
@@ -123,6 +124,37 @@ export const priceStats = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Watch Items (flip tracker — items Lily is considering buying to resell)
+// ---------------------------------------------------------------------------
+export const watchItems = pgTable(
+  "watch_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    vintedUrl: text("vinted_url").notNull(),
+    vintedId: text("vinted_id"),
+    title: text("title").notNull(),
+    brand: text("brand"),
+    category: text("category"),
+    size: text("size"),
+    condition: text("condition"),
+    currentPrice: numeric("current_price", { precision: 10, scale: 2 }),
+    targetBuyPrice: numeric("target_buy_price", { precision: 10, scale: 2 }),
+    estimatedResale: numeric("estimated_resale", { precision: 10, scale: 2 }),
+    estimatedMarginPct: numeric("estimated_margin_pct", { precision: 5, scale: 2 }),
+    photoUrl: text("photo_url"),
+    status: text("status").notNull().default("watching"), // watching | bought | passed | sold_out
+    convertedItemId: uuid("converted_item_id").references(() => items.id),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("watch_items_vinted_url_idx").on(table.vintedUrl),
+    index("watch_items_status_idx").on(table.status),
+    index("watch_items_brand_category_idx").on(table.brand, table.category),
+  ],
+);
+
+// ---------------------------------------------------------------------------
 // Deal Alerts (user-configured search filters)
 // ---------------------------------------------------------------------------
 export const dealAlerts = pgTable("deal_alerts", {
@@ -182,6 +214,9 @@ export type NewPriceData = InferInsertModel<typeof priceData>;
 
 export type PriceStat = InferSelectModel<typeof priceStats>;
 export type NewPriceStat = InferInsertModel<typeof priceStats>;
+
+export type WatchItem = InferSelectModel<typeof watchItems>;
+export type NewWatchItem = InferInsertModel<typeof watchItems>;
 
 export type DealAlert = InferSelectModel<typeof dealAlerts>;
 export type NewDealAlert = InferInsertModel<typeof dealAlerts>;

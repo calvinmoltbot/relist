@@ -44,6 +44,27 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     });
     return true;
   }
+
+  if (message.type === "CHECK_INVENTORY") {
+    checkInventory(message.vintedUrl)
+      .then((result) => sendResponse(result))
+      .catch(() => sendResponse({ inInventory: false, watched: false }));
+    return true;
+  }
+
+  if (message.type === "WATCH_ITEM") {
+    watchItem(message.data)
+      .then((result) => sendResponse(result))
+      .catch((error) => sendResponse({ error: error.message }));
+    return true;
+  }
+
+  if (message.type === "CONVERT_WATCH_ITEM") {
+    convertWatchItem(message.watchItemId, message.buyPrice)
+      .then((result) => sendResponse(result))
+      .catch((error) => sendResponse({ error: error.message }));
+    return true;
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -131,6 +152,78 @@ async function maybeRefreshStats() {
   } catch {
     // Use stale cache
   }
+}
+
+// ---------------------------------------------------------------------------
+// Check if item exists in inventory or watch list
+// ---------------------------------------------------------------------------
+async function checkInventory(vintedUrl) {
+  if (!vintedUrl) return { inInventory: false, watched: false };
+
+  const { apiBase } = await chrome.storage.sync.get(["apiBase"]);
+  const base = apiBase || API_BASE;
+
+  const response = await fetch(
+    `${base}/api/inventory/check?vintedUrl=${encodeURIComponent(vintedUrl)}`,
+  );
+
+  if (!response.ok) {
+    throw new Error(`Check failed: ${response.status}`);
+  }
+
+  return await response.json();
+}
+
+// ---------------------------------------------------------------------------
+// Add item to watch list
+// ---------------------------------------------------------------------------
+async function watchItem(data) {
+  const { apiBase } = await chrome.storage.sync.get(["apiBase"]);
+  const base = apiBase || API_BASE;
+
+  const response = await fetch(`${base}/api/watch-items`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      vintedUrl: data.vintedUrl,
+      vintedId: data.vintedId,
+      title: data.title,
+      brand: data.brand || null,
+      category: data.category || null,
+      size: data.size || null,
+      condition: data.condition || null,
+      price: data.price || null,
+      photoUrl: data.photoUrls?.[0] || null,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Watch failed: ${response.status}: ${errorBody}`);
+  }
+
+  return await response.json();
+}
+
+// ---------------------------------------------------------------------------
+// Convert watched item to inventory (Mark as Bought)
+// ---------------------------------------------------------------------------
+async function convertWatchItem(watchItemId, buyPrice) {
+  const { apiBase } = await chrome.storage.sync.get(["apiBase"]);
+  const base = apiBase || API_BASE;
+
+  const response = await fetch(`${base}/api/watch-items/${watchItemId}/convert`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ buyPrice }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Convert failed: ${response.status}: ${errorBody}`);
+  }
+
+  return await response.json();
 }
 
 // ---------------------------------------------------------------------------

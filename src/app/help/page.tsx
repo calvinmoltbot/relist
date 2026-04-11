@@ -16,6 +16,7 @@ import {
   ChevronRight,
   ArrowRight,
   Settings2,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -65,6 +66,12 @@ const GROUP_META: Record<
     color: "text-zinc-300",
     bgColor: "bg-zinc-400/10",
     description: "Set your revenue, hours, and margin targets that drive the whole app.",
+  },
+  "Deal Finder": {
+    icon: Zap,
+    color: "text-yellow-400",
+    bgColor: "bg-yellow-400/10",
+    description: "Track items you're watching for a good flip and see estimated margins.",
   },
   "Chrome Extension": {
     icon: Globe,
