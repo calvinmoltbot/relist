@@ -75,7 +75,7 @@ export function InventoryPhotoUpload({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="flex size-20 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-zinc-700 bg-zinc-800/30 text-zinc-500 transition-colors hover:border-zinc-600 hover:bg-zinc-800/50 hover:text-zinc-400"
+            className="flex size-20 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-zinc-700 bg-zinc-800/30 text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800/50 hover:text-zinc-200"
           >
             {photos.length === 0 ? (
               <>

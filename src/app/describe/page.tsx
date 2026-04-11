@@ -87,7 +87,7 @@ export default function DescribePage() {
         </h1>
         <button
           onClick={clearForm}
-          className="flex items-center gap-1.5 text-xs text-zinc-500 transition-colors hover:text-zinc-300"
+          className="flex items-center gap-1.5 text-xs text-zinc-300 transition-colors hover:text-zinc-200"
         >
           <Trash2 className="size-3" />
           Clear
@@ -141,9 +141,9 @@ export default function DescribePage() {
               {isDragging ? (
                 <Upload className="size-5 text-violet-400" />
               ) : (
-                <Camera className="size-5 text-zinc-500" />
+                <Camera className="size-5 text-zinc-300" />
               )}
-              <span className="text-xs text-zinc-500">
+              <span className="text-xs text-zinc-300">
                 {isDragging ? "Drop photo" : "Drop photo or click to upload"}
               </span>
             </div>
@@ -266,7 +266,7 @@ export default function DescribePage() {
                     <Sparkles className="size-6 text-violet-400" />
                   </motion.div>
                 )}
-                <p className="text-sm text-zinc-500">Crafting your listing...</p>
+                <p className="text-sm text-zinc-300">Crafting your listing...</p>
               </motion.div>
             ) : result ? (
               <motion.div
@@ -339,8 +339,8 @@ export default function DescribePage() {
                 exit={{ opacity: 0 }}
                 className="flex flex-col items-center justify-center gap-3 py-20 text-center"
               >
-                <Sparkles className="size-8 text-zinc-700" />
-                <p className="text-sm text-zinc-500">
+                <Sparkles className="size-8 text-zinc-400" />
+                <p className="text-sm text-zinc-300">
                   Your description will appear here
                 </p>
               </motion.div>
@@ -408,7 +408,7 @@ function Toggle<T extends string>({
             "rounded-md px-2.5 py-1 text-[11px] font-medium transition-all",
             value === opt.value
               ? "bg-zinc-700 text-zinc-100"
-              : "text-zinc-500 hover:text-zinc-300",
+              : "text-zinc-300 hover:text-zinc-200",
           )}
         >
           {opt.label}
@@ -452,7 +452,7 @@ function ComboSelect({
         />
         <button
           onClick={() => { onChange(""); setCustom(false); }}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400"
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
         >
           <X className="size-3" />
         </button>
@@ -466,7 +466,7 @@ function ComboSelect({
         onClick={() => setOpen(!open)}
         className={cn(
           "flex h-9 w-full items-center rounded-md border border-input bg-zinc-900 px-3 text-sm transition-colors",
-          value ? "text-zinc-200" : "text-zinc-500",
+          value ? "text-zinc-200" : "text-zinc-300",
         )}
       >
         {value || placeholder}
@@ -490,7 +490,7 @@ function ComboSelect({
           <div className="border-t border-zinc-700 mt-1 pt-1">
             <button
               onClick={() => { setOpen(false); setCustom(true); }}
-              className="block w-full rounded-md px-2.5 py-1.5 text-left text-xs text-zinc-500 hover:bg-zinc-700/50 hover:text-zinc-300"
+              className="block w-full rounded-md px-2.5 py-1.5 text-left text-xs text-zinc-300 hover:bg-zinc-700/50 hover:text-zinc-200"
             >
               + Custom...
             </button>

@@ -224,7 +224,7 @@ export default function InventoryPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-zinc-100">Inventory</h1>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-zinc-300">
             Track your items from source to sale
           </p>
         </div>
@@ -237,7 +237,7 @@ export default function InventoryPage() {
               className={`rounded-md p-1.5 transition-colors ${
                 viewMode === "grid"
                   ? "bg-zinc-800 text-zinc-200"
-                  : "text-zinc-500 hover:text-zinc-300"
+                  : "text-zinc-300 hover:text-zinc-200"
               }`}
               title="Grid view"
             >
@@ -248,7 +248,7 @@ export default function InventoryPage() {
               className={`rounded-md p-1.5 transition-colors ${
                 viewMode === "list"
                   ? "bg-zinc-800 text-zinc-200"
-                  : "text-zinc-500 hover:text-zinc-300"
+                  : "text-zinc-300 hover:text-zinc-200"
               }`}
               title="List view"
             >
@@ -259,7 +259,7 @@ export default function InventoryPage() {
               className={`rounded-md p-1.5 transition-colors ${
                 viewMode === "table"
                   ? "bg-zinc-800 text-zinc-200"
-                  : "text-zinc-500 hover:text-zinc-300"
+                  : "text-zinc-300 hover:text-zinc-200"
               }`}
               title="Table view"
             >
@@ -325,19 +325,19 @@ export default function InventoryPage() {
 
       {/* Item grid / list / table */}
       {loading && items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
+        <div className="flex flex-col items-center justify-center py-20 text-zinc-300">
           <div className="size-6 animate-spin rounded-full border-2 border-zinc-700 border-t-zinc-400" />
           <p className="mt-3 text-sm">Loading inventory...</p>
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="flex size-16 items-center justify-center rounded-2xl bg-zinc-900 ring-1 ring-white/[0.06]">
-            <Package className="size-7 text-zinc-600" />
+            <Package className="size-7 text-zinc-400" />
           </div>
           <h3 className="mt-4 text-sm font-medium text-zinc-300">
             No items yet
           </h3>
-          <p className="mt-1 max-w-xs text-sm text-zinc-500">
+          <p className="mt-1 max-w-xs text-sm text-zinc-300">
             Add your first item to start tracking your inventory from source to
             sale.
           </p>
@@ -410,13 +410,13 @@ function StatCard({
 }) {
   return (
     <div className="rounded-xl bg-zinc-900 px-4 py-3 ring-1 ring-white/[0.06]">
-      <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+      <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-300">
         {label}
       </p>
       <p className="mt-1 text-lg font-semibold text-zinc-100">
         {value}
         {suffix && (
-          <span className="ml-1 text-xs font-normal text-zinc-500">
+          <span className="ml-1 text-xs font-normal text-zinc-300">
             {suffix}
           </span>
         )}
@@ -495,7 +495,7 @@ function BulkDateDialog({
                 className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                   scope === "all_sold"
                     ? "bg-zinc-700 text-zinc-100"
-                    : "bg-zinc-800/60 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                    : "bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-300"
                 }`}
               >
                 All sold/shipped ({soldItems.length})
@@ -506,7 +506,7 @@ function BulkDateDialog({
                 className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                   scope === "no_date"
                     ? "bg-zinc-700 text-zinc-100"
-                    : "bg-zinc-800/60 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                    : "bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-300"
                 }`}
               >
                 Missing date only ({noDateItems.length})
@@ -526,7 +526,7 @@ function BulkDateDialog({
           </div>
 
           {targetItems.length > 0 && date && (
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-zinc-300">
               This will update{" "}
               <span className="font-medium text-zinc-300">
                 {targetItems.length}
@@ -588,7 +588,7 @@ function ListRow({
 
       {/* Photo placeholder */}
       <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-zinc-800">
-        <Package className="size-4 text-zinc-600" />
+        <Package className="size-4 text-zinc-400" />
       </div>
 
       {/* Name + brand */}
@@ -596,7 +596,7 @@ function ListRow({
         <p className="truncate text-sm font-medium text-zinc-200">
           {item.name}
         </p>
-        <p className="truncate text-xs text-zinc-500">
+        <p className="truncate text-xs text-zinc-300">
           {[item.brand, item.category, item.size]
             .filter(Boolean)
             .join(" \u00B7 ")}
@@ -606,7 +606,7 @@ function ListRow({
       {/* Prices */}
       <div className="hidden text-right text-xs sm:block">
         {cost != null && (
-          <span className="text-zinc-500">
+          <span className="text-zinc-300">
             {"\u00A3"}
             {cost.toFixed(2)}
           </span>
@@ -629,7 +629,7 @@ function ListRow({
       <Button
         variant="ghost"
         size="icon-xs"
-        className="shrink-0 text-zinc-600 hover:text-red-400"
+        className="shrink-0 text-zinc-400 hover:text-red-400"
         onClick={(e) => {
           e.stopPropagation();
           onDelete(item.id);

@@ -19,7 +19,7 @@ export function TopItems({ data }: { data: ItemProfit[] }) {
     <div className="-mx-3 sm:mx-0 overflow-x-auto">
       <div className="min-w-[480px] space-y-1 px-3 sm:px-0">
         {/* Header */}
-        <div className="grid grid-cols-12 gap-2 px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+        <div className="grid grid-cols-12 gap-2 px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-zinc-300">
           <div className="col-span-5">Item</div>
           <div className="col-span-2 text-right">Cost</div>
           <div className="col-span-2 text-right">Sold</div>
@@ -37,7 +37,7 @@ export function TopItems({ data }: { data: ItemProfit[] }) {
             >
               <div className="col-span-5 min-w-0">
                 <p className="truncate font-medium text-zinc-200">{item.name}</p>
-                <p className="truncate text-xs text-zinc-500">
+                <p className="truncate text-xs text-zinc-300">
                   {[item.brand, item.category].filter(Boolean).join(" \u00B7 ")}
                 </p>
               </div>
@@ -56,7 +56,7 @@ export function TopItems({ data }: { data: ItemProfit[] }) {
                 >
                   {item.profit >= 0 ? "+" : ""}{"\u00A3"}{item.profit.toFixed(2)}
                 </span>
-                <span className="text-xs text-zinc-500">
+                <span className="text-xs text-zinc-300">
                   {margin.toFixed(0)}%
                 </span>
               </div>

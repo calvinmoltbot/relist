@@ -345,7 +345,7 @@ export function QuickLog() {
                 </h2>
                 <button
                   onClick={() => setOpen(false)}
-                  className="flex size-7 items-center justify-center rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
+                  className="flex size-7 items-center justify-center rounded-lg text-zinc-300 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
                 >
                   <X className="size-4" />
                 </button>
@@ -366,7 +366,7 @@ export function QuickLog() {
                             : m.key === "new"
                               ? "bg-amber-500/15 text-amber-400 border border-amber-500/25"
                               : "bg-purple-500/15 text-purple-400 border border-purple-500/25"
-                        : "text-zinc-500 hover:text-zinc-300 border border-transparent hover:bg-zinc-800"
+                        : "text-zinc-300 hover:text-zinc-200 border border-transparent hover:bg-zinc-800"
                     }`}
                   >
                     {m.icon}
@@ -399,7 +399,7 @@ export function QuickLog() {
                       <>
                         {/* Search input */}
                         <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-500" />
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-300" />
                           <input
                             type="text"
                             value={inv.query}
@@ -413,7 +413,7 @@ export function QuickLog() {
                             autoFocus
                           />
                           {inv.loading && (
-                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-zinc-500 animate-spin" />
+                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-zinc-300 animate-spin" />
                           )}
                         </div>
 
@@ -432,7 +432,7 @@ export function QuickLog() {
                                     {item.name}
                                   </p>
                                   {item.brand && (
-                                    <p className="truncate text-xs text-zinc-500">
+                                    <p className="truncate text-xs text-zinc-300">
                                       {item.brand}
                                     </p>
                                   )}
@@ -448,7 +448,7 @@ export function QuickLog() {
                         )}
 
                         {inv.query && !inv.loading && inv.results.length === 0 && (
-                          <p className="text-center text-sm text-zinc-500 py-4">
+                          <p className="text-center text-sm text-zinc-300 py-4">
                             No {mode === "sold" ? "listed" : "sold"} items found
                           </p>
                         )}
@@ -463,7 +463,7 @@ export function QuickLog() {
                               {selectedItem.name}
                             </p>
                             {selectedItem.brand && (
-                              <p className="truncate text-xs text-zinc-500">
+                              <p className="truncate text-xs text-zinc-300">
                                 {selectedItem.brand}
                               </p>
                             )}
@@ -473,7 +473,7 @@ export function QuickLog() {
                               setSelectedItem(null);
                               inv.clear();
                             }}
-                            className="flex size-6 items-center justify-center rounded text-zinc-500 hover:text-zinc-300 hover:bg-zinc-700 transition-colors"
+                            className="flex size-6 items-center justify-center rounded text-zinc-300 hover:text-zinc-200 hover:bg-zinc-700 transition-colors"
                           >
                             <X className="size-3.5" />
                           </button>
@@ -487,7 +487,7 @@ export function QuickLog() {
                                 Sold Price
                               </label>
                               <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-300">
                                   £
                                 </span>
                                 <input
@@ -589,7 +589,7 @@ export function QuickLog() {
                           Cost Price
                         </label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-300">
                             £
                           </span>
                           <input
@@ -607,7 +607,7 @@ export function QuickLog() {
                           List Price
                         </label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-300">
                             £
                           </span>
                           <input

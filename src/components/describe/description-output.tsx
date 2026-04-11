@@ -65,10 +65,10 @@ export function DescriptionOutput({
       {/* Description preview */}
       <div className="relative rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-xs font-medium text-zinc-500">
+          <span className="text-xs font-medium text-zinc-300">
             Listing Preview
           </span>
-          <span className="text-xs text-zinc-600">
+          <span className="text-xs text-zinc-400">
             {description.length} chars
           </span>
         </div>
@@ -113,7 +113,7 @@ export function DescriptionOutput({
       {/* Hashtag suggestions */}
       {hashtags.length > 0 && (
         <div>
-          <span className="mb-2 block text-xs font-medium text-zinc-500">
+          <span className="mb-2 block text-xs font-medium text-zinc-300">
             Suggested Hashtags
           </span>
           <div className="flex flex-wrap gap-1.5">

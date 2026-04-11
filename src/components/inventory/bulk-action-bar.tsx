@@ -92,7 +92,7 @@ export function BulkActionBar({
           <button
             type="button"
             onClick={onClearSelection}
-            className="rounded-md p-0.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+            className="rounded-md p-0.5 text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
           >
             <X className="size-3.5" />
           </button>
@@ -187,7 +187,7 @@ export function BulkActionBar({
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="bulk-sold-price">
                 Sold price{" "}
-                <span className="text-zinc-500 font-normal">(optional)</span>
+                <span className="text-zinc-300 font-normal">(optional)</span>
               </Label>
               <Input
                 id="bulk-sold-price"
@@ -240,7 +240,7 @@ export function BulkActionBar({
                   className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                     dateField === "soldAt"
                       ? "bg-zinc-700 text-zinc-100"
-                      : "bg-zinc-800/60 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                      : "bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-300"
                   }`}
                 >
                   Sold Date
@@ -251,7 +251,7 @@ export function BulkActionBar({
                   className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                     dateField === "shippedAt"
                       ? "bg-zinc-700 text-zinc-100"
-                      : "bg-zinc-800/60 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                      : "bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-300"
                   }`}
                 >
                   Shipped Date

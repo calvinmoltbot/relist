@@ -94,7 +94,7 @@ export default function HelpPage() {
 
       {/* Search */}
       <div className="relative mb-8">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-300" />
         <Input
           type="text"
           placeholder="Search help topics..."
@@ -103,7 +103,7 @@ export default function HelpPage() {
           className="h-10 pl-10 text-sm"
         />
         {query && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500">
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-300">
             {totalResults} result{totalResults !== 1 ? "s" : ""}
           </span>
         )}
@@ -112,10 +112,10 @@ export default function HelpPage() {
       {/* Groups */}
       <div className="space-y-4">
         {filtered.length === 0 && (
-          <div className="py-12 text-center text-zinc-500">
-            <Search className="mx-auto mb-3 size-8 text-zinc-600" />
+          <div className="py-12 text-center text-zinc-300">
+            <Search className="mx-auto mb-3 size-8 text-zinc-400" />
             <p className="text-sm">No results for &ldquo;{query}&rdquo;</p>
-            <p className="mt-1 text-xs text-zinc-600">
+            <p className="mt-1 text-xs text-zinc-400">
               Try a different search term
             </p>
           </div>
@@ -145,13 +145,13 @@ export default function HelpPage() {
                   <h2 className="text-sm font-semibold text-zinc-100">
                     {group}
                   </h2>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-zinc-300">
                     {entries.length} topic{entries.length !== 1 ? "s" : ""}
                   </p>
                 </div>
                 <ChevronRight
                   className={cn(
-                    "size-4 text-zinc-600 transition-transform",
+                    "size-4 text-zinc-400 transition-transform",
                     isExpanded && "rotate-90"
                   )}
                 />
@@ -166,7 +166,7 @@ export default function HelpPage() {
                           {entry.category === "tip" ? (
                             <Lightbulb className="mt-0.5 size-3.5 shrink-0 text-amber-500/70" />
                           ) : (
-                            <BookOpen className="mt-0.5 size-3.5 shrink-0 text-zinc-600" />
+                            <BookOpen className="mt-0.5 size-3.5 shrink-0 text-zinc-400" />
                           )}
                           <div>
                             <div className="flex items-center gap-2">
@@ -198,7 +198,7 @@ export default function HelpPage() {
       </div>
 
       {/* Footer */}
-      <p className="mt-8 pb-4 text-center text-xs text-zinc-600">
+      <p className="mt-8 pb-4 text-center text-xs text-zinc-400">
         Need more help? Ask Calvin — he built this for you.
       </p>
     </div>

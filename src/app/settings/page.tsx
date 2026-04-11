@@ -101,7 +101,7 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           {!settings ? (
-            <div className="py-8 text-center text-sm text-zinc-500">
+            <div className="py-8 text-center text-sm text-zinc-300">
               Loading...
             </div>
           ) : (
@@ -114,12 +114,12 @@ export default function SettingsPage() {
                       htmlFor={field.key}
                       className="flex items-center gap-2 text-sm text-zinc-300"
                     >
-                      <Icon className="size-3.5 text-zinc-500" />
+                      <Icon className="size-3.5 text-zinc-300" />
                       {field.label}
                     </Label>
                     <div className="flex items-center gap-2">
                       {field.prefix && (
-                        <span className="text-sm text-zinc-500">
+                        <span className="text-sm text-zinc-300">
                           {field.prefix}
                         </span>
                       )}
@@ -133,12 +133,12 @@ export default function SettingsPage() {
                         className="max-w-[160px]"
                       />
                       {field.suffix && (
-                        <span className="text-sm text-zinc-500">
+                        <span className="text-sm text-zinc-300">
                           {field.suffix}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-zinc-600">{field.description}</p>
+                    <p className="text-xs text-zinc-400">{field.description}</p>
                   </div>
                 );
               })}

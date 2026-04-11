@@ -85,7 +85,7 @@ function InlineEditCell({
             {value}
           </>
         ) : (
-          <span className="text-zinc-600">{placeholder ?? "\u2014"}</span>
+          <span className="text-zinc-400">{placeholder ?? "\u2014"}</span>
         )}
       </button>
     );
@@ -154,7 +154,7 @@ export function InventoryTable({
     <div className="overflow-x-auto rounded-xl bg-zinc-900 ring-1 ring-white/[0.06]">
       <table className="w-full text-left text-xs">
         <thead>
-          <tr className="border-b border-white/[0.06] text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+          <tr className="border-b border-white/[0.06] text-[11px] font-medium uppercase tracking-wider text-zinc-300">
             <th className="w-10 px-3 py-2.5">
               <input
                 type="checkbox"
@@ -223,14 +223,14 @@ export function InventoryTable({
                           className="size-full object-cover"
                         />
                       ) : (
-                        <Package className="size-3.5 text-zinc-600" />
+                        <Package className="size-3.5 text-zinc-400" />
                       )}
                     </div>
                     <div className="min-w-0">
                       <p className="truncate text-[13px] font-medium text-zinc-200 group-hover/item:text-zinc-100">
                         {item.name}
                       </p>
-                      <p className="truncate text-[11px] text-zinc-500">
+                      <p className="truncate text-[11px] text-zinc-300">
                         {[item.brand, item.size, item.category]
                           .filter(Boolean)
                           .join(" \u00B7 ")}
@@ -266,7 +266,7 @@ export function InventoryTable({
                   {item.listedPrice ? (
                     <span className="px-1.5 py-0.5">{"\u00A3"}{parseFloat(item.listedPrice).toFixed(2)}</span>
                   ) : (
-                    <span className="px-1.5 py-0.5 text-zinc-600">{"\u2014"}</span>
+                    <span className="px-1.5 py-0.5 text-zinc-400">{"\u2014"}</span>
                   )}
                 </td>
 
@@ -304,7 +304,7 @@ export function InventoryTable({
                       {profit >= 0 ? "+" : ""}{"\u00A3"}{profit.toFixed(2)}
                     </span>
                   ) : (
-                    <span className="px-1.5 py-0.5 text-zinc-600">{"\u2014"}</span>
+                    <span className="px-1.5 py-0.5 text-zinc-400">{"\u2014"}</span>
                   )}
                 </td>
               </tr>
@@ -314,7 +314,7 @@ export function InventoryTable({
       </table>
 
       {items.length === 0 && (
-        <div className="flex items-center justify-center py-12 text-sm text-zinc-500">
+        <div className="flex items-center justify-center py-12 text-sm text-zinc-300">
           No items match your filters
         </div>
       )}

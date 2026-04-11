@@ -81,7 +81,7 @@ export function InventoryHealth({ data, sellThroughRate, avgDaysToSell }: Invent
         </CardHeader>
         <CardContent>
           {totalItems === 0 ? (
-            <p className="py-6 text-center text-sm text-zinc-500">
+            <p className="py-6 text-center text-sm text-zinc-300">
               No unsold inventory to analyse
             </p>
           ) : (
@@ -119,7 +119,7 @@ export function InventoryHealth({ data, sellThroughRate, avgDaysToSell }: Invent
                       <p className="mt-1 text-sm font-medium text-zinc-200">
                         {count} items
                       </p>
-                      <p className="text-xs text-zinc-500">£{value.toFixed(0)} value</p>
+                      <p className="text-xs text-zinc-300">£{value.toFixed(0)} value</p>
                     </div>
                   );
                 })}
@@ -153,7 +153,7 @@ export function InventoryHealth({ data, sellThroughRate, avgDaysToSell }: Invent
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-zinc-200">{item.name}</p>
                     {item.brand && (
-                      <p className="text-xs text-zinc-500">{item.brand}</p>
+                      <p className="text-xs text-zinc-300">{item.brand}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-3 shrink-0 ml-3">
@@ -175,7 +175,7 @@ export function InventoryHealth({ data, sellThroughRate, avgDaysToSell }: Invent
                 </div>
               ))}
               {data.deadStock.length > 15 && (
-                <p className="pt-2 text-center text-xs text-zinc-500">
+                <p className="pt-2 text-center text-xs text-zinc-300">
                   + {data.deadStock.length - 15} more items
                 </p>
               )}
@@ -211,8 +211,8 @@ function MiniStat({
   return (
     <div className="rounded-xl bg-zinc-900 px-3 py-2.5 sm:px-4 sm:py-3 ring-1 ring-white/[0.06]">
       <div className="flex items-center gap-1.5">
-        <Icon className="size-3 text-zinc-500" />
-        <p className="text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+        <Icon className="size-3 text-zinc-300" />
+        <p className="text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-zinc-300">
           {label}
         </p>
       </div>

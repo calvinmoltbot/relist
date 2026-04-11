@@ -70,7 +70,7 @@ export function ItemCard({ item, onStatusChange, onEdit, onDelete }: ItemCardPro
             className="h-full w-full object-cover"
           />
         ) : (
-          <Package className="size-10 text-zinc-600" />
+          <Package className="size-10 text-zinc-400" />
         )}
         {/* Status badge overlay */}
         <div className="absolute top-2 left-2">
@@ -106,17 +106,17 @@ export function ItemCard({ item, onStatusChange, onEdit, onDelete }: ItemCardPro
         {/* Price row */}
         <div className="flex items-center gap-1.5 text-xs text-zinc-400">
           {cost != null && (
-            <span className="text-zinc-500">{"\u00A3"}{cost.toFixed(2)}</span>
+            <span className="text-zinc-300">{"\u00A3"}{cost.toFixed(2)}</span>
           )}
           {listed != null && (
             <>
-              <ArrowRight className="size-3 text-zinc-600" />
+              <ArrowRight className="size-3 text-zinc-400" />
               <span className="text-blue-400">{"\u00A3"}{listed.toFixed(2)}</span>
             </>
           )}
           {sold != null && (
             <>
-              <ArrowRight className="size-3 text-zinc-600" />
+              <ArrowRight className="size-3 text-zinc-400" />
               <span className="text-emerald-400">{"\u00A3"}{sold.toFixed(2)}</span>
             </>
           )}
@@ -136,7 +136,7 @@ export function ItemCard({ item, onStatusChange, onEdit, onDelete }: ItemCardPro
 
         {/* Size */}
         {item.size && (
-          <p className="text-[11px] text-zinc-500">Size: {item.size}</p>
+          <p className="text-[11px] text-zinc-300">Size: {item.size}</p>
         )}
       </div>
 
@@ -178,7 +178,7 @@ export function ItemCard({ item, onStatusChange, onEdit, onDelete }: ItemCardPro
           <Button
             variant="ghost"
             size="icon-xs"
-            className="text-zinc-500 hover:text-zinc-200"
+            className="text-zinc-300 hover:text-zinc-200"
             onClick={() => onEdit(item)}
           >
             <Pencil className="size-3" />
@@ -186,7 +186,7 @@ export function ItemCard({ item, onStatusChange, onEdit, onDelete }: ItemCardPro
           <Button
             variant="ghost"
             size="icon-xs"
-            className="text-zinc-500 hover:text-red-400"
+            className="text-zinc-300 hover:text-red-400"
             onClick={() => onDelete(item.id)}
           >
             <Trash2 className="size-3" />

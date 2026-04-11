@@ -115,7 +115,7 @@ export function PhotoUpload({ image, onImageChange }: PhotoUploadProps) {
               <p className="text-sm font-medium text-zinc-300">
                 {isDragging ? "Drop your photo" : "Drop your photo here"}
               </p>
-              <p className="mt-1 text-xs text-zinc-500">
+              <p className="mt-1 text-xs text-zinc-300">
                 or click to browse
               </p>
             </div>

@@ -30,7 +30,7 @@ interface DateRangePickerProps {
 export function DateRangePicker({ preset, onPresetChange }: DateRangePickerProps) {
   return (
     <div className="-mx-1 flex items-center gap-1 overflow-x-auto px-1 pb-1 sm:mx-0 sm:gap-1.5 sm:px-0 sm:pb-0 scrollbar-none">
-      <Calendar className="size-4 shrink-0 text-zinc-500" />
+      <Calendar className="size-4 shrink-0 text-zinc-300" />
       {PRESETS.map((p) => (
         <button
           key={p.value}
@@ -39,7 +39,7 @@ export function DateRangePicker({ preset, onPresetChange }: DateRangePickerProps
             "shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors min-h-[36px] sm:min-h-0 sm:py-1",
             preset === p.value
               ? "bg-zinc-800 text-zinc-100"
-              : "text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-300"
+              : "text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-200"
           )}
         >
           {p.label}

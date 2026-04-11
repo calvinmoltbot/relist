@@ -141,7 +141,7 @@ export function ToneControls({
                 "col-span-2 flex items-center justify-center gap-2 rounded-lg px-3 py-1 text-center transition-all duration-200",
                 model === m.id
                   ? "text-violet-400"
-                  : "text-zinc-500 hover:text-zinc-400"
+                  : "text-zinc-300 hover:text-zinc-200"
               )}
             >
               <span className="text-xs">{m.name}</span>

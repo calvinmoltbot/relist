@@ -59,12 +59,12 @@ export function ItemFilters({
       {/* Search + sort row */}
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-zinc-500" />
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-zinc-300" />
           <Input
             placeholder="Search by name or brand..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-8 bg-zinc-900 pl-8 text-sm placeholder:text-zinc-600"
+            className="h-8 bg-zinc-900 pl-8 text-sm placeholder:text-zinc-500"
           />
         </div>
 
@@ -112,7 +112,7 @@ export function ItemFilters({
                 "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap",
                 status === s.value
                   ? "bg-zinc-800 text-zinc-100"
-                  : "text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-300",
+                  : "text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-200",
               )}
             >
               {s.label}
@@ -121,7 +121,7 @@ export function ItemFilters({
                   "inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1 text-[10px]",
                   status === s.value
                     ? "bg-zinc-700 text-zinc-300"
-                    : "bg-zinc-800/60 text-zinc-600",
+                    : "bg-zinc-800/60 text-zinc-400",
                 )}
               >
                 {count}

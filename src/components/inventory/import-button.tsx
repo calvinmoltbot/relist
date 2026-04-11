@@ -150,7 +150,7 @@ export function ImportButton({ onImported }: ImportButtonProps) {
               />
             </div>
 
-            <div className="flex items-center gap-3 text-xs text-zinc-600">
+            <div className="flex items-center gap-3 text-xs text-zinc-400">
               <div className="h-px flex-1 bg-zinc-800" />
               or
               <div className="h-px flex-1 bg-zinc-800" />
@@ -166,7 +166,7 @@ export function ImportButton({ onImported }: ImportButtonProps) {
                 placeholder={'[{"title":"Vintage Levis 501","brand":"Levis","condition":"Good","size":"W32","price":25}]'}
                 value={jsonText}
                 onChange={(e) => setJsonText(e.target.value)}
-                className="w-full rounded-lg border border-input bg-zinc-900 px-2.5 py-2 text-xs font-mono placeholder:text-zinc-700 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                className="w-full rounded-lg border border-input bg-zinc-900 px-2.5 py-2 text-xs font-mono placeholder:text-zinc-500 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
               />
               <Button
                 variant="outline"
@@ -191,7 +191,7 @@ export function ImportButton({ onImported }: ImportButtonProps) {
                     <p className="text-sm text-zinc-300">
                       {result.withUrls} item{result.withUrls === 1 ? " has" : "s have"} Vinted URLs — fetch photos?
                     </p>
-                    <p className="mt-1 text-xs text-zinc-500">
+                    <p className="mt-1 text-xs text-zinc-300">
                       This will try to download photos from each Vinted listing. Anti-bot protection may block some requests.
                     </p>
                     <Button
@@ -252,7 +252,7 @@ export function ImportButton({ onImported }: ImportButtonProps) {
                       {photoResult.failed > 0 && `, ${photoResult.failed} failed`}
                     </p>
                     {photoResult.blocked > 0 && (
-                      <p className="mt-1 text-xs text-zinc-500">
+                      <p className="mt-1 text-xs text-zinc-300">
                         For blocked items, open each item and use the "Fetch Photos" button, or visit the Vinted URL with the browser extension active.
                       </p>
                     )}

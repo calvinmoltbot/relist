@@ -147,7 +147,7 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
                   className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                     status === s.value
                       ? "bg-zinc-700 text-zinc-100"
-                      : "bg-zinc-800/60 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                      : "bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-300"
                   }`}
                 >
                   {s.label}
@@ -292,7 +292,7 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
                   className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                     category === c
                       ? "bg-zinc-700 text-zinc-100"
-                      : "bg-zinc-800/60 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                      : "bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-300"
                   }`}
                 >
                   {c}
@@ -313,7 +313,7 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
                   className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                     condition === c.value
                       ? "bg-zinc-700 text-zinc-100"
-                      : "bg-zinc-800/60 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                      : "bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-300"
                   }`}
                 >
                   {c.label}
@@ -334,7 +334,7 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
                   className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                     sourceType === s.value
                       ? "bg-zinc-700 text-zinc-100"
-                      : "bg-zinc-800/60 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                      : "bg-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-300"
                   }`}
                 >
                   {s.label}
@@ -446,7 +446,7 @@ function FetchFromVinted({
             href={vintedUrl.trim()}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center rounded-md border border-zinc-800 px-2 text-zinc-500 transition-colors hover:border-zinc-700 hover:text-zinc-300"
+            className="flex items-center justify-center rounded-md border border-zinc-800 px-2 text-zinc-300 transition-colors hover:border-zinc-700 hover:text-zinc-200"
             title="Open in new tab"
           >
             <ExternalLink className="size-3.5" />
@@ -470,12 +470,12 @@ function FetchFromVinted({
             )}
             {fetching ? "Fetching..." : "Fetch Photos"}
           </Button>
-          <span className="text-[11px] text-zinc-600">
+          <span className="text-[11px] text-zinc-400">
             Attempts to download photos from the listing
           </span>
         </div>
         {vintedUrl.trim() && (
-          <p className="text-[11px] text-zinc-600">
+          <p className="text-[11px] text-zinc-400">
             If fetch fails, open the link above with the ReList extension active — it can grab photos directly.
           </p>
         )}
@@ -567,7 +567,7 @@ function DescriptionField({
         placeholder="Notes about condition, unique details..."
         value={description}
         onChange={(e) => onDescriptionChange(e.target.value)}
-        className="w-full rounded-lg border border-input bg-zinc-900 px-2.5 py-2 text-sm placeholder:text-zinc-600 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="w-full rounded-lg border border-input bg-zinc-900 px-2.5 py-2 text-sm placeholder:text-zinc-500 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       />
       {genError && (
         <p className="text-xs text-red-400">{genError}</p>

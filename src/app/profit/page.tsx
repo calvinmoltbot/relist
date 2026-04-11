@@ -158,11 +158,11 @@ export default function FinancialsPage() {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <div>
           <h1 className="text-xl font-semibold text-zinc-100">Financials</h1>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-zinc-300">
             Track your earnings, expenses, and business health
           </p>
         </div>
-        <div className="flex items-center justify-center py-16 sm:py-20 text-zinc-500">
+        <div className="flex items-center justify-center py-16 sm:py-20 text-zinc-300">
           <div className="size-6 animate-spin rounded-full border-2 border-zinc-700 border-t-zinc-400" />
         </div>
       </div>
@@ -179,7 +179,7 @@ export default function FinancialsPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-zinc-100">Financials</h1>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-zinc-300">
             Track your earnings, expenses, and business health
           </p>
         </div>
@@ -194,7 +194,7 @@ export default function FinancialsPage() {
               <p className="text-sm font-medium text-zinc-200">
                 Monthly Revenue — {formatMonthLabel(targets.currentMonth)}
               </p>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-zinc-300">
                 {targets.daysRemaining} days remaining
               </p>
             </div>
@@ -202,7 +202,7 @@ export default function FinancialsPage() {
               <span className="text-xl sm:text-2xl font-semibold text-zinc-100">
                 £{targets.monthRevenue.toFixed(0)}
               </span>
-              <span className="text-sm text-zinc-500">
+              <span className="text-sm text-zinc-300">
                 {" / £"}{targets.monthlyTarget.toLocaleString()}
               </span>
             </div>
@@ -218,13 +218,13 @@ export default function FinancialsPage() {
               }}
             />
           </div>
-          <div className="mt-2 flex flex-col gap-0.5 text-xs text-zinc-500 sm:flex-row sm:justify-between">
+          <div className="mt-2 flex flex-col gap-0.5 text-xs text-zinc-300 sm:flex-row sm:justify-between">
             <span>{targets.revenueProgress.toFixed(0)}% of target</span>
             <span>
               Projected: £{targets.projectedMonthRevenue.toLocaleString()}
               {" · "}
               £{targets.effectiveHourlyRate.toFixed(2)}/hr
-              <span className="text-zinc-600 hidden sm:inline">
+              <span className="text-zinc-400 hidden sm:inline">
                 {" "}(target £{targets.targetHourlyRate}/hr)
               </span>
             </span>
@@ -264,7 +264,7 @@ export default function FinancialsPage() {
                     </span>{" "}
                     sold this week
                   </span>
-                  <span className="text-zinc-500 hidden sm:inline">·</span>
+                  <span className="text-zinc-300 hidden sm:inline">·</span>
                   <span className="text-zinc-300">
                     £
                     <span className="font-semibold text-zinc-100">
@@ -274,7 +274,7 @@ export default function FinancialsPage() {
                   </span>
                   {weeklyPulse.revenueDelta != null && (
                     <>
-                      <span className="text-zinc-500 hidden sm:inline">·</span>
+                      <span className="text-zinc-300 hidden sm:inline">·</span>
                       <DeltaBadge value={weeklyPulse.revenueDelta} label="vs last week" />
                     </>
                   )}
@@ -348,12 +348,12 @@ export default function FinancialsPage() {
               <Card className="border-zinc-800 bg-zinc-900/50">
                 <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                   <div className="flex size-16 items-center justify-center rounded-2xl bg-zinc-900 ring-1 ring-white/[0.06]">
-                    <BarChart3 className="size-7 text-zinc-600" />
+                    <BarChart3 className="size-7 text-zinc-400" />
                   </div>
                   <h3 className="mt-4 text-sm font-medium text-zinc-300">
                     No sales data{preset !== "all_time" ? " in this period" : " yet"}
                   </h3>
-                  <p className="mt-1 max-w-xs text-sm text-zinc-500">
+                  <p className="mt-1 max-w-xs text-sm text-zinc-300">
                     {preset !== "all_time"
                       ? "Try a different date range or mark items as sold."
                       : "Mark items as sold in your inventory to see profit analytics here."}
@@ -369,7 +369,7 @@ export default function FinancialsPage() {
           <div className="space-y-6">
             {summary.itemsSold === 0 ? (
               <Card className="border-zinc-800 bg-zinc-900/50">
-                <CardContent className="py-12 text-center text-sm text-zinc-500">
+                <CardContent className="py-12 text-center text-sm text-zinc-300">
                   No sales data{preset !== "all_time" ? " in this period" : ""} to break down.
                 </CardContent>
               </Card>
@@ -473,7 +473,7 @@ function StatCard({
   return (
     <div className="rounded-xl bg-zinc-900 p-3 sm:p-4 ring-1 ring-white/[0.06]">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-300">
           {label}
         </p>
         <div
@@ -491,7 +491,7 @@ function StatCard({
       <div className="mt-0.5 flex items-center gap-2">
         {delta != null && <DeltaBadge value={delta} />}
         {subtitle && (
-          <p className="text-[11px] text-zinc-500">{subtitle}</p>
+          <p className="text-[11px] text-zinc-300">{subtitle}</p>
         )}
       </div>
     </div>
@@ -501,7 +501,7 @@ function StatCard({
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-zinc-900 px-3 py-2.5 sm:px-4 sm:py-3 ring-1 ring-white/[0.06]">
-      <p className="text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+      <p className="text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-zinc-300">
         {label}
       </p>
       <p className="mt-1 text-sm font-semibold text-zinc-200">{value}</p>
@@ -524,7 +524,7 @@ function DeltaBadge({ value, label }: { value: number; label?: string }) {
         <ArrowDownRight className="size-3" />
       )}
       {Math.abs(value).toFixed(0)}%
-      {label && <span className="text-zinc-500 font-normal ml-0.5">{label}</span>}
+      {label && <span className="text-zinc-300 font-normal ml-0.5">{label}</span>}
     </span>
   );
 }
