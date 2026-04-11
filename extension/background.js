@@ -4,7 +4,7 @@
 // Caches price stats for content script overlay.
 // ---------------------------------------------------------------------------
 
-const API_BASE = "https://relist.warmwetcircles.com";
+const API_BASE = "http://100.90.11.37:3002";
 let cachedStats = {};
 let todayCount = 0;
 let lastStatsRefresh = 0;
@@ -59,7 +59,8 @@ async function sendToReList(data) {
     category: data.category || null,
     condition: data.condition || null,
     size: data.size || null,
-    costPrice: data.price ? String(data.price) : null,
+    listedPrice: data.price ? String(data.price) : null,
+    status: "listed",
     description: data.description || null,
     sourceType: "online",
     sourceLocation: "Vinted",
@@ -93,8 +94,7 @@ async function ingestBatch(listings) {
   // Persist count
   chrome.storage.local.set({ todayCount, lastCountDate: new Date().toDateString() });
 
-  // Get API base from storage (configurable)
-  const { apiBase } = await chrome.storage.local.get(["apiBase"]);
+  const { apiBase } = await chrome.storage.sync.get(["apiBase"]);
   const base = apiBase || API_BASE;
 
   try {
@@ -120,7 +120,7 @@ async function maybeRefreshStats() {
   const now = Date.now();
   if (now - lastStatsRefresh < STATS_REFRESH_INTERVAL) return;
 
-  const { apiBase } = await chrome.storage.local.get(["apiBase"]);
+  const { apiBase } = await chrome.storage.sync.get(["apiBase"]);
   const base = apiBase || API_BASE;
 
   try {

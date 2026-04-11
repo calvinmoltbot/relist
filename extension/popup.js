@@ -74,127 +74,70 @@ document.addEventListener("DOMContentLoaded", () => {
         {
           target: { tabId: tabs[0].id },
           func: () => {
-            // This runs in the content script context — call the extraction
-            // function if it exists, otherwise extract inline
-            const ITEM_URL_PATTERN = /\/items\/(\d+)/;
-
-            function findTextElement(root, pattern) {
-              const walker = document.createTreeWalker(
-                root,
-                NodeFilter.SHOW_TEXT,
-              );
-              while (walker.nextNode()) {
-                if (pattern.test(walker.currentNode.textContent)) {
-                  return walker.currentNode.parentElement;
-                }
-              }
-              return null;
-            }
-
-            function findDetailValue(labels) {
-              const containers = document.querySelectorAll(
-                '.details-list__item, [class*="ItemDetail"], [data-testid*="item-details"]',
-              );
-              for (const container of containers) {
-                const text = container.textContent || "";
-                for (const label of labels) {
-                  if (text.toLowerCase().includes(label.toLowerCase())) {
-                    const valueEl = container.querySelector(
-                      ".details-list__item-value, [class*='value'], a, span:last-child",
-                    );
-                    if (valueEl) return valueEl.textContent.trim();
-                    return text
-                      .replace(new RegExp(label + ":?\\s*", "i"), "")
-                      .trim();
-                  }
-                }
-              }
-              return null;
-            }
-
+            // Extract item data using validated Vinted DOM selectors
             function mapCondition(raw) {
               if (!raw) return null;
               const lower = raw.toLowerCase();
-              if (
-                lower.includes("new with tag") ||
-                lower.includes("new with label")
-              )
-                return "new";
-              if (lower.includes("new without") || lower.includes("new"))
-                return "new";
-              if (lower.includes("very good") || lower.includes("like new"))
-                return "like_new";
+              if (lower.includes("new with tag") || lower.includes("new with label")) return "new";
+              if (lower.includes("new without") || lower.includes("new")) return "new";
+              if (lower.includes("very good") || lower.includes("like new")) return "like_new";
               if (lower.includes("good")) return "good";
-              if (lower.includes("satisfactory") || lower.includes("fair"))
-                return "fair";
+              if (lower.includes("satisfactory") || lower.includes("fair")) return "fair";
               return "good";
             }
 
             const data = {};
-            const idMatch = window.location.pathname.match(ITEM_URL_PATTERN);
+            const idMatch = window.location.pathname.match(/\/items\/(\d+)/);
             data.vintedId = idMatch ? idMatch[1] : null;
             data.vintedUrl = window.location.href;
 
-            const titleEl =
-              document.querySelector('[data-testid="item-title"]') ||
-              document.querySelector('[itemprop="name"]') ||
-              document.querySelector("h1");
-            data.title = titleEl?.textContent?.trim() ?? null;
+            // Title
+            data.title = document.querySelector("h1")?.textContent?.trim() ?? null;
 
-            const priceEl =
-              document.querySelector('[data-testid="item-price"]') ||
-              document.querySelector('[itemprop="price"]') ||
-              findTextElement(document.body, /^[£€]\s*[\d,.]+/);
+            // Price
+            const priceEl = document.querySelector('[data-testid="item-price"]');
             if (priceEl) {
               const priceMatch = priceEl.textContent.trim().match(/[\d,.]+/);
-              data.price = priceMatch
-                ? parseFloat(priceMatch[0].replace(",", ""))
-                : null;
+              data.price = priceMatch ? parseFloat(priceMatch[0].replace(",", "")) : null;
             }
 
-            const brandEl =
-              document.querySelector('[data-testid="item-details-brand"]') ||
-              document.querySelector('[itemprop="brand"]');
-            data.brand = brandEl?.textContent?.trim() ?? findDetailValue(["Brand"]);
+            // Brand — from summary plugin link
+            const summaryPlugin = document.querySelector('[data-testid="item-page-summary-plugin"]');
+            const brandLink = summaryPlugin?.querySelector('a[href*="/brand"]');
+            data.brand = brandLink ? brandLink.textContent.trim() : null;
 
-            const sizeEl =
-              document.querySelector('[data-testid="item-details-size"]') ||
-              document.querySelector('[itemprop="size"]');
-            data.size = sizeEl?.textContent?.trim() ?? findDetailValue(["Size"]);
+            // Size — strip "Size" prefix
+            const sizeEl = document.querySelector('[data-testid="item-attributes-size"]');
+            data.size = sizeEl ? sizeEl.textContent.trim().replace(/^Size/i, '').trim() : null;
 
-            const conditionEl = document.querySelector(
-              '[data-testid="item-details-condition"]',
-            );
-            data.condition = mapCondition(
-              conditionEl?.textContent?.trim() ??
-                findDetailValue(["Condition"]),
-            );
+            // Condition — strip "Condition" prefix
+            const condEl = document.querySelector('[data-testid="item-attributes-status"]');
+            const rawCond = condEl?.textContent?.trim().replace(/^Condition/i, '').trim() ?? null;
+            data.condition = mapCondition(rawCond);
 
-            const breadcrumbs = document.querySelectorAll(
-              '[data-testid="breadcrumbs"] a, nav[aria-label="Breadcrumbs"] a',
-            );
-            if (breadcrumbs.length > 0) {
-              data.category =
-                breadcrumbs[breadcrumbs.length - 1]?.textContent?.trim() ??
-                null;
+            // Category — from first brand link text minus brand name
+            const allBrandLinks = document.querySelectorAll('a[href*="/brand"]');
+            if (allBrandLinks.length > 0 && data.brand) {
+              const category = allBrandLinks[0].textContent.trim().replace(data.brand, '').trim();
+              data.category = category || null;
+            } else {
+              data.category = null;
             }
 
-            const descEl =
-              document.querySelector('[data-testid="item-description"]') ||
-              document.querySelector('[itemprop="description"]');
-            data.description = descEl?.textContent?.trim() ?? null;
+            // Description
+            data.description = document.querySelector('[itemprop="description"]')?.textContent?.trim() ?? null;
 
-            const photoEls = document.querySelectorAll(
-              '[data-testid="item-photo"] img, .item-photos img, [class*="ItemPhoto"] img, .web_ui__Image__content',
-            );
-            const photoUrls = new Set();
-            for (const img of photoEls) {
+            // Photos — item-photo-N--img pattern (only actual product photos)
+            const photoUrls = [];
+            for (let i = 1; i <= 20; i++) {
+              const img = document.querySelector(`[data-testid="item-photo-${i}--img"]`);
+              if (!img) break;
               const src = img.src || img.getAttribute("src");
               if (src && src.startsWith("http")) {
-                photoUrls.add(src.replace(/\?.*$/, ""));
+                photoUrls.push(src);
               }
             }
-            data.photoUrls = [...photoUrls];
+            data.photoUrls = photoUrls;
 
             return data;
           },
