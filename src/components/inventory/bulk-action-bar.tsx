@@ -136,23 +136,29 @@ export function BulkActionBar({
     });
   }, [targetStatus, soldDate, soldPrice, onSetStatus, withLoading]);
 
-  if (selectedCount === 0) return null;
+  const hasSelection = selectedCount > 0;
 
   return (
     <>
-      <div className="flex items-center gap-3 rounded-xl bg-blue-500/[0.08] px-4 py-2.5 ring-1 ring-blue-500/20">
+      <div className={`flex items-center gap-3 rounded-xl px-4 py-2.5 ring-1 transition-colors ${
+        hasSelection
+          ? "bg-blue-500/[0.08] ring-blue-500/20"
+          : "bg-zinc-900/50 ring-white/[0.06]"
+      }`}>
         {/* Count + clear */}
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-blue-400">
-            {selectedCount} selected
+          <span className={`text-sm font-medium ${hasSelection ? "text-blue-400" : "text-zinc-500"}`}>
+            {hasSelection ? `${selectedCount} selected` : "Select items to edit"}
           </span>
-          <button
-            type="button"
-            onClick={onClearSelection}
-            className="rounded-md p-0.5 text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
-          >
-            <X className="size-3.5" />
-          </button>
+          {hasSelection && (
+            <button
+              type="button"
+              onClick={onClearSelection}
+              className="rounded-md p-0.5 text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
         </div>
 
         <div className="h-4 w-px bg-white/[0.08]" />
@@ -162,13 +168,13 @@ export function BulkActionBar({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-1.5 text-zinc-400 hover:text-zinc-200"
+            className={`gap-1.5 ${hasSelection ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-600 cursor-default"}`}
             onClick={() => {
               setTargetStatus(null);
               setShowReversalWarning(false);
               setStatusDialogOpen(true);
             }}
-            disabled={loading}
+            disabled={!hasSelection || loading}
           >
             <ArrowRightLeft className="size-3.5" />
             Set Status
@@ -177,9 +183,9 @@ export function BulkActionBar({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-1.5 text-zinc-400 hover:text-zinc-200"
+            className={`gap-1.5 ${hasSelection ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-600 cursor-default"}`}
             onClick={() => setDateDialogOpen(true)}
-            disabled={loading}
+            disabled={!hasSelection || loading}
           >
             <CalendarDays className="size-3.5" />
             Set Date
@@ -188,9 +194,9 @@ export function BulkActionBar({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-1.5 text-zinc-400 hover:text-zinc-200"
+            className={`gap-1.5 ${hasSelection ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-600 cursor-default"}`}
             onClick={() => setPriceDialogOpen(true)}
-            disabled={loading}
+            disabled={!hasSelection || loading}
           >
             <Tag className="size-3.5" />
             Set Price
@@ -199,9 +205,9 @@ export function BulkActionBar({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-1.5 text-zinc-400 hover:text-zinc-200"
+            className={`gap-1.5 ${hasSelection ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-600 cursor-default"}`}
             onClick={() => setFeesDialogOpen(true)}
-            disabled={loading}
+            disabled={!hasSelection || loading}
           >
             <Receipt className="size-3.5" />
             Set Fees
@@ -210,9 +216,9 @@ export function BulkActionBar({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-1.5 text-red-400/70 hover:text-red-400"
+            className={`gap-1.5 ${hasSelection ? "text-red-400/70 hover:text-red-400" : "text-zinc-600 cursor-default"}`}
             onClick={() => setDeleteDialogOpen(true)}
-            disabled={loading}
+            disabled={!hasSelection || loading}
           >
             <Trash2 className="size-3.5" />
             Delete
