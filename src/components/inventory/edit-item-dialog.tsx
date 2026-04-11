@@ -453,25 +453,32 @@ function FetchFromVinted({
           </a>
         )}
       </div>
-      <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="gap-1.5 text-xs"
-          disabled={fetching || !vintedUrl.trim()}
-          onClick={handleFetch}
-        >
-          {fetching ? (
-            <RefreshCw className="size-3 animate-spin" />
-          ) : (
-            <Download className="size-3" />
-          )}
-          {fetching ? "Fetching..." : "Fetch Photos"}
-        </Button>
-        <span className="text-[11px] text-zinc-600">
-          Attempts to download photos from the listing
-        </span>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs"
+            disabled={fetching || !vintedUrl.trim()}
+            onClick={handleFetch}
+          >
+            {fetching ? (
+              <RefreshCw className="size-3 animate-spin" />
+            ) : (
+              <Download className="size-3" />
+            )}
+            {fetching ? "Fetching..." : "Fetch Photos"}
+          </Button>
+          <span className="text-[11px] text-zinc-600">
+            Attempts to download photos from the listing
+          </span>
+        </div>
+        {vintedUrl.trim() && (
+          <p className="text-[11px] text-zinc-600">
+            If fetch fails, open the link above with the ReList extension active — it can grab photos directly.
+          </p>
+        )}
       </div>
       {error && <p className="text-xs text-amber-400">{error}</p>}
       {success && <p className="text-xs text-emerald-400">{success}</p>}

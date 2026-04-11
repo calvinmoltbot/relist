@@ -43,6 +43,9 @@ export const items = pgTable(
     index("items_status_idx").on(table.status),
     index("items_brand_idx").on(table.brand),
     index("items_category_idx").on(table.category),
+    index("items_created_at_idx").on(table.createdAt),
+    index("items_listed_at_idx").on(table.listedAt),
+    index("items_sold_at_idx").on(table.soldAt),
   ],
 );
 
@@ -65,7 +68,9 @@ export const transactions = pgTable("transactions", {
   profit: numeric("profit", { precision: 10, scale: 2 }),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("transactions_item_id_idx").on(table.itemId),
+]);
 
 // ---------------------------------------------------------------------------
 // Price Data (market snapshots from Vinted monitoring)

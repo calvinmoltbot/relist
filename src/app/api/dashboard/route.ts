@@ -1,114 +1,149 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { items } from "@/db/schema";
-import { desc } from "drizzle-orm";
+import { eq, sql, and, gte, lt, isNull, or } from "drizzle-orm";
 import { getTargets } from "@/lib/settings";
 
 // ---------------------------------------------------------------------------
 // GET /api/dashboard — Morning dashboard data
 // ---------------------------------------------------------------------------
 export async function GET() {
-  const allItems = await db.select().from(items).orderBy(desc(items.createdAt));
-
   const now = new Date();
-  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  const currentMonthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
+  const monthStart = new Date(currentYear, currentMonth, 1);
+  const monthEnd = new Date(currentYear, currentMonth + 1, 1);
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-  // Categorise items
-  const sourced = allItems.filter((i) => i.status === "sourced");
-  const listed = allItems.filter((i) => i.status === "listed");
-  const sold = allItems.filter((i) => i.status === "sold");
-  const shipped = allItems.filter((i) => i.status === "shipped");
+  // Run targeted queries in parallel instead of fetching all items
+  const [
+    statusCounts,
+    needsListingRows,
+    needsShippingRows,
+    staleListingRows,
+    monthSoldRows,
+    weekSoldRows,
+    recentActivityRows,
+  ] = await Promise.all([
+    // Count by status
+    db.select({
+      status: items.status,
+      count: sql<number>`count(*)::int`,
+    }).from(items).groupBy(items.status),
 
-  // Items needing action
-  const needsListing = sourced.map((i) => ({
-    id: i.id,
-    name: i.name,
-    brand: i.brand,
-    daysWaiting: daysSince(i.createdAt),
-  }));
+    // Sourced items (needs listing)
+    db.select({
+      id: items.id,
+      name: items.name,
+      brand: items.brand,
+      createdAt: items.createdAt,
+    }).from(items).where(eq(items.status, "sourced")),
 
-  const needsShipping = sold.map((i) => ({
-    id: i.id,
-    name: i.name,
-    brand: i.brand,
-    soldAt: i.soldAt?.toISOString() ?? null,
-    daysSinceSold: daysSince(i.soldAt),
-  }));
+    // Sold items (needs shipping)
+    db.select({
+      id: items.id,
+      name: items.name,
+      brand: items.brand,
+      soldAt: items.soldAt,
+    }).from(items).where(eq(items.status, "sold")),
 
-  // Stale listings (listed for more than 14 days)
-  const staleListings = listed
-    .filter((i) => daysSince(i.listedAt) > 14)
-    .map((i) => ({
-      id: i.id,
-      name: i.name,
-      brand: i.brand,
-      listedPrice: i.listedPrice,
-      daysListed: daysSince(i.listedAt),
-    }));
+    // Stale listings (listed 14+ days ago)
+    db.select({
+      id: items.id,
+      name: items.name,
+      brand: items.brand,
+      listedPrice: items.listedPrice,
+      listedAt: items.listedAt,
+    }).from(items).where(
+      and(
+        eq(items.status, "listed"),
+        lt(items.listedAt, fourteenDaysAgo),
+      ),
+    ),
 
-  // This month's sales
-  const monthSold = [...sold, ...shipped].filter(
-    (i) => i.soldAt && i.soldAt.toISOString().startsWith(currentMonthKey),
+    // This month's sold/shipped items
+    db.select({
+      soldPrice: items.soldPrice,
+      costPrice: items.costPrice,
+    }).from(items).where(
+      and(
+        or(eq(items.status, "sold"), eq(items.status, "shipped")),
+        gte(items.soldAt, monthStart),
+        lt(items.soldAt, monthEnd),
+      ),
+    ),
+
+    // This week's sold/shipped items
+    db.select({
+      soldPrice: items.soldPrice,
+    }).from(items).where(
+      and(
+        or(eq(items.status, "sold"), eq(items.status, "shipped")),
+        gte(items.soldAt, weekAgo),
+      ),
+    ),
+
+    // Recent activity (last 5 updated)
+    db.select({
+      id: items.id,
+      name: items.name,
+      status: items.status,
+      updatedAt: items.updatedAt,
+    }).from(items)
+      .orderBy(sql`${items.updatedAt} DESC NULLS LAST`)
+      .limit(5),
+  ]);
+
+  // Parse status counts
+  const counts: Record<string, number> = {};
+  let totalItems = 0;
+  for (const row of statusCounts) {
+    counts[row.status] = row.count;
+    totalItems += row.count;
+  }
+
+  // Month calculations
+  const monthRevenue = monthSoldRows.reduce(
+    (sum, i) => sum + (i.soldPrice ? parseFloat(i.soldPrice) : 0), 0,
   );
-  const monthRevenue = monthSold.reduce(
-    (sum, i) => sum + (i.soldPrice ? parseFloat(i.soldPrice) : 0),
-    0,
-  );
-  const monthCost = monthSold.reduce(
-    (sum, i) => sum + (i.costPrice ? parseFloat(i.costPrice) : 0),
-    0,
+  const monthCost = monthSoldRows.reduce(
+    (sum, i) => sum + (i.costPrice ? parseFloat(i.costPrice) : 0), 0,
   );
   const monthProfit = monthRevenue - monthCost;
 
-  // This week's sales (last 7 days)
-  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const weekSold = [...sold, ...shipped].filter(
-    (i) => i.soldAt && i.soldAt >= weekAgo,
-  );
-  const weekRevenue = weekSold.reduce(
-    (sum, i) => sum + (i.soldPrice ? parseFloat(i.soldPrice) : 0),
-    0,
+  // Week calculations
+  const weekRevenue = weekSoldRows.reduce(
+    (sum, i) => sum + (i.soldPrice ? parseFloat(i.soldPrice) : 0), 0,
   );
 
-  // Revenue targets (from DB settings)
+  // Revenue targets
   const targets = await getTargets();
   const MONTHLY_TARGET = targets.monthlyRevenueTarget;
   const WEEKLY_HOURS = targets.weeklyHours;
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const dayOfMonth = now.getDate();
   const dailyRate = dayOfMonth > 0 ? monthRevenue / dayOfMonth : 0;
   const projectedRevenue = round(dailyRate * daysInMonth);
 
-  // Effective hourly rate
   const hoursThisMonth = (dayOfMonth / 7) * WEEKLY_HOURS;
   const hourlyRate = hoursThisMonth > 0 ? monthProfit / hoursThisMonth : 0;
-
-  // Recent activity (last 5 status changes)
-  const recentActivity = allItems
-    .filter((i) => i.updatedAt)
-    .sort((a, b) => (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0))
-    .slice(0, 5)
-    .map((i) => ({
-      id: i.id,
-      name: i.name,
-      status: i.status,
-      updatedAt: i.updatedAt?.toISOString() ?? null,
-    }));
 
   return NextResponse.json({
     greeting: getGreeting(),
     stats: {
-      totalItems: allItems.length,
-      sourced: sourced.length,
-      listed: listed.length,
-      sold: sold.length,
-      shipped: shipped.length,
+      totalItems,
+      sourced: counts["sourced"] ?? 0,
+      listed: counts["listed"] ?? 0,
+      sold: counts["sold"] ?? 0,
+      shipped: counts["shipped"] ?? 0,
     },
     month: {
       key: currentMonthKey,
       revenue: round(monthRevenue),
       profit: round(monthProfit),
-      itemsSold: monthSold.length,
+      itemsSold: monthSoldRows.length,
       target: MONTHLY_TARGET,
       progress: round((monthRevenue / MONTHLY_TARGET) * 100),
       projected: projectedRevenue,
@@ -117,16 +152,38 @@ export async function GET() {
     },
     week: {
       revenue: round(weekRevenue),
-      itemsSold: weekSold.length,
+      itemsSold: weekSoldRows.length,
     },
     hourlyRate: round(hourlyRate),
     targetHourlyRate: targets.targetHourlyRate,
     actions: {
-      needsListing,
-      needsShipping,
-      staleListings,
+      needsListing: needsListingRows.map((i) => ({
+        id: i.id,
+        name: i.name,
+        brand: i.brand,
+        daysWaiting: daysSince(i.createdAt),
+      })),
+      needsShipping: needsShippingRows.map((i) => ({
+        id: i.id,
+        name: i.name,
+        brand: i.brand,
+        soldAt: i.soldAt?.toISOString() ?? null,
+        daysSinceSold: daysSince(i.soldAt),
+      })),
+      staleListings: staleListingRows.map((i) => ({
+        id: i.id,
+        name: i.name,
+        brand: i.brand,
+        listedPrice: i.listedPrice,
+        daysListed: daysSince(i.listedAt),
+      })),
     },
-    recentActivity,
+    recentActivity: recentActivityRows.map((i) => ({
+      id: i.id,
+      name: i.name,
+      status: i.status,
+      updatedAt: i.updatedAt?.toISOString() ?? null,
+    })),
   });
 }
 

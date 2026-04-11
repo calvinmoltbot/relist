@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { items } from "@/db/schema";
-import { desc } from "drizzle-orm";
+import { eq, and, lt, or, isNull, sql } from "drizzle-orm";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -23,13 +23,67 @@ interface DailyTask {
 // GET /api/daily-plan — Generate a prioritised daily task list
 // ---------------------------------------------------------------------------
 export async function GET() {
-  const allItems = await db.select().from(items).orderBy(desc(items.createdAt));
-
   const now = new Date();
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+  // Run targeted queries in parallel instead of fetching all items
+  const [soldItems, incompleteItems, staleItems, noPhotoItems] = await Promise.all([
+    // Priority 1: Items sold but not shipped
+    db.select({
+      id: items.id,
+      name: items.name,
+      soldPrice: items.soldPrice,
+    }).from(items).where(eq(items.status, "sold")),
+
+    // Priority 2: Items missing cost price, category, or brand (exclude shipped)
+    db.select({
+      id: items.id,
+      name: items.name,
+      costPrice: items.costPrice,
+      category: items.category,
+      brand: items.brand,
+    }).from(items).where(
+      and(
+        sql`${items.status} != 'shipped'`,
+        or(
+          isNull(items.costPrice),
+          isNull(items.category),
+          isNull(items.brand),
+        ),
+      ),
+    ),
+
+    // Priority 3: Stale listings (listed 14+ days ago)
+    db.select({
+      id: items.id,
+      name: items.name,
+      listedPrice: items.listedPrice,
+      listedAt: items.listedAt,
+    }).from(items).where(
+      and(
+        eq(items.status, "listed"),
+        lt(items.listedAt, fourteenDaysAgo),
+      ),
+    ),
+
+    // Priority 4: Listed items with no photos
+    db.select({
+      id: items.id,
+      name: items.name,
+    }).from(items).where(
+      and(
+        eq(items.status, "listed"),
+        or(
+          isNull(items.photoUrls),
+          sql`array_length(${items.photoUrls}, 1) IS NULL`,
+        ),
+      ),
+    ),
+  ]);
+
   const tasks: DailyTask[] = [];
 
-  // Priority 1: Ship items — sold but not yet shipped
-  const soldItems = allItems.filter((i) => i.status === "sold");
+  // Priority 1: Ship items
   for (const item of soldItems) {
     const soldPrice = item.soldPrice
       ? `\u00A3${parseFloat(item.soldPrice).toFixed(0)}`
@@ -48,12 +102,7 @@ export async function GET() {
     });
   }
 
-  // Priority 2: Quick updates — items missing cost price, category, or brand
-  const incompleteItems = allItems.filter(
-    (i) =>
-      i.status !== "shipped" &&
-      (!i.costPrice || !i.category || !i.brand),
-  );
+  // Priority 2: Quick updates
   for (const item of incompleteItems) {
     const missing: string[] = [];
     if (!item.costPrice) missing.push("cost price");
@@ -74,14 +123,7 @@ export async function GET() {
     });
   }
 
-  // Priority 3: Stale listings — listed more than 14 days ago
-  const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
-  const staleItems = allItems.filter(
-    (i) =>
-      i.status === "listed" &&
-      i.listedAt &&
-      now.getTime() - i.listedAt.getTime() > fourteenDaysMs,
-  );
+  // Priority 3: Stale listings
   for (const item of staleItems) {
     const daysListed = Math.floor(
       (now.getTime() - (item.listedAt?.getTime() ?? now.getTime())) /
@@ -104,12 +146,7 @@ export async function GET() {
     });
   }
 
-  // Priority 4: Photo check — listed items with no photos
-  const noPhotoItems = allItems.filter(
-    (i) =>
-      i.status === "listed" &&
-      (!i.photoUrls || i.photoUrls.length === 0),
-  );
+  // Priority 4: Photo check
   for (const item of noPhotoItems) {
     tasks.push({
       id: `photo-${item.id}`,
@@ -125,7 +162,7 @@ export async function GET() {
     });
   }
 
-  // Sort by priority, then by name within same priority
+  // Sort by priority, then by name
   tasks.sort((a, b) => a.priority - b.priority || a.itemName.localeCompare(b.itemName));
 
   return NextResponse.json({
