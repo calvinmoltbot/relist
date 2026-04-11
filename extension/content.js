@@ -237,20 +237,12 @@
     data.vintedId = idMatch ? idMatch[1] : null;
     data.vintedUrl = window.location.href;
 
-    // Title — Vinted uses h1 or an element with itemprop="name"
-    const titleEl =
-      document.querySelector('[data-testid="item-title"]') ||
-      document.querySelector('[itemprop="name"]') ||
-      document.querySelector("h1") ||
-      document.querySelector(".ItemDetails_itemTitle__P5VTe");
+    // Title — h1 is reliable on Vinted item pages
+    const titleEl = document.querySelector("h1");
     data.title = titleEl?.textContent?.trim() ?? null;
 
-    // Price
-    const priceEl =
-      document.querySelector('[data-testid="item-price"]') ||
-      document.querySelector('[itemprop="price"]') ||
-      document.querySelector(".ItemPrice_price__QDKGJ") ||
-      findTextElement(document.body, /^[£€]\s*[\d,.]+/);
+    // Price — data-testid="item-price" contains the price text (e.g. "£7.00")
+    const priceEl = document.querySelector('[data-testid="item-price"]');
     if (priceEl) {
       const priceText = priceEl.textContent.trim();
       const priceMatch = priceText.match(/[\d,.]+/);
@@ -259,83 +251,71 @@
         : null;
     }
 
-    // Brand — look in details section
-    const brandEl =
-      document.querySelector('[data-testid="item-details-brand"]') ||
-      document.querySelector('[itemprop="brand"]') ||
-      document.querySelector(
-        '.ItemDetails_brand__IdCZQ, .details-list__item-value--brand',
-      );
-    if (brandEl) {
-      data.brand = brandEl.textContent.trim();
+    // Brand — the summary area has brand links; pick the one in the
+    // attributes section (contains just the brand name, not "Brand menu" text).
+    // The summary plugin has "Size·Condition·Brand" with brand as a link.
+    const summaryPlugin = document.querySelector('[data-testid="item-page-summary-plugin"]');
+    const brandLink = summaryPlugin?.querySelector('a[href*="/brand"]');
+    if (brandLink) {
+      data.brand = brandLink.textContent.trim();
     } else {
-      // Fallback: scan detail rows for "Brand" label
-      data.brand = findDetailValue(["Brand", "brand"]);
+      // Fallback: find brand in attributes section, strip "Brand menu" suffix
+      const brandMenuBtn = document.querySelector('[data-testid="item-attributes-brand-menu-button"]');
+      if (brandMenuBtn) {
+        const parentText = brandMenuBtn.closest('div')?.parentElement?.textContent?.trim() || '';
+        data.brand = parentText.replace(/Brand\s*menu/i, '').replace(/^Brand/i, '').trim() || null;
+      } else {
+        data.brand = null;
+      }
     }
 
-    // Size
-    const sizeEl =
-      document.querySelector('[data-testid="item-details-size"]') ||
-      document.querySelector('[itemprop="size"]');
+    // Size — data-testid="item-attributes-size" contains "SizeS / UK 8-10"
+    const sizeEl = document.querySelector('[data-testid="item-attributes-size"]');
     if (sizeEl) {
-      data.size = sizeEl.textContent.trim();
+      data.size = sizeEl.textContent.trim().replace(/^Size/i, '').trim();
     } else {
-      data.size = findDetailValue(["Size", "size"]);
+      data.size = null;
     }
 
-    // Condition — map Vinted terms to ReList values
-    const conditionEl = document.querySelector(
-      '[data-testid="item-details-condition"]',
-    );
-    let rawCondition = conditionEl?.textContent?.trim();
-    if (!rawCondition) {
-      rawCondition = findDetailValue(["Condition", "condition"]);
-    }
+    // Condition — data-testid="item-attributes-status" contains "ConditionGood"
+    const conditionEl = document.querySelector('[data-testid="item-attributes-status"]');
+    let rawCondition = conditionEl?.textContent?.trim().replace(/^Condition/i, '').trim() ?? null;
     data.condition = mapCondition(rawCondition);
 
-    // Category — from breadcrumbs
-    const breadcrumbs = document.querySelectorAll(
-      '[data-testid="breadcrumbs"] a, nav[aria-label="Breadcrumbs"] a, .Breadcrumbs_link__V_PvK',
-    );
-    if (breadcrumbs.length > 0) {
-      const lastCrumb = breadcrumbs[breadcrumbs.length - 1];
-      data.category = lastCrumb?.textContent?.trim() ?? null;
+    // Category — Vinted's first brand link contains "Brand Category" (e.g. "Per Una Off-the-shoulder tops").
+    // Extract category by removing the brand name from this combined text.
+    const allBrandLinks = document.querySelectorAll('a[href*="/brand"]');
+    if (allBrandLinks.length > 0 && data.brand) {
+      const firstBrandText = allBrandLinks[0].textContent.trim();
+      const category = firstBrandText.replace(data.brand, '').trim();
+      data.category = category || null;
     } else {
       data.category = null;
     }
 
-    // Description
-    const descEl =
-      document.querySelector('[data-testid="item-description"]') ||
-      document.querySelector('[itemprop="description"]') ||
-      document.querySelector(
-        '.ItemDescription_description__LVNXi, .ItemDescription_content__FVWGE',
-      );
+    // Description — itemprop="description" is reliable
+    const descEl = document.querySelector('[itemprop="description"]');
     data.description = descEl?.textContent?.trim() ?? null;
 
-    // Photos — collect all gallery images
-    const photoEls = document.querySelectorAll(
-      '[data-testid="item-photo"] img, .ItemGallery_image__LGwjU, .item-photos img, [class*="ItemPhoto"] img, .web_ui__Image__content',
-    );
+    // Photos — Vinted uses data-testid="item-photo-N--img" pattern
     const photoUrls = new Set();
-    for (const img of photoEls) {
+    for (let i = 1; i <= 20; i++) {
+      const img = document.querySelector(`[data-testid="item-photo-${i}--img"]`);
+      if (!img) break;
       const src = img.src || img.getAttribute("src");
-      if (src && src.startsWith("http") && !src.includes("favicon")) {
-        // Try to get the highest resolution version by removing size params
-        const highRes = src.replace(/\?.*$/, "");
-        photoUrls.add(highRes);
+      if (src && src.startsWith("http")) {
+        // Keep the full URL (includes size params for CDN)
+        photoUrls.add(src);
       }
     }
-    // Also check for background images in gallery
-    const galleryItems = document.querySelectorAll(
-      '[class*="Gallery"] [style*="background-image"], [class*="gallery"] [style*="background-image"]',
-    );
-    for (const el of galleryItems) {
-      const style = el.getAttribute("style") || "";
-      const urlMatch = style.match(/url\(["']?(https?:\/\/[^"')]+)["']?\)/);
-      if (urlMatch) {
-        photoUrls.add(urlMatch[1].replace(/\?.*$/, ""));
-      }
+    // Fallback: any img inside elements with item-photo test IDs
+    if (photoUrls.size === 0) {
+      document.querySelectorAll('[data-testid^="item-photo"] img').forEach(img => {
+        const src = img.src || img.getAttribute("src");
+        if (src && src.startsWith("http") && !src.includes("favicon")) {
+          photoUrls.add(src);
+        }
+      });
     }
     data.photoUrls = [...photoUrls];
 
