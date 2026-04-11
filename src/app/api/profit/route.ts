@@ -23,8 +23,10 @@ export async function GET(request: NextRequest) {
   const allItems = await db.select().from(items);
 
   // Sold items (optionally filtered by date range)
+  const hasDateFilter = from != null || to != null;
   const sold = allItems.filter((i) => {
     if (i.status !== "sold" && i.status !== "shipped") return false;
+    if (hasDateFilter && !i.soldAt) return false;
     if (from && i.soldAt && i.soldAt < from) return false;
     if (to && i.soldAt && i.soldAt > to) return false;
     return true;
