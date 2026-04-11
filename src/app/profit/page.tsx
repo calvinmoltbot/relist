@@ -1,7 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
 import {
   TrendingUp,
   TrendingDown,
@@ -131,59 +130,27 @@ interface ProfitData {
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
-export default function FinancialsPageWrapper() {
-  return (
-    <Suspense
-      fallback={
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-          <div>
-            <h1 className="text-xl font-semibold text-zinc-100">Financials</h1>
-            <p className="text-sm text-zinc-500">Track your earnings, expenses, and business health</p>
-          </div>
-          <div className="flex items-center justify-center py-20 text-zinc-500">
-            <div className="size-6 animate-spin rounded-full border-2 border-zinc-700 border-t-zinc-400" />
-          </div>
-        </div>
-      }
-    >
-      <FinancialsPage />
-    </Suspense>
-  );
-}
-
-function FinancialsPage() {
+export default function FinancialsPage() {
   const [data, setData] = useState<ProfitData | null>(null);
   const [loading, setLoading] = useState(true);
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const [preset, setPreset] = useState<DatePreset>("all_time");
 
-  const preset = (searchParams.get("preset") as DatePreset) || "all_time";
-
-  const fetchData = useCallback(
-    (p: DatePreset) => {
-      setLoading(true);
-      const url = p === "all_time" ? "/api/profit" : `/api/profit?preset=${p}`;
-      fetch(url)
-        .then((r) => r.json())
-        .then(setData)
-        .catch(console.error)
-        .finally(() => setLoading(false));
-    },
-    []
-  );
+  const fetchData = useCallback((p: DatePreset) => {
+    setLoading(true);
+    const url = p === "all_time" ? "/api/profit" : `/api/profit?preset=${p}`;
+    fetch(url)
+      .then((r) => r.json())
+      .then(setData)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
     fetchData(preset);
   }, [preset, fetchData]);
 
   function handlePresetChange(p: DatePreset) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (p === "all_time") {
-      params.delete("preset");
-    } else {
-      params.set("preset", p);
-    }
-    router.replace(`/profit?${params.toString()}`);
+    setPreset(p);
   }
 
   if (loading && !data) {
