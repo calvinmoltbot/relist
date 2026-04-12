@@ -13,6 +13,7 @@ import {
   Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MarkupCalculator } from "@/components/dashboard/markup-calculator";
 
 // ---------------------------------------------------------------------------
 // Types (matches /api/dashboard)
@@ -263,6 +264,9 @@ export default function DashboardPage() {
           itemsSoldThisWeek={data.week.itemsSold}
           daily={data.week.daily}
         />
+
+        {/* Markup calculator */}
+        <MarkupCalculator />
 
         {/* CTA */}
         <Link

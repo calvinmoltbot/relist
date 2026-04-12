@@ -57,6 +57,15 @@ export const HELP_ENTRIES: HelpEntry[] = [
     context: "/",
   },
   {
+    id: "dashboard-markup-calc",
+    title: "Markup Calculator",
+    description:
+      "A quick calculator in the Performance panel. Type in what you paid for an item, drag the markup slider (or tap a preset like 200%), and it shows what to list it at and how much profit you'd make. Handy for pricing on the fly — no save, just a scratchpad.",
+    category: "feature",
+    group: "Dashboard",
+    context: "/",
+  },
+  {
     id: "dashboard-hourly-rate",
     title: "Hourly Rate",
     description:
