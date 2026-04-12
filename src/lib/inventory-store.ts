@@ -159,8 +159,10 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     set((s) => ({ items: s.items.filter((i) => i.id !== id) }));
 
     try {
-      await fetch(`/api/inventory/${id}`, { method: "DELETE" });
-    } catch {
+      const res = await fetch(`/api/inventory/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
+    } catch (err) {
+      console.error("Failed to delete item:", err);
       set({ items: prev });
     }
   },

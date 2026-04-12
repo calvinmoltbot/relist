@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { items, transactions } from "@/db/schema";
+import { items, transactions, expenses, watchItems } from "@/db/schema";
 import { eq, inArray, and } from "drizzle-orm";
 
 // Statuses that have an associated sell transaction
@@ -171,8 +171,16 @@ export async function DELETE(request: NextRequest) {
     );
   }
 
-  // Delete associated transactions first
+  // Clear dependent rows first — transactions FK is NOT NULL (delete), others nullable (null out).
   await db.delete(transactions).where(inArray(transactions.itemId, ids));
+  await db
+    .update(expenses)
+    .set({ itemId: null })
+    .where(inArray(expenses.itemId, ids));
+  await db
+    .update(watchItems)
+    .set({ convertedItemId: null })
+    .where(inArray(watchItems.convertedItemId, ids));
 
   // Delete the items
   const deleted = await db

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { items, transactions } from "@/db/schema";
+import { items, transactions, expenses, watchItems } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
 const SOLD_STATUSES = new Set(["sold", "shipped"]);
@@ -190,6 +190,18 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+
+  // Clear dependent rows first — transactions.itemId is NOT NULL FK (must delete),
+  // expenses/watchItems references are nullable (null out so history stays intact).
+  await db.delete(transactions).where(eq(transactions.itemId, id));
+  await db
+    .update(expenses)
+    .set({ itemId: null })
+    .where(eq(expenses.itemId, id));
+  await db
+    .update(watchItems)
+    .set({ convertedItemId: null })
+    .where(eq(watchItems.convertedItemId, id));
 
   const [deleted] = await db
     .delete(items)
