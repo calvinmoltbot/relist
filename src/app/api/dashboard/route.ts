@@ -78,9 +78,10 @@ export async function GET() {
       ),
     ),
 
-    // This week's sold/shipped items
+    // This week's sold/shipped items (with soldAt for daily breakdown)
     db.select({
       soldPrice: items.soldPrice,
+      soldAt: items.soldAt,
     }).from(items).where(
       and(
         or(eq(items.status, "sold"), eq(items.status, "shipped")),
@@ -124,6 +125,33 @@ export async function GET() {
     (sum, i) => sum + (i.soldPrice ? parseFloat(i.soldPrice) : 0), 0,
   );
 
+  // Daily buckets for the last 7 days (index 0 = 6 days ago, index 6 = today)
+  const dailyBuckets: { date: string; dayOfWeek: number; count: number; revenue: number }[] = [];
+  for (let offset = 6; offset >= 0; offset--) {
+    const d = new Date(now);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - offset);
+    dailyBuckets.push({
+      date: d.toISOString().slice(0, 10),
+      dayOfWeek: d.getDay(),
+      count: 0,
+      revenue: 0,
+    });
+  }
+  const todayKey = dailyBuckets[6].date;
+  const startKey = dailyBuckets[0].date;
+  const bucketByDate = new Map(dailyBuckets.map((b) => [b.date, b]));
+  for (const row of weekSoldRows) {
+    if (!row.soldAt) continue;
+    const key = row.soldAt.toISOString().slice(0, 10);
+    if (key < startKey || key > todayKey) continue;
+    const bucket = bucketByDate.get(key);
+    if (!bucket) continue;
+    bucket.count += 1;
+    bucket.revenue += row.soldPrice ? parseFloat(row.soldPrice) : 0;
+  }
+  const todayItemsSold = dailyBuckets[6].count;
+
   // Revenue targets
   const MONTHLY_TARGET = targets.monthlyRevenueTarget;
   const WEEKLY_HOURS = targets.weeklyHours;
@@ -158,6 +186,13 @@ export async function GET() {
     week: {
       revenue: round(weekRevenue),
       itemsSold: weekSoldRows.length,
+      todayItemsSold,
+      daily: dailyBuckets.map((b) => ({
+        date: b.date,
+        dayOfWeek: b.dayOfWeek,
+        count: b.count,
+        revenue: round(b.revenue),
+      })),
     },
     hourlyRate: round(hourlyRate),
     targetHourlyRate: targets.targetHourlyRate,

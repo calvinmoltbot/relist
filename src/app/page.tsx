@@ -50,7 +50,12 @@ interface DashboardData {
     onTrack: boolean;
     daysRemaining: number;
   };
-  week: { revenue: number; itemsSold: number };
+  week: {
+    revenue: number;
+    itemsSold: number;
+    todayItemsSold: number;
+    daily: { date: string; dayOfWeek: number; count: number; revenue: number }[];
+  };
   hourlyRate: number;
   targetHourlyRate: number;
   actions: {
@@ -230,7 +235,10 @@ export default function DashboardPage() {
         </div>
 
         {/* Daily Velocity */}
-        <DailyVelocityCard weekItemsSold={data.week.itemsSold} />
+        <DailyVelocityCard
+          todayItemsSold={data.week.todayItemsSold}
+          daily={data.week.daily}
+        />
 
         {/* Weekly listings progress */}
         <WeeklyListingsCard
@@ -246,7 +254,10 @@ export default function DashboardPage() {
         />
 
         {/* 7-day trend */}
-        <WeeklyTrendCard itemsSoldThisWeek={data.week.itemsSold} />
+        <WeeklyTrendCard
+          itemsSoldThisWeek={data.week.itemsSold}
+          daily={data.week.daily}
+        />
 
         {/* CTA */}
         <Link
@@ -458,37 +469,48 @@ function ReviewCard({
 // ---------------------------------------------------------------------------
 // Performance cards
 // ---------------------------------------------------------------------------
-function DailyVelocityCard({ weekItemsSold }: { weekItemsSold: number }) {
-  // Synthetic sparkline — until we have daily breakdown
-  const heights = [40, 55, 30, 85];
+function DailyVelocityCard({
+  todayItemsSold,
+  daily,
+}: {
+  todayItemsSold: number;
+  daily: { date: string; count: number }[];
+}) {
+  // Use last 4 days (including today) as the sparkline
+  const lastFour = daily.slice(-4);
+  const maxCount = Math.max(1, ...lastFour.map((d) => d.count));
+
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-white/[0.04] bg-zinc-900 p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-400">
-          This Week
-        </span>
-      </div>
+      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-400">
+        Today
+      </span>
       <div className="flex items-end justify-between">
         <div className="flex flex-col">
           <span className="text-2xl font-black text-zinc-100">
-            {weekItemsSold}{" "}
+            {todayItemsSold}{" "}
             <span className="text-sm font-medium text-zinc-400">
-              item{weekItemsSold !== 1 ? "s" : ""}
+              item{todayItemsSold !== 1 ? "s" : ""}
             </span>
           </span>
           <span className="text-[10px] text-zinc-300">sold</span>
         </div>
         <div className="flex h-10 w-24 items-end gap-1">
-          {heights.map((h, i) => (
-            <div
-              key={i}
-              className={cn(
-                "flex-1 rounded-sm",
-                i === heights.length - 1 ? "bg-emerald-400" : "bg-emerald-400/20",
-              )}
-              style={{ height: `${h}%` }}
-            />
-          ))}
+          {lastFour.map((d, i) => {
+            const isToday = i === lastFour.length - 1;
+            const pct = (d.count / maxCount) * 100;
+            return (
+              <div
+                key={d.date}
+                title={`${d.date}: ${d.count}`}
+                className={cn(
+                  "flex-1 rounded-sm",
+                  isToday ? "bg-emerald-400" : "bg-emerald-400/20",
+                )}
+                style={{ height: `${Math.max(6, pct)}%` }}
+              />
+            );
+          })}
         </div>
       </div>
     </div>
@@ -609,11 +631,15 @@ function MonthlyRevenueCard({
   );
 }
 
-function WeeklyTrendCard({ itemsSoldThisWeek }: { itemsSoldThisWeek: number }) {
-  // Synthetic 7-day shape — until we have per-day breakdown in the API
-  const today = new Date().getDay();
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const shape = [40, 60, 80, 30, 95, 50, 75];
+function WeeklyTrendCard({
+  itemsSoldThisWeek,
+  daily,
+}: {
+  itemsSoldThisWeek: number;
+  daily: { date: string; dayOfWeek: number; count: number; revenue: number }[];
+}) {
+  const dayLabels = ["S", "M", "T", "W", "T", "F", "S"];
+  const maxCount = Math.max(1, ...daily.map((d) => d.count));
   return (
     <div className="border-t border-white/[0.05] pt-4">
       <div className="mb-3 flex items-center justify-between">
@@ -623,20 +649,26 @@ function WeeklyTrendCard({ itemsSoldThisWeek }: { itemsSoldThisWeek: number }) {
         <Info className="size-3.5 text-zinc-500" />
       </div>
       <div className="flex h-20 items-end gap-2">
-        {shape.map((h, i) => {
-          const isToday = i === today;
+        {daily.map((d, i) => {
+          const isToday = i === daily.length - 1;
+          const pct = (d.count / maxCount) * 100;
+          const empty = d.count === 0;
           return (
             <div
-              key={i}
+              key={d.date}
               className="flex flex-1 flex-col items-center gap-1"
-              title={`${days[i]}${isToday ? " (today)" : ""}`}
+              title={`${d.date}: ${d.count} sold · £${d.revenue.toFixed(0)}`}
             >
               <div
                 className={cn(
                   "w-full rounded-t-md transition-colors",
-                  isToday ? "bg-emerald-400" : "bg-zinc-800 hover:bg-emerald-400/40",
+                  isToday
+                    ? "bg-emerald-400"
+                    : empty
+                      ? "bg-zinc-800/60"
+                      : "bg-zinc-700 hover:bg-emerald-400/60",
                 )}
-                style={{ height: `${h}%` }}
+                style={{ height: empty ? "6%" : `${Math.max(8, pct)}%` }}
               />
               <span
                 className={cn(
@@ -644,7 +676,7 @@ function WeeklyTrendCard({ itemsSoldThisWeek }: { itemsSoldThisWeek: number }) {
                   isToday ? "text-emerald-400 font-bold" : "text-zinc-300",
                 )}
               >
-                {days[i][0]}
+                {dayLabels[d.dayOfWeek]}
               </span>
             </div>
           );
