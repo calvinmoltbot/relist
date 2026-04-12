@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
@@ -103,12 +104,12 @@ export function ItemCard({ item, onStatusChange, onEdit, onDelete }: ItemCardPro
           )}
         </div>
 
-        {/* Price row */}
+        {/* Price row — includes profit chip when sold */}
         <div className="flex items-center gap-1.5 text-xs text-zinc-400">
           {cost != null && (
             <span className="text-zinc-300">{"\u00A3"}{cost.toFixed(2)}</span>
           )}
-          {listed != null && (
+          {listed != null && sold == null && (
             <>
               <ArrowRight className="size-3 text-zinc-400" />
               <span className="text-blue-400">{"\u00A3"}{listed.toFixed(2)}</span>
@@ -120,19 +121,17 @@ export function ItemCard({ item, onStatusChange, onEdit, onDelete }: ItemCardPro
               <span className="text-emerald-400">{"\u00A3"}{sold.toFixed(2)}</span>
             </>
           )}
+          {profit != null && (
+            <span
+              className={cn(
+                "ml-auto shrink-0 font-medium tabular-nums",
+                profit >= 0 ? "text-emerald-400" : "text-red-400",
+              )}
+            >
+              {profit >= 0 ? "+" : ""}{"\u00A3"}{profit.toFixed(2)}
+            </span>
+          )}
         </div>
-
-        {/* Profit */}
-        {profit != null && (
-          <div
-            className={cn(
-              "text-xs font-medium",
-              profit >= 0 ? "text-emerald-400" : "text-red-400",
-            )}
-          >
-            {profit >= 0 ? "+" : ""}{"\u00A3"}{profit.toFixed(2)} profit
-          </div>
-        )}
 
         {/* Size */}
         {item.size && (
@@ -154,23 +153,25 @@ export function ItemCard({ item, onStatusChange, onEdit, onDelete }: ItemCardPro
             <ChevronDown className="size-3" />
           </Button>
           <DropdownMenuContent align="start" sideOffset={4}>
-            <DropdownMenuLabel>Change status</DropdownMenuLabel>
-            {STATUS_ORDER.map((s) => {
-              const cfg = STATUS_CONFIG[s];
-              return (
-                <DropdownMenuItem
-                  key={s}
-                  disabled={s === item.status}
-                  onSelect={() => {
-                    onStatusChange(item.id, s);
-                    setMenuOpen(false);
-                  }}
-                >
-                  <span className={cn("size-2 rounded-full", cfg.className.split(" ")[1])} />
-                  {cfg.label}
-                </DropdownMenuItem>
-              );
-            })}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Change status</DropdownMenuLabel>
+              {STATUS_ORDER.map((s) => {
+                const cfg = STATUS_CONFIG[s];
+                return (
+                  <DropdownMenuItem
+                    key={s}
+                    disabled={s === item.status}
+                    onSelect={() => {
+                      onStatusChange(item.id, s);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    <span className={cn("size-2 rounded-full", cfg.className.split(" ")[1])} />
+                    {cfg.label}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
 
