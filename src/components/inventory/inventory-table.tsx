@@ -256,7 +256,7 @@ export function InventoryTable({
                     onSave={(val) => onInlineEdit(item.id, "costPrice", val)}
                     type="number"
                     prefix={"\u00A3"}
-                    placeholder="\u2014"
+                    placeholder={"\u2014"}
                     className="text-zinc-400"
                   />
                 </td>
@@ -277,7 +277,7 @@ export function InventoryTable({
                     onSave={(val) => onInlineEdit(item.id, "soldPrice", val)}
                     type="number"
                     prefix={"\u00A3"}
-                    placeholder="\u2014"
+                    placeholder={"\u2014"}
                     className="text-emerald-400"
                   />
                 </td>
