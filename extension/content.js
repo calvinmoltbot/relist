@@ -635,7 +635,7 @@
       const { apiBase } = await new Promise((resolve) =>
         chrome.storage.sync.get(["apiBase"], resolve),
       );
-      const base = apiBase || "http://100.90.11.37:3002";
+      const base = apiBase || "https://relist.warmwetcircles.com";
 
       await fetch(`${base}/api/watch-items/${watchItemId}`, {
         method: "PATCH",

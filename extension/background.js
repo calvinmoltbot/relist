@@ -4,7 +4,7 @@
 // Caches price stats for content script overlay.
 // ---------------------------------------------------------------------------
 
-const API_BASE = "http://100.90.11.37:3002";
+const API_BASE = "https://relist.warmwetcircles.com";
 let cachedStats = {};
 let todayCount = 0;
 let lastStatsRefresh = 0;
