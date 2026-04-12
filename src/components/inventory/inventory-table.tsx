@@ -151,7 +151,7 @@ export function InventoryTable({
   );
 
   return (
-    <div className="rounded-xl bg-zinc-900 ring-1 ring-white/[0.06]">
+    <div className="flex-1 min-h-0 overflow-y-auto rounded-xl bg-zinc-900 ring-1 ring-white/[0.06]">
       <table className="w-full text-left text-xs">
         <thead>
           <tr className="text-[11px] font-medium uppercase tracking-wider text-zinc-300">
