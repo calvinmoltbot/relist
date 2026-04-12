@@ -88,23 +88,23 @@ const COLUMNS = [
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export function PlanMyDay() {
-  const [tasks, setTasks] = useState<DailyTask[]>([]);
+export function PlanMyDay({ initialTasks }: { initialTasks?: DailyTask[] } = {}) {
+  const hasInitial = initialTasks !== undefined;
+  const [tasks, setTasks] = useState<DailyTask[]>(initialTasks ?? []);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!hasInitial);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const dismissed = getDismissedToday();
-    setDismissedIds(new Set(dismissed));
-
+    setDismissedIds(new Set(getDismissedToday()));
+    if (hasInitial) return;
     fetch("/api/daily-plan")
       .then((r) => r.json())
       .then((data) => setTasks(data.tasks ?? []))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [hasInitial]);
 
   const activeTasks = tasks.filter(
     (t) => !dismissedIds.has(t.id) && !completedIds.has(t.id),

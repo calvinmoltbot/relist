@@ -32,14 +32,6 @@ const FIELDS = [
     description: "Hours you spend on reselling per week",
   },
   {
-    key: "target_hourly_rate" as const,
-    label: "Target Hourly Rate",
-    icon: TrendingUp,
-    prefix: "£",
-    suffix: "/hour",
-    description: "Your target hourly earnings rate",
-  },
-  {
     key: "margin_target_pct" as const,
     label: "Margin Target",
     icon: Percent,
@@ -48,6 +40,17 @@ const FIELDS = [
     description: "Your target profit margin percentage",
   },
 ];
+
+const WEEKS_PER_MONTH = 52 / 12;
+
+function computeHourlyRate(s: Settings): number {
+  const revenue = Number(s.monthly_revenue_target);
+  const hours = Number(s.weekly_hours);
+  const margin = Number(s.margin_target_pct);
+  const monthlyHours = hours * WEEKS_PER_MONTH;
+  if (!revenue || !monthlyHours || !margin) return 0;
+  return (revenue * (margin / 100)) / monthlyHours;
+}
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -65,10 +68,14 @@ export default function SettingsPage() {
     setSaving(true);
     setSaved(false);
     try {
+      const payload = {
+        ...settings,
+        target_hourly_rate: computeHourlyRate(settings).toFixed(2),
+      };
       const res = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       setSettings(data.settings);
@@ -142,6 +149,24 @@ export default function SettingsPage() {
                   </div>
                 );
               })}
+
+              <div className="rounded-md border border-zinc-800 bg-zinc-900/70 p-4">
+                <div className="flex items-center gap-2 text-sm text-zinc-300">
+                  <TrendingUp className="size-3.5 text-zinc-300" />
+                  Target Hourly Rate
+                </div>
+                <div className="mt-1 text-2xl font-semibold text-zinc-100">
+                  £{computeHourlyRate(settings).toFixed(2)}
+                  <span className="ml-1 text-sm font-normal text-zinc-400">
+                    /hour
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-zinc-400">
+                  Calculated from revenue × margin ÷ monthly hours (
+                  {(Number(settings.weekly_hours) * WEEKS_PER_MONTH).toFixed(1)}{" "}
+                  hrs/month).
+                </p>
+              </div>
 
               <div className="pt-3">
                 <Button onClick={handleSave} disabled={saving}>

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { items } from "@/db/schema";
-import { eq, sql, and, gte, lt, isNull, or } from "drizzle-orm";
+import { eq, sql, and, gte, lt, or } from "drizzle-orm";
 import { getTargets } from "@/lib/settings";
+import { buildDailyPlan } from "@/lib/daily-plan";
 
 // ---------------------------------------------------------------------------
 // GET /api/dashboard — Morning dashboard data
@@ -26,6 +27,8 @@ export async function GET() {
     monthSoldRows,
     weekSoldRows,
     recentActivityRows,
+    targets,
+    dailyPlan,
   ] = await Promise.all([
     // Count by status
     db.select({
@@ -94,6 +97,9 @@ export async function GET() {
     }).from(items)
       .orderBy(sql`${items.updatedAt} DESC NULLS LAST`)
       .limit(5),
+
+    getTargets(),
+    buildDailyPlan(),
   ]);
 
   // Parse status counts
@@ -119,7 +125,6 @@ export async function GET() {
   );
 
   // Revenue targets
-  const targets = await getTargets();
   const MONTHLY_TARGET = targets.monthlyRevenueTarget;
   const WEEKLY_HOURS = targets.weeklyHours;
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -184,6 +189,7 @@ export async function GET() {
       status: i.status,
       updatedAt: i.updatedAt?.toISOString() ?? null,
     })),
+    dailyPlan,
   });
 }
 

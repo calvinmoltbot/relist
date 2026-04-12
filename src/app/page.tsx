@@ -47,6 +47,21 @@ interface DashboardData {
     staleListings: { id: string; name: string; brand: string | null; listedPrice: string | null; daysListed: number }[];
   };
   recentActivity: { id: string; name: string; status: string; updatedAt: string | null }[];
+  dailyPlan: {
+    tasks: {
+      id: string;
+      type: "ship" | "update" | "reprice" | "photo";
+      priority: number;
+      title: string;
+      subtitle: string;
+      itemId: string;
+      itemName: string;
+      action: string;
+      estimatedMinutes: number;
+      icon: "package" | "edit" | "tag" | "camera";
+    }[];
+    totalEstimatedMinutes: number;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -97,7 +112,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Row 2: Kanban board — the main action area, at the top */}
-      <PlanMyDay />
+      <PlanMyDay initialTasks={data.dailyPlan.tasks} />
 
       {/* Row 3: Stats + Revenue target — side by side */}
       <div className="grid gap-3 md:grid-cols-2">
