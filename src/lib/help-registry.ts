@@ -71,7 +71,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     id: "inventory-overview",
     title: "Inventory Management",
     description:
-      "Track every item from sourcing to shipping. Add items manually, import from Excel/CSV, or paste JSON from the Vinted scraper. Each item tracks cost, listing price, sale price, and status.",
+      "Track every item from sourcing to shipping. Add items manually, import from Excel/CSV, or send items in from the ReList Chrome extension while browsing Vinted. Each item tracks cost, listing price, sale price, and status.",
     category: "feature",
     group: "Inventory",
     context: "/inventory",
@@ -90,15 +90,6 @@ export const HELP_ENTRIES: HelpEntry[] = [
     title: "Import from Excel/CSV",
     description:
       "Click the Import button and upload an .xlsx, .xls, or .csv file. The importer maps columns automatically. Great for bulk-adding items from a spreadsheet.",
-    category: "feature",
-    group: "Inventory",
-    context: "/inventory",
-  },
-  {
-    id: "inventory-import-json",
-    title: "Import from Vinted Scraper",
-    description:
-      "Use the JSON Paste tab in the Import dialog. Run the Vinted scraper in your browser console, copy the output, and paste it here to import your sold items history.",
     category: "feature",
     group: "Inventory",
     context: "/inventory",
@@ -362,24 +353,6 @@ export const HELP_ENTRIES: HelpEntry[] = [
     category: "feature",
     group: "Chrome Extension",
   },
-
-  // ── Vinted Scraper ───────────────────────────────────────────
-  {
-    id: "scraper-overview",
-    title: "Vinted Sold Items Scraper",
-    description:
-      "A browser console script that extracts your sold items history from Vinted. Run it in your browser's developer console while on Vinted, then import the output into ReList.",
-    category: "feature",
-    group: "Vinted Scraper",
-  },
-  {
-    id: "scraper-howto",
-    title: "Running the Scraper",
-    description:
-      "Open Vinted in Chrome → press F12 → go to Console tab → paste the scraper script → press Enter. Copy the JSON output, then use Import → JSON Paste in ReList's Inventory page.",
-    category: "tip",
-    group: "Vinted Scraper",
-  },
 ];
 
 export const GROUP_ORDER = [
@@ -391,7 +364,6 @@ export const GROUP_ORDER = [
   "Settings",
   "Deal Finder",
   "Chrome Extension",
-  "Vinted Scraper",
 ];
 
 export function slugify(name: string): string {
