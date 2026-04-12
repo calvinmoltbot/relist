@@ -33,10 +33,11 @@ interface InventoryHealthProps {
 }
 
 const BUCKET_LABELS: Record<string, { label: string; color: string; bgColor: string }> = {
-  "0-30": { label: "0–30 days", color: "bg-emerald-500", bgColor: "text-emerald-400" },
-  "31-60": { label: "31–60 days", color: "bg-amber-500", bgColor: "text-amber-400" },
-  "61-90": { label: "61–90 days", color: "bg-orange-500", bgColor: "text-orange-400" },
-  "90+": { label: "90+ days", color: "bg-red-500", bgColor: "text-red-400" },
+  "0-7": { label: "< 1 week", color: "bg-emerald-500", bgColor: "text-emerald-400" },
+  "8-14": { label: "1–2 weeks", color: "bg-lime-500", bgColor: "text-lime-400" },
+  "15-21": { label: "2–3 weeks", color: "bg-amber-500", bgColor: "text-amber-400" },
+  "22-28": { label: "3–4 weeks", color: "bg-orange-500", bgColor: "text-orange-400" },
+  "28+": { label: "4+ weeks", color: "bg-red-500", bgColor: "text-red-400" },
 };
 
 export function InventoryHealth({ data, sellThroughRate, avgDaysToSell }: InventoryHealthProps) {
@@ -64,10 +65,11 @@ export function InventoryHealth({ data, sellThroughRate, avgDaysToSell }: Invent
           icon={Clock}
         />
         <MiniStat
-          label="Stock at Risk"
+          label="Stale (4+ wk)"
           value={`£${data.stockAtRisk.toFixed(0)}`}
           icon={AlertTriangle}
           accent={data.stockAtRisk > 0 ? "red" : "emerald"}
+          title="Total listed value of items unsold for 4 weeks or more — these are the best candidates for reprice or relist."
         />
       </div>
 
@@ -106,7 +108,7 @@ export function InventoryHealth({ data, sellThroughRate, avgDaysToSell }: Invent
               </div>
 
               {/* Legend + details */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                 {Object.entries(data.agingBuckets).map(([bucket, count]) => {
                   const meta = BUCKET_LABELS[bucket];
                   const value = data.agingValues[bucket] ?? 0;
@@ -140,7 +142,7 @@ export function InventoryHealth({ data, sellThroughRate, avgDaysToSell }: Invent
               </Badge>
             </div>
             <CardDescription>
-              Items listed for 60+ days — consider repricing or delisting
+              Items listed for 3+ weeks — consider repricing or relisting
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -164,7 +166,7 @@ export function InventoryHealth({ data, sellThroughRate, avgDaysToSell }: Invent
                       variant="secondary"
                       className={cn(
                         "text-[10px] px-1.5 py-0",
-                        item.daysListed >= 90
+                        item.daysListed >= 28
                           ? "bg-red-500/10 text-red-400"
                           : "bg-orange-500/10 text-orange-400"
                       )}
@@ -195,11 +197,13 @@ function MiniStat({
   value,
   icon: Icon,
   accent = "zinc",
+  title,
 }: {
   label: string;
   value: string;
   icon: React.ComponentType<{ className?: string }>;
   accent?: "emerald" | "amber" | "red" | "zinc";
+  title?: string;
 }) {
   const accentColors = {
     emerald: "text-emerald-400",
@@ -209,7 +213,10 @@ function MiniStat({
   };
 
   return (
-    <div className="rounded-xl bg-zinc-900 px-3 py-2.5 sm:px-4 sm:py-3 ring-1 ring-white/[0.06]">
+    <div
+      title={title}
+      className="rounded-xl bg-zinc-900 px-3 py-2.5 sm:px-4 sm:py-3 ring-1 ring-white/[0.06]"
+    >
       <div className="flex items-center gap-1.5">
         <Icon className="size-3 text-zinc-300" />
         <p className="text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-zinc-300">
