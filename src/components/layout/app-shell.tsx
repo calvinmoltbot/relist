@@ -53,7 +53,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Main content area */}
       <div className="flex flex-1 flex-col md:pl-64 h-screen overflow-hidden">
         <Header onMenuToggle={toggleMobile} />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6">{children}</main>
       </div>
     </div>
   );
