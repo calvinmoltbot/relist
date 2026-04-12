@@ -9,6 +9,7 @@ import {
   X,
   Receipt,
   AlertTriangle,
+  Coins,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +36,7 @@ interface BulkActionBarProps {
   ) => Promise<void>;
   onSetDate: (field: "soldAt" | "shippedAt", date: string) => Promise<void>;
   onSetPrice: (price: string) => Promise<void>;
+  onSetCost: (cost: string) => Promise<void>;
   onSetFees: (fees: {
     shippingCost?: string;
     platformFees?: string;
@@ -59,6 +61,7 @@ export function BulkActionBar({
   onSetStatus,
   onSetDate,
   onSetPrice,
+  onSetCost,
   onSetFees,
   onDelete,
   onClearSelection,
@@ -66,6 +69,7 @@ export function BulkActionBar({
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [dateDialogOpen, setDateDialogOpen] = useState(false);
   const [priceDialogOpen, setPriceDialogOpen] = useState(false);
+  const [costDialogOpen, setCostDialogOpen] = useState(false);
   const [feesDialogOpen, setFeesDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -86,6 +90,9 @@ export function BulkActionBar({
 
   // Set price state
   const [priceValue, setPriceValue] = useState("");
+
+  // Set cost state
+  const [costValue, setCostValue] = useState("");
 
   // Set fees state
   const [shippingCost, setShippingCost] = useState("");
@@ -199,7 +206,18 @@ export function BulkActionBar({
             disabled={!hasSelection || loading}
           >
             <Tag className="size-3.5" />
-            Set Price
+            Set Listed
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-1.5 ${hasSelection ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-600 cursor-default"}`}
+            onClick={() => setCostDialogOpen(true)}
+            disabled={!hasSelection || loading}
+          >
+            <Coins className="size-3.5" />
+            Set Cost
           </Button>
 
           <Button
@@ -420,6 +438,46 @@ export function BulkActionBar({
               }
             >
               {loading ? "Updating..." : "Set Price"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ---------- Set Cost Dialog ---------- */}
+      <Dialog open={costDialogOpen} onOpenChange={setCostDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Set Cost Price</DialogTitle>
+            <DialogDescription>
+              Update the cost (what you paid) for {selectedCount} item
+              {selectedCount > 1 ? "s" : ""}. Profit will be recalculated.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="bulk-cost-value">Cost ({"\u00A3"})</Label>
+            <Input
+              id="bulk-cost-value"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="e.g. 4.00 (use 0 for free / gifted)"
+              value={costValue}
+              onChange={(e) => setCostValue(e.target.value)}
+              className="max-w-[220px] bg-zinc-900"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              disabled={costValue === "" || loading}
+              onClick={() =>
+                withLoading(async () => {
+                  await onSetCost(costValue);
+                  setCostDialogOpen(false);
+                  setCostValue("");
+                })
+              }
+            >
+              {loading ? "Updating..." : "Set Cost"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -190,6 +190,23 @@ export default function InventoryPage() {
     [selectedIds, fetchItems],
   );
 
+  const handleBulkSetCost = useCallback(
+    async (cost: string) => {
+      const ids = Array.from(selectedIds);
+      await fetch("/api/inventory/bulk", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids,
+          updates: { costPrice: cost },
+        }),
+      });
+      setSelectedIds(new Set());
+      fetchItems();
+    },
+    [selectedIds, fetchItems],
+  );
+
   const handleBulkSetFees = useCallback(
     async (fees: { shippingCost?: string; platformFees?: string }) => {
       const ids = Array.from(selectedIds);
@@ -309,6 +326,7 @@ export default function InventoryPage() {
           onSetStatus={handleBulkSetStatus}
           onSetDate={handleBulkSetDate}
           onSetPrice={handleBulkSetPrice}
+          onSetCost={handleBulkSetCost}
           onSetFees={handleBulkSetFees}
           onDelete={handleBulkDelete}
           onClearSelection={() => setSelectedIds(new Set())}
