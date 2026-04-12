@@ -86,15 +86,6 @@ export const HELP_ENTRIES: HelpEntry[] = [
     context: "/inventory",
   },
   {
-    id: "inventory-import-xlsx",
-    title: "Import from Excel/CSV",
-    description:
-      "Click the Import button and upload an .xlsx, .xls, or .csv file. The importer maps columns automatically. Great for bulk-adding items from a spreadsheet.",
-    category: "feature",
-    group: "Inventory",
-    context: "/inventory",
-  },
-  {
     id: "inventory-status",
     title: "Item Statuses",
     description:

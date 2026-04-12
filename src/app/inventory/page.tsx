@@ -9,7 +9,6 @@ import { ItemCard } from "@/components/inventory/item-card";
 import { ItemFilters } from "@/components/inventory/item-filters";
 import { AddItemDialog } from "@/components/inventory/add-item-dialog";
 import { EditItemDialog } from "@/components/inventory/edit-item-dialog";
-import { ImportButton } from "@/components/inventory/import-button";
 import { InventoryTable } from "@/components/inventory/inventory-table";
 import { BulkActionBar } from "@/components/inventory/bulk-action-bar";
 
@@ -284,7 +283,6 @@ export default function InventoryPage() {
             </button>
           </div>
 
-          <ImportButton onImported={fetchItems} />
           <AddItemDialog onAdd={addItem} />
         </div>
       </div>

@@ -108,7 +108,6 @@ const FEATURED_IDS = [
   "inventory-overview",
   "describe-overview",
   "dashboard-overview",
-  "inventory-import-xlsx",
   "extension-overview",
 ];
 
