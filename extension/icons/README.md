@@ -1,8 +1,5 @@
 # Extension Icons
 
-Placeholder — replace with actual ReList icons before publishing.
+Emerald rounded tile with white "R" monogram, matching the in-app sidebar logo. Generated via PIL.
 
-Required sizes:
-- icon16.png (16x16)
-- icon48.png (48x48)
-- icon128.png (128x128)
+Sizes: icon16.png (16×16), icon48.png (48×48), icon128.png (128×128).
