@@ -223,6 +223,9 @@ export default function DashboardPage() {
             })}
           </KanbanColumn>
         </div>
+
+        {/* Markup calculator — sits under the kanban so it's visible without scrolling */}
+        <MarkupCalculator />
       </section>
 
       {/* ============================================================== */}
@@ -264,9 +267,6 @@ export default function DashboardPage() {
           itemsSoldThisWeek={data.week.itemsSold}
           daily={data.week.daily}
         />
-
-        {/* Markup calculator */}
-        <MarkupCalculator />
 
         {/* CTA */}
         <Link

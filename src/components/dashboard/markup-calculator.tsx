@@ -15,7 +15,7 @@ export function MarkupCalculator() {
   const profit = valid ? listPrice - costNum : 0;
 
   return (
-    <div className="rounded-2xl border border-white/[0.05] bg-zinc-950/40 p-4">
+    <div className="rounded-2xl border border-white/[0.06] bg-zinc-900/60 p-4 shadow-xl">
       <div className="mb-3 flex items-center gap-2">
         <Calculator className="size-3.5 text-zinc-400" />
         <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-300">
@@ -23,7 +23,8 @@ export function MarkupCalculator() {
         </h4>
       </div>
 
-      <div className="space-y-3">
+      <div className="grid gap-4 md:grid-cols-[minmax(0,160px)_minmax(0,1fr)_minmax(0,180px)] md:items-end">
+        {/* Cost price */}
         <label className="block">
           <span className="mb-1 block text-[10px] uppercase tracking-wider text-zinc-400">
             Cost price
@@ -39,12 +40,13 @@ export function MarkupCalculator() {
               step="0.01"
               value={cost}
               onChange={(e) => setCost(e.target.value)}
-              className="w-full rounded-lg border border-white/[0.08] bg-zinc-900 py-2 pl-7 pr-3 text-sm text-zinc-100 tabular-nums focus:border-emerald-500/50 focus:outline-none"
+              className="w-full rounded-lg border border-white/[0.08] bg-zinc-950/60 py-2 pl-7 pr-3 text-sm text-zinc-100 tabular-nums focus:border-emerald-500/50 focus:outline-none"
             />
           </div>
         </label>
 
-        <label className="block">
+        {/* Markup */}
+        <div>
           <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-wider text-zinc-400">
             <span>Markup</span>
             <span className="font-semibold tabular-nums text-zinc-200">
@@ -76,14 +78,15 @@ export function MarkupCalculator() {
               </button>
             ))}
           </div>
-        </label>
+        </div>
 
+        {/* Result */}
         <div className="flex items-end justify-between rounded-lg bg-emerald-500/10 px-3 py-2.5 ring-1 ring-emerald-500/20">
           <div>
             <p className="text-[10px] uppercase tracking-wider text-emerald-300/70">
               List at
             </p>
-            <p className="text-xl font-black tabular-nums text-emerald-300">
+            <p className="text-2xl font-black tabular-nums leading-tight text-emerald-300">
               £{listPrice.toFixed(2)}
             </p>
           </div>
