@@ -153,9 +153,9 @@ export function InventoryTable({
   return (
     <div className="rounded-xl bg-zinc-900 ring-1 ring-white/[0.06]">
       <table className="w-full text-left text-xs">
-        <thead className="sticky top-0 z-10">
-          <tr className="text-[11px] font-medium uppercase tracking-wider text-zinc-300 [&>th]:sticky [&>th]:top-0 [&>th]:bg-zinc-900 [&>th]:border-b [&>th]:border-white/[0.06] [&>th]:shadow-[0_1px_0_0_rgba(255,255,255,0.04)]">
-            <th className="w-10 px-3 py-2.5">
+        <thead>
+          <tr className="text-[11px] font-medium uppercase tracking-wider text-zinc-300">
+            <th className="sticky top-0 z-10 w-10 border-b border-white/[0.06] bg-zinc-900 px-3 py-2.5">
               <input
                 type="checkbox"
                 checked={allSelected}
@@ -166,13 +166,13 @@ export function InventoryTable({
                 className="size-3.5 rounded border-zinc-600 bg-zinc-800 accent-blue-500 cursor-pointer"
               />
             </th>
-            <th className="min-w-[200px] px-3 py-2.5">Item</th>
-            <th className="w-24 px-3 py-2.5">Status</th>
-            <th className="w-24 px-3 py-2.5">Cost</th>
-            <th className="w-24 px-3 py-2.5">Listed</th>
-            <th className="w-24 px-3 py-2.5">Sold</th>
-            <th className="w-28 px-3 py-2.5">Sold Date</th>
-            <th className="w-24 px-3 py-2.5">Profit</th>
+            <th className="sticky top-0 z-10 min-w-[200px] border-b border-white/[0.06] bg-zinc-900 px-3 py-2.5">Item</th>
+            <th className="sticky top-0 z-10 w-24 border-b border-white/[0.06] bg-zinc-900 px-3 py-2.5">Status</th>
+            <th className="sticky top-0 z-10 w-24 border-b border-white/[0.06] bg-zinc-900 px-3 py-2.5">Cost</th>
+            <th className="sticky top-0 z-10 w-24 border-b border-white/[0.06] bg-zinc-900 px-3 py-2.5">Listed</th>
+            <th className="sticky top-0 z-10 w-24 border-b border-white/[0.06] bg-zinc-900 px-3 py-2.5">Sold</th>
+            <th className="sticky top-0 z-10 w-28 border-b border-white/[0.06] bg-zinc-900 px-3 py-2.5">Sold Date</th>
+            <th className="sticky top-0 z-10 w-24 border-b border-white/[0.06] bg-zinc-900 px-3 py-2.5">Profit</th>
           </tr>
         </thead>
         <tbody>
