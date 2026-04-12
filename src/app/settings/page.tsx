@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Target, Clock, TrendingUp, Percent, Save, Check } from "lucide-react";
+import { Target, Clock, TrendingUp, Percent, Save, Check, Package, Truck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,8 @@ interface Settings {
   weekly_hours: string;
   target_hourly_rate: string;
   margin_target_pct: string;
+  active_listings_target: string;
+  urgent_ship_days: string;
 }
 
 const FIELDS = [
@@ -38,6 +40,22 @@ const FIELDS = [
     prefix: "",
     suffix: "%",
     description: "Your target profit margin percentage",
+  },
+  {
+    key: "active_listings_target" as const,
+    label: "Active Listings Target",
+    icon: Package,
+    prefix: "",
+    suffix: "items",
+    description: "How many items you aim to keep listed at once",
+  },
+  {
+    key: "urgent_ship_days" as const,
+    label: "Urgent Ship Threshold",
+    icon: Truck,
+    prefix: "",
+    suffix: "days",
+    description: "Flag sold-but-not-shipped items as urgent after this many days",
   },
 ];
 

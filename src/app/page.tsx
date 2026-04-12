@@ -58,6 +58,8 @@ interface DashboardData {
   };
   hourlyRate: number;
   targetHourlyRate: number;
+  activeListingsTarget: number;
+  urgentShipDays: number;
   actions: {
     needsListing: { id: string; name: string; brand: string | null; daysWaiting: number }[];
     needsShipping: {
@@ -117,8 +119,11 @@ export default function DashboardPage() {
   );
   const reviewTasks = data.dailyPlan.tasks.filter((t) => t.type === "reprice");
 
-  // Urgent = ship tasks where daysSinceSold >= 2 (rough proxy)
-  const urgentCount = data.actions.needsShipping.filter((i) => i.daysSinceSold >= 2).length;
+  // Urgent = sold items waiting to ship for longer than the configured threshold
+  const urgentThreshold = data.urgentShipDays;
+  const urgentCount = data.actions.needsShipping.filter(
+    (i) => i.daysSinceSold >= urgentThreshold,
+  ).length;
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -166,7 +171,7 @@ export default function DashboardPage() {
           >
             {shipTasks.map((t) => {
               const ship = data.actions.needsShipping.find((s) => s.id === t.itemId);
-              const urgent = ship ? ship.daysSinceSold >= 2 : false;
+              const urgent = ship ? ship.daysSinceSold >= urgentThreshold : false;
               return (
                 <ShipCard
                   key={t.id}
@@ -240,10 +245,10 @@ export default function DashboardPage() {
           daily={data.week.daily}
         />
 
-        {/* Weekly listings progress */}
+        {/* Active listings progress */}
         <WeeklyListingsCard
           listed={data.stats.listed}
-          target={Math.max(15, data.stats.listed + 3)}
+          target={data.activeListingsTarget}
         />
 
         {/* Monthly Revenue */}

@@ -196,6 +196,8 @@ export async function GET() {
     },
     hourlyRate: round(hourlyRate),
     targetHourlyRate: targets.targetHourlyRate,
+    activeListingsTarget: targets.activeListingsTarget,
+    urgentShipDays: targets.urgentShipDays,
     actions: {
       needsListing: needsListingRows.map((i) => ({
         id: i.id,

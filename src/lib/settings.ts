@@ -6,6 +6,8 @@ export interface Targets {
   weeklyHours: number;
   targetHourlyRate: number;
   marginTargetPct: number;
+  activeListingsTarget: number;
+  urgentShipDays: number;
 }
 
 const DEFAULTS: Record<string, string> = {
@@ -13,6 +15,8 @@ const DEFAULTS: Record<string, string> = {
   weekly_hours: "25",
   target_hourly_rate: "18",
   margin_target_pct: "65",
+  active_listings_target: "30",
+  urgent_ship_days: "2",
 };
 
 export async function getSettings(): Promise<Record<string, string>> {
@@ -31,5 +35,7 @@ export async function getTargets(): Promise<Targets> {
     weeklyHours: Number(s.weekly_hours),
     targetHourlyRate: Number(s.target_hourly_rate),
     marginTargetPct: Number(s.margin_target_pct),
+    activeListingsTarget: Number(s.active_listings_target),
+    urgentShipDays: Number(s.urgent_ship_days),
   };
 }
