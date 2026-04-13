@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Target, Clock, TrendingUp, Percent, Save, Check, Package, Truck } from "lucide-react";
+import { Target, Clock, TrendingUp, Percent, Save, Check, Package, Truck, Download, Shield } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 interface Settings {
   monthly_revenue_target: string;
@@ -203,6 +203,35 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6 border-zinc-800 bg-zinc-900/50">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Shield className="size-4 text-emerald-400" />
+            <CardTitle className="text-base text-zinc-100">Backup Your Data</CardTitle>
+          </div>
+          <CardDescription>
+            Download a single file with everything — items, sales, expenses,
+            watch list, settings. Save it somewhere safe (email it to yourself,
+            drop it in Google Drive). If anything goes wrong we can restore
+            from it.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <a
+            href="/api/backup"
+            download
+            className={buttonVariants({ variant: "outline" })}
+          >
+            <Download className="mr-2 size-4" />
+            Download backup
+          </a>
+          <p className="mt-3 text-xs text-zinc-400">
+            Tip: do this every week or two, and any time before you bulk-delete
+            or make big changes.
+          </p>
         </CardContent>
       </Card>
     </div>

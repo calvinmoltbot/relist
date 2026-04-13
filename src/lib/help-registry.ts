@@ -290,6 +290,15 @@ export const HELP_ENTRIES: HelpEntry[] = [
     group: "Settings",
     context: "/settings",
   },
+  {
+    id: "settings-backup",
+    title: "Backup Your Data",
+    description:
+      "On the Settings page, tap 'Download backup' to save everything — your items, sales, expenses, watch list, and settings — as one JSON file. Keep it somewhere safe like Google Drive or your email. If anything ever goes wrong or you delete something by accident, the backup can be used to restore your data. Try to do this every week or two.",
+    category: "tip",
+    group: "Settings",
+    context: "/settings",
+  },
 
   // ── Deal Finder ──────────────────────────────────────────────
   {
