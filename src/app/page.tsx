@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MarkupCalculator } from "@/components/dashboard/markup-calculator";
+import { BackupNudge } from "@/components/dashboard/backup-nudge";
 
 // ---------------------------------------------------------------------------
 // Types (matches /api/dashboard)
@@ -61,6 +62,7 @@ interface DashboardData {
   targetHourlyRate: number;
   activeListingsTarget: number;
   urgentShipDays: number;
+  lastBackupAt: string | null;
   actions: {
     needsListing: { id: string; name: string; brand: string | null; daysWaiting: number }[];
     needsShipping: {
@@ -127,7 +129,9 @@ export default function DashboardPage() {
   ).length;
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+    <div className="flex flex-col gap-6">
+      <BackupNudge lastBackupAt={data.lastBackupAt} />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
       {/* ============================================================== */}
       {/* LEFT: Today's Flow */}
       {/* ============================================================== */}
@@ -277,6 +281,7 @@ export default function DashboardPage() {
           <TrendingUp className="size-4" />
         </Link>
       </aside>
+      </div>
     </div>
   );
 }

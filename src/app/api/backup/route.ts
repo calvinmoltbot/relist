@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { sql } from "drizzle-orm";
 import {
   items,
   transactions,
@@ -62,7 +63,17 @@ export async function GET() {
     },
   };
 
-  const filename = `relist-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  // Record the download time so the Dashboard can nudge when it gets stale.
+  const now = new Date().toISOString();
+  await db
+    .insert(userSettings)
+    .values({ key: "last_backup_at", value: now })
+    .onConflictDoUpdate({
+      target: userSettings.key,
+      set: { value: now, updatedAt: sql`now()` },
+    });
+
+  const filename = `relist-backup-${now.slice(0, 10)}.json`;
 
   return new NextResponse(JSON.stringify(backup, null, 2), {
     status: 200,

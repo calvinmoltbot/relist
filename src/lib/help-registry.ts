@@ -294,7 +294,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     id: "settings-backup",
     title: "Backup Your Data",
     description:
-      "On the Settings page, tap 'Download backup' to save everything — your items, sales, expenses, watch list, and settings — as one JSON file. Keep it somewhere safe like Google Drive or your email. If anything ever goes wrong or you delete something by accident, the backup can be used to restore your data. Try to do this every week or two.",
+      "On the Settings page, tap 'Download backup' to save everything — your items, sales, expenses, watch list, and settings — as one JSON file. Keep it somewhere safe like Google Drive or your email. If anything ever goes wrong or you delete something by accident, the backup can be used to restore your data. The Dashboard nudges you with an amber banner if it's been more than 2 weeks since your last backup.",
     category: "tip",
     group: "Settings",
     context: "/settings",

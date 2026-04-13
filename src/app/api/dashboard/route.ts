@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { items } from "@/db/schema";
+import { items, userSettings } from "@/db/schema";
 import { eq, sql, and, gte, lt, or } from "drizzle-orm";
 import { getTargets } from "@/lib/settings";
 import { buildDailyPlan } from "@/lib/daily-plan";
@@ -198,6 +198,14 @@ export async function GET() {
     targetHourlyRate: targets.targetHourlyRate,
     activeListingsTarget: targets.activeListingsTarget,
     urgentShipDays: targets.urgentShipDays,
+    lastBackupAt: await (async () => {
+      const [row] = await db
+        .select({ value: userSettings.value })
+        .from(userSettings)
+        .where(eq(userSettings.key, "last_backup_at"))
+        .limit(1);
+      return row?.value ?? null;
+    })(),
     actions: {
       needsListing: needsListingRows.map((i) => ({
         id: i.id,
