@@ -53,7 +53,26 @@ export async function GET(request: NextRequest) {
     .where(where)
     .orderBy(orderBy);
 
-  return NextResponse.json({ items: result });
+  // List views only need the cover photo, not every photo. photoUrls can
+  // contain base64 data URIs (~200-400 KB each) so returning the full array
+  // blows up response size to tens of MB. Keep only the first entry here;
+  // full photos are available from the item detail endpoint.
+  const trimmed = result.map((item) => ({
+    ...item,
+    photoUrls: item.photoUrls && item.photoUrls.length > 0
+      ? [item.photoUrls[0]]
+      : item.photoUrls,
+    photoCount: item.photoUrls?.length ?? 0,
+  }));
+
+  return NextResponse.json(
+    { items: trimmed },
+    {
+      headers: {
+        "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
+      },
+    },
+  );
 }
 
 // ---------------------------------------------------------------------------

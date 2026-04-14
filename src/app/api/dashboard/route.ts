@@ -163,7 +163,8 @@ export async function GET() {
   const hoursThisMonth = (dayOfMonth / 7) * WEEKLY_HOURS;
   const hourlyRate = hoursThisMonth > 0 ? monthProfit / hoursThisMonth : 0;
 
-  return NextResponse.json({
+  return NextResponse.json(
+    {
     greeting: getGreeting(),
     stats: {
       totalItems,
@@ -235,7 +236,14 @@ export async function GET() {
       updatedAt: i.updatedAt?.toISOString() ?? null,
     })),
     dailyPlan,
-  });
+    },
+    {
+      headers: {
+        // Short private cache so rapid dashboard refreshes don't re-hit origin
+        "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
+      },
+    },
+  );
 }
 
 function daysSince(date: Date | null | undefined): number {
