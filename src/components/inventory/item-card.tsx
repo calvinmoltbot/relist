@@ -63,10 +63,10 @@ export function ItemCard({ item, onStatusChange, onEdit, onDelete }: ItemCardPro
     <div className="group relative flex flex-col overflow-hidden rounded-xl bg-zinc-900 ring-1 ring-white/[0.06] transition-all hover:ring-white/[0.12]">
       {/* Photo area */}
       <div className="relative flex h-40 items-center justify-center bg-zinc-800/50 overflow-hidden">
-        {item.photoUrls && item.photoUrls.length > 0 ? (
+        {item.thumbnailUrl || (item.photoUrls && item.photoUrls.length > 0) ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src={item.photoUrls[0]}
+            src={item.thumbnailUrl ?? item.photoUrls![0]}
             alt={item.name}
             className="h-full w-full object-cover"
           />

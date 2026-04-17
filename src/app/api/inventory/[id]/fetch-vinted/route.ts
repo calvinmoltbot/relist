@@ -2,13 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { items } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import sharp from "sharp";
+import { resizePhotoBuffer } from "@/lib/photos";
 
-// ---------------------------------------------------------------------------
-// Download and resize a photo from an external URL
-// Returns a data URI (base64-encoded JPEG)
-// ---------------------------------------------------------------------------
-async function downloadAndResizePhoto(url: string): Promise<string | null> {
+async function downloadVintedPhoto(
+  url: string,
+): Promise<{ full: string; thumb: string } | null> {
   try {
     const response = await fetch(url, {
       headers: {
@@ -18,19 +16,9 @@ async function downloadAndResizePhoto(url: string): Promise<string | null> {
         Referer: "https://www.vinted.co.uk/",
       },
     });
-
     if (!response.ok) return null;
-
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const resized = await sharp(buffer)
-      .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality: 70 })
-      .toBuffer();
-
-    const base64 = resized.toString("base64");
-    return `data:image/jpeg;base64,${base64}`;
+    const buffer = Buffer.from(await response.arrayBuffer());
+    return await resizePhotoBuffer(buffer);
   } catch (error) {
     console.error("[ReList] Failed to download photo:", url, error);
     return null;
@@ -175,13 +163,13 @@ export async function POST(
 
     // Download and resize photos
     const downloadResults = await Promise.all(
-      photoUrls.slice(0, 10).map((u) => downloadAndResizePhoto(u)),
+      photoUrls.slice(0, 10).map((u) => downloadVintedPhoto(u)),
     );
-    const successfulPhotos = downloadResults.filter(
-      (r): r is string => r !== null,
+    const successful = downloadResults.filter(
+      (r): r is { full: string; thumb: string } => r !== null,
     );
 
-    if (successfulPhotos.length === 0) {
+    if (successful.length === 0) {
       return NextResponse.json(
         {
           error:
@@ -194,21 +182,26 @@ export async function POST(
 
     // Merge with existing photos (keep existing, add new)
     const existingPhotos = item.photoUrls ?? [];
-    const allPhotos = [...existingPhotos, ...successfulPhotos];
+    const allPhotos = [...existingPhotos, ...successful.map((r) => r.full)];
+
+    const updateSet: Record<string, unknown> = {
+      photoUrls: allPhotos,
+      vintedUrl: url || item.vintedUrl,
+      updatedAt: new Date(),
+    };
+    if (!item.thumbnailUrl) {
+      updateSet.thumbnailUrl = successful[0].thumb;
+    }
 
     const [updated] = await db
       .update(items)
-      .set({
-        photoUrls: allPhotos,
-        vintedUrl: url || item.vintedUrl,
-        updatedAt: new Date(),
-      })
+      .set(updateSet)
       .where(eq(items.id, id))
       .returning();
 
     return NextResponse.json({
       item: updated,
-      photosAdded: successfulPhotos.length,
+      photosAdded: successful.length,
     });
   } catch (error) {
     console.error("[ReList] Fetch Vinted error:", error);

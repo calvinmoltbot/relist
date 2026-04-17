@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { items } from "@/db/schema";
 import { eq, inArray } from "drizzle-orm";
-import sharp from "sharp";
+import { resizePhotoBuffer } from "@/lib/photos";
 
-// ---------------------------------------------------------------------------
-// Download and resize a photo from an external URL
-// ---------------------------------------------------------------------------
-async function downloadAndResizePhoto(url: string): Promise<string | null> {
+// Vinted image CDN requires a Referer header; generic helper doesn't set it.
+async function downloadVintedPhoto(
+  url: string,
+): Promise<{ full: string; thumb: string } | null> {
   try {
     const response = await fetch(url, {
       headers: {
@@ -19,17 +19,8 @@ async function downloadAndResizePhoto(url: string): Promise<string | null> {
     });
 
     if (!response.ok) return null;
-
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const resized = await sharp(buffer)
-      .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality: 70 })
-      .toBuffer();
-
-    const base64 = resized.toString("base64");
-    return `data:image/jpeg;base64,${base64}`;
+    const buffer = Buffer.from(await response.arrayBuffer());
+    return await resizePhotoBuffer(buffer);
   } catch (error) {
     console.error("[ReList] Failed to download photo:", url, error);
     return null;
@@ -159,13 +150,13 @@ export async function POST(request: NextRequest) {
       }
 
       const downloadResults = await Promise.all(
-        photoUrls.slice(0, 10).map((u) => downloadAndResizePhoto(u)),
+        photoUrls.slice(0, 10).map((u) => downloadVintedPhoto(u)),
       );
-      const successfulPhotos = downloadResults.filter(
-        (r): r is string => r !== null,
+      const successful = downloadResults.filter(
+        (r): r is { full: string; thumb: string } => r !== null,
       );
 
-      if (successfulPhotos.length === 0) {
+      if (successful.length === 0) {
         results.failed++;
         results.details.push({
           id: item.id,
@@ -176,20 +167,21 @@ export async function POST(request: NextRequest) {
       }
 
       const existingPhotos = item.photoUrls ?? [];
-      await db
-        .update(items)
-        .set({
-          photoUrls: [...existingPhotos, ...successfulPhotos],
-          updatedAt: new Date(),
-        })
-        .where(eq(items.id, item.id));
+      const updates: Record<string, unknown> = {
+        photoUrls: [...existingPhotos, ...successful.map((r) => r.full)],
+        updatedAt: new Date(),
+      };
+      if (!item.thumbnailUrl) {
+        updates.thumbnailUrl = successful[0].thumb;
+      }
+      await db.update(items).set(updates).where(eq(items.id, item.id));
 
       results.succeeded++;
       results.details.push({
         id: item.id,
         name: item.name,
         status: "success",
-        photosAdded: successfulPhotos.length,
+        photosAdded: successful.length,
       });
     }
 

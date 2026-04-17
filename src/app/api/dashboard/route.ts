@@ -240,7 +240,7 @@ export async function GET() {
     {
       headers: {
         // Short private cache so rapid dashboard refreshes don't re-hit origin
-        "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
+        "Cache-Control": "private, max-age=120, stale-while-revalidate=300",
       },
     },
   );

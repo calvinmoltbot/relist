@@ -215,10 +215,10 @@ export function InventoryTable({
                   >
                     {/* Thumbnail */}
                     <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-800 overflow-hidden">
-                      {item.photoUrls && item.photoUrls.length > 0 ? (
+                      {item.thumbnailUrl || (item.photoUrls && item.photoUrls.length > 0) ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
-                          src={item.photoUrls[0]}
+                          src={item.thumbnailUrl ?? item.photoUrls![0]}
                           alt=""
                           className="size-full object-cover"
                         />

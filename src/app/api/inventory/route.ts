@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { items } from "@/db/schema";
 import { desc, asc, ilike, eq, or, sql } from "drizzle-orm";
-import sharp from "sharp";
+import { downloadAndResizePhoto, thumbnailFromDataUri } from "@/lib/photos";
 
 // ---------------------------------------------------------------------------
 // GET /api/inventory
@@ -47,18 +47,35 @@ export async function GET(request: NextRequest) {
     ? conditions.reduce((a, b) => sql`${a} AND ${b}`)
     : undefined;
 
+  // Only select columns the list UI actually renders. `description` and
+  // `vintedUrl` in particular can be large and aren't shown in cards/table;
+  // they're fetched on demand by the edit dialog via /api/inventory/[id].
   const result = await db
-    .select()
+    .select({
+      id: items.id,
+      name: items.name,
+      brand: items.brand,
+      category: items.category,
+      size: items.size,
+      costPrice: items.costPrice,
+      listedPrice: items.listedPrice,
+      soldPrice: items.soldPrice,
+      status: items.status,
+      thumbnailUrl: items.thumbnailUrl,
+      // Fallback: return the first photoUrl only when thumbnailUrl is missing
+      // (legacy items pre-backfill). Drop this select after backfill completes.
+      photoUrls: items.photoUrls,
+      soldAt: items.soldAt,
+      createdAt: items.createdAt,
+      updatedAt: items.updatedAt,
+    })
     .from(items)
     .where(where)
     .orderBy(orderBy);
 
-  // List views only need the cover photo, not every photo. photoUrls can
-  // contain base64 data URIs (~200-400 KB each) so returning the full array
-  // blows up response size to tens of MB. Keep only the first entry here;
-  // full photos are available from the item detail endpoint.
   const trimmed = result.map((item) => ({
     ...item,
+    thumbnailUrl: item.thumbnailUrl ?? item.photoUrls?.[0] ?? null,
     photoUrls: item.photoUrls && item.photoUrls.length > 0
       ? [item.photoUrls[0]]
       : item.photoUrls,
@@ -69,41 +86,10 @@ export async function GET(request: NextRequest) {
     { items: trimmed },
     {
       headers: {
-        "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
+        "Cache-Control": "private, max-age=120, stale-while-revalidate=300",
       },
     },
   );
-}
-
-// ---------------------------------------------------------------------------
-// Download and resize a photo from an external URL
-// Returns a data URI (base64-encoded JPEG)
-// ---------------------------------------------------------------------------
-async function downloadAndResizePhoto(url: string): Promise<string | null> {
-  try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      },
-    });
-
-    if (!response.ok) return null;
-
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const resized = await sharp(buffer)
-      .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality: 70 })
-      .toBuffer();
-
-    const base64 = resized.toString("base64");
-    return `data:image/jpeg;base64,${base64}`;
-  } catch (error) {
-    console.error("[ReList] Failed to download photo:", url, error);
-    return null;
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -141,7 +127,8 @@ export async function POST(request: NextRequest) {
   }
 
   // If externalPhotoUrls are provided (from extension), download and resize them
-  let photoUrls = body.photoUrls ?? null;
+  let photoUrls: string[] | null = body.photoUrls ?? null;
+  let thumbnailUrl: string | null = null;
 
   if (
     body.externalPhotoUrls &&
@@ -153,13 +140,17 @@ export async function POST(request: NextRequest) {
         downloadAndResizePhoto(url),
       ),
     );
-    const successfulDownloads = downloadResults.filter(
-      (r): r is string => r !== null,
+    const successful = downloadResults.filter(
+      (r): r is { full: string; thumb: string } => r !== null,
     );
 
-    if (successfulDownloads.length > 0) {
-      photoUrls = successfulDownloads;
+    if (successful.length > 0) {
+      photoUrls = successful.map((r) => r.full);
+      thumbnailUrl = successful[0].thumb;
     }
+  } else if (photoUrls && photoUrls.length > 0) {
+    // Client uploaded base64 photos directly — derive thumb from the first.
+    thumbnailUrl = await thumbnailFromDataUri(photoUrls[0]);
   }
 
   // If duplicate found, update it instead of creating a new one
@@ -178,6 +169,9 @@ export async function POST(request: NextRequest) {
     // Always update photos if new ones were downloaded and existing has none
     if (photoUrls && (!existing.photoUrls || existing.photoUrls.length === 0)) {
       updates.photoUrls = photoUrls;
+    }
+    if (thumbnailUrl && !existing.thumbnailUrl) {
+      updates.thumbnailUrl = thumbnailUrl;
     }
 
     const [updated] = await db
@@ -208,6 +202,7 @@ export async function POST(request: NextRequest) {
       sourceLocation: body.sourceLocation ?? null,
       vintedUrl: body.vintedUrl ?? null,
       photoUrls,
+      thumbnailUrl,
       status,
       listedAt: status === "listed" ? now : null,
     })

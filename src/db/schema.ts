@@ -28,6 +28,7 @@ export const items = pgTable(
     status: text("status").notNull().default("sourced"), // sourced | listed | sold | shipped
     platform: text("platform").default("vinted"),
     photoUrls: text("photo_urls").array(),
+    thumbnailUrl: text("thumbnail_url"),
     description: text("description"),
     sourceType: text("source_type"), // charity_shop | car_boot | online | other
     sourceLocation: text("source_location"),

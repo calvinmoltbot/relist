@@ -16,6 +16,7 @@ export interface InventoryItem {
   status: string;
   platform: string | null;
   photoUrls: string[] | null;
+  thumbnailUrl: string | null;
   description: string | null;
   sourceType: string | null;
   sourceLocation: string | null;
@@ -107,6 +108,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       status: "sourced",
       platform: "vinted",
       photoUrls: item.photoUrls ?? null,
+      thumbnailUrl: null,
       description: item.description ?? null,
       sourceType: item.sourceType ?? null,
       sourceLocation: item.sourceLocation ?? null,
