@@ -44,3 +44,4 @@ Data/
 extension/relist-extension-*.zip
 
 .claude/
+vercel-env-check
