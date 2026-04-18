@@ -62,9 +62,10 @@ export async function GET(request: NextRequest) {
       soldPrice: items.soldPrice,
       status: items.status,
       thumbnailUrl: items.thumbnailUrl,
-      // Fallback: return the first photoUrl only when thumbnailUrl is missing
-      // (legacy items pre-backfill). Drop this select after backfill completes.
-      photoUrls: items.photoUrls,
+      // photo_urls is a text[] of base64 data URIs — each cover photo is
+      // 200-400 KB. List responses return only thumbnailUrl + count, never
+      // the array. Full photos come from /api/inventory/[id] on demand.
+      photoCount: sql<number>`COALESCE(array_length(${items.photoUrls}, 1), 0)::int`,
       soldAt: items.soldAt,
       createdAt: items.createdAt,
       updatedAt: items.updatedAt,
@@ -73,17 +74,8 @@ export async function GET(request: NextRequest) {
     .where(where)
     .orderBy(orderBy);
 
-  const trimmed = result.map((item) => ({
-    ...item,
-    thumbnailUrl: item.thumbnailUrl ?? item.photoUrls?.[0] ?? null,
-    photoUrls: item.photoUrls && item.photoUrls.length > 0
-      ? [item.photoUrls[0]]
-      : item.photoUrls,
-    photoCount: item.photoUrls?.length ?? 0,
-  }));
-
   return NextResponse.json(
-    { items: trimmed },
+    { items: result },
     {
       headers: {
         "Cache-Control": "private, max-age=120, stale-while-revalidate=300",
