@@ -14,6 +14,15 @@ pnpm dev
 bun dev
 ```
 
+### Enable the pre-commit secret scan
+
+After cloning, run this once so gitleaks runs before every commit:
+
+```bash
+brew install gitleaks
+git config core.hooksPath .githooks
+```
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.

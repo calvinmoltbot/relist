@@ -44,4 +44,9 @@ Data/
 extension/relist-extension-*.zip
 
 .claude/
-vercel-env-check
+
+# secret dumps — never commit Vercel env pulls or local secret files
+vercel-env*
+.env.pull*
+*.secrets
+secrets.json

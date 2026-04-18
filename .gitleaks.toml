@@ -1,0 +1,32 @@
+# Extend gitleaks defaults with patterns specific to this stack.
+# See https://github.com/gitleaks/gitleaks for rule syntax.
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "neon-postgres-password"
+description = "Neon Postgres connection string with npg_ password"
+regex = '''postgresql:\/\/[^:]+:npg_[A-Za-z0-9]{14,}@'''
+tags = ["database", "neon", "postgres"]
+
+[[rules]]
+id = "openrouter-api-key"
+description = "OpenRouter API key"
+regex = '''sk-or-v1-[A-Za-z0-9]{40,}'''
+tags = ["api-key", "openrouter"]
+
+[[rules]]
+id = "vercel-env-dump"
+description = "Whole-file Vercel env pull dump (multiple KEY=value lines with a DATABASE_URL)"
+regex = '''(?s)DATABASE_URL\s*=\s*"?postgres'''
+path = '''(^|/)(vercel-env-.*|\.env\.pull.*)$'''
+tags = ["env-dump"]
+
+[allowlist]
+description = "Allowed paths and commits"
+paths = [
+  '''(^|/)node_modules/''',
+  '''(^|/)\.next/''',
+  '''(^|/)drizzle/meta/''',
+]

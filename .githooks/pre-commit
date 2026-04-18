@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Block commits that contain obvious secrets. Run from this repo's versioned
+# hooks dir (enable once per clone with: git config core.hooksPath .githooks).
+
+set -e
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks not installed; skipping secret scan"
+  echo "  install with: brew install gitleaks"
+  exit 0
+fi
+
+# Scan only what's staged (protect: subcommand respects staged diff).
+gitleaks protect --staged --redact --no-banner --verbose \
+  --config "$(git rev-parse --show-toplevel)/.gitleaks.toml"
