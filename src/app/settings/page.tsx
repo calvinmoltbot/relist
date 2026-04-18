@@ -16,10 +16,10 @@ import {
   Upload,
   AlertTriangle,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -127,135 +127,147 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-100">
+    <div className="mx-auto max-w-3xl flex flex-col gap-6">
+      {/* Page header — matches Dashboard's h2 treatment */}
+      <div>
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-400">
+          Configuration
+        </span>
+        <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-zinc-100">
           Settings
         </h1>
-        <p className="mt-1 text-sm text-zinc-400">
-          Configure your business targets and preferences.
-        </p>
       </div>
 
-      <Card className="border-zinc-800 bg-zinc-900/50">
-        <CardHeader>
-          <CardTitle className="text-base text-zinc-100">
-            Business Targets
-          </CardTitle>
-          <CardDescription>
-            These targets are used across your dashboard and financial reports.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!settings ? (
-            <div className="py-8 text-center text-sm text-zinc-300">
-              Loading...
-            </div>
-          ) : (
-            <div className="space-y-5">
+      {/* ============================================================== */}
+      {/* Business Targets */}
+      {/* ============================================================== */}
+      <section className="rounded-2xl border border-white/[0.06] bg-zinc-900/60 p-5 shadow-xl">
+        <div className="mb-5 flex items-center justify-between border-b border-white/[0.05] pb-3">
+          <div className="flex items-center gap-2">
+            <Target className="size-3.5 text-emerald-400" />
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">
+              Business Targets
+            </h2>
+          </div>
+          <span className="text-[10px] text-zinc-500">
+            Used across Dashboard &amp; Financials
+          </span>
+        </div>
+
+        {!settings ? (
+          <div className="py-10 text-center text-xs text-zinc-400">Loading…</div>
+        ) : (
+          <>
+            <div className="grid gap-4 md:grid-cols-2">
               {FIELDS.map((field) => {
                 const Icon = field.icon;
                 return (
-                  <div key={field.key} className="space-y-1.5">
-                    <Label
-                      htmlFor={field.key}
-                      className="flex items-center gap-2 text-sm text-zinc-300"
-                    >
-                      <Icon className="size-3.5 text-zinc-300" />
+                  <label key={field.key} className="block">
+                    <span className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                      <Icon className="size-3" />
                       {field.label}
-                    </Label>
-                    <div className="flex items-center gap-2">
+                    </span>
+                    <div className="relative">
                       {field.prefix && (
-                        <span className="text-sm text-zinc-300">
+                        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-zinc-400">
                           {field.prefix}
                         </span>
                       )}
-                      <Input
+                      <input
                         id={field.key}
                         type="number"
+                        inputMode="decimal"
                         value={settings[field.key] ?? ""}
                         onChange={(e) =>
                           setSettings({ ...settings, [field.key]: e.target.value })
                         }
-                        className="max-w-[160px]"
+                        className={cn(
+                          "w-full rounded-lg border border-white/[0.08] bg-zinc-950/60 py-2 pr-14 text-sm text-zinc-100 tabular-nums focus:border-emerald-500/50 focus:outline-none",
+                          field.prefix ? "pl-7" : "pl-3",
+                        )}
                       />
                       {field.suffix && (
-                        <span className="text-sm text-zinc-300">
+                        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[10px] uppercase tracking-wider text-zinc-500">
                           {field.suffix}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-zinc-400">{field.description}</p>
-                  </div>
+                    <p className="mt-1 text-[11px] text-zinc-500">{field.description}</p>
+                  </label>
                 );
               })}
+            </div>
 
-              <div className="rounded-md border border-zinc-800 bg-zinc-900/70 p-4">
-                <div className="flex items-center gap-2 text-sm text-zinc-300">
-                  <TrendingUp className="size-3.5 text-zinc-300" />
+            {/* Derived: target hourly rate — emerald accent block mirrors Dashboard */}
+            <div className="mt-5 flex items-end justify-between rounded-2xl bg-emerald-500/10 px-4 py-3 ring-1 ring-emerald-500/20">
+              <div>
+                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-300/70">
+                  <TrendingUp className="size-3" />
                   Target Hourly Rate
                 </div>
-                <div className="mt-1 text-2xl font-semibold text-zinc-100">
+                <div className="mt-0.5 text-3xl font-black tabular-nums text-emerald-300">
                   £{computeHourlyRate(settings).toFixed(2)}
-                  <span className="ml-1 text-sm font-normal text-zinc-400">
+                  <span className="ml-1 text-xs font-medium text-emerald-300/60">
                     /hour
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-zinc-400">
-                  Calculated from revenue × margin ÷ monthly hours (
-                  {(Number(settings.weekly_hours) * WEEKS_PER_MONTH).toFixed(1)}{" "}
-                  hrs/month).
-                </p>
               </div>
-
-              <div className="pt-3">
-                <Button onClick={handleSave} disabled={saving}>
-                  {saved ? (
-                    <>
-                      <Check className="mr-2 size-4" />
-                      Saved
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 size-4" />
-                      {saving ? "Saving..." : "Save Changes"}
-                    </>
-                  )}
-                </Button>
-              </div>
+              <p className="text-right text-[10px] leading-tight text-zinc-400">
+                Revenue × margin<br />
+                ÷ {(Number(settings.weekly_hours) * WEEKS_PER_MONTH).toFixed(1)} hrs/mo
+              </p>
             </div>
-          )}
-        </CardContent>
-      </Card>
 
-      <Card className="mt-6 border-zinc-800 bg-zinc-900/50">
-        <CardHeader>
+            <div className="mt-5 flex justify-end border-t border-white/[0.05] pt-4">
+              <Button onClick={handleSave} disabled={saving}>
+                {saved ? (
+                  <>
+                    <Check className="mr-2 size-4" />
+                    Saved
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 size-4" />
+                    {saving ? "Saving…" : "Save Changes"}
+                  </>
+                )}
+              </Button>
+            </div>
+          </>
+        )}
+      </section>
+
+      {/* ============================================================== */}
+      {/* Backup */}
+      {/* ============================================================== */}
+      <section className="rounded-2xl border border-white/[0.06] bg-zinc-900/60 p-5 shadow-xl">
+        <div className="mb-4 flex items-center justify-between border-b border-white/[0.05] pb-3">
           <div className="flex items-center gap-2">
-            <Shield className="size-4 text-emerald-400" />
-            <CardTitle className="text-base text-zinc-100">Backup Your Data</CardTitle>
+            <Shield className="size-3.5 text-emerald-400" />
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">
+              Backup
+            </h2>
           </div>
-          <CardDescription>
-            Download a single file with everything — items, sales, expenses,
-            watch list, settings. Save it somewhere safe (email it to yourself,
-            drop it in Google Drive). If anything goes wrong we can restore
-            from it.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <a
-            href="/api/backup"
-            download
-            className={buttonVariants({ variant: "outline" })}
-          >
-            <Download className="mr-2 size-4" />
-            Download backup
-          </a>
-          <p className="mt-3 text-xs text-zinc-400">
-            Tip: do this every week or two, and any time before you bulk-delete
-            or make big changes.
-          </p>
-        </CardContent>
-      </Card>
+        </div>
+        <p className="mb-4 text-xs text-zinc-400 leading-relaxed">
+          Download a single file with everything — items, sales, expenses,
+          watch list, settings. Save it somewhere safe (email it to yourself,
+          drop it in Google Drive). If anything goes wrong we can restore
+          from it.
+        </p>
+        <a
+          href="/api/backup"
+          download
+          className={buttonVariants({ variant: "outline" })}
+        >
+          <Download className="mr-2 size-4" />
+          Download backup
+        </a>
+        <p className="mt-3 text-[11px] text-zinc-500">
+          Tip: do this every week or two, and any time before you bulk-delete
+          or make big changes.
+        </p>
+      </section>
 
       <RestoreBackupCard />
     </div>
@@ -416,44 +428,47 @@ function RestoreBackupCard() {
   }
 
   return (
-    <Card className="mt-6 border-zinc-800 bg-zinc-900/50">
-      <CardHeader>
+    <section className="rounded-2xl border border-amber-500/20 bg-zinc-900/60 p-5 shadow-xl">
+      <div className="mb-4 flex items-center justify-between border-b border-white/[0.05] pb-3">
         <div className="flex items-center gap-2">
-          <Upload className="size-4 text-amber-400" />
-          <CardTitle className="text-base text-zinc-100">Restore From Backup</CardTitle>
+          <Upload className="size-3.5 text-amber-400" />
+          <h2 className="text-xs font-black uppercase tracking-[0.2em] text-amber-400">
+            Restore From Backup
+          </h2>
         </div>
-        <CardDescription>
-          Upload a backup file to replace everything in the app with what's in
-          that file. Use this if something's gone wrong and you need to roll
-          back. You'll be asked to confirm before anything is overwritten.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="application/json,.json"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) void handleFile(file);
-          }}
-        />
-        <Button
-          variant="outline"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <Upload className="mr-2 size-4" />
-          Choose backup file
-        </Button>
-        {parseError && (
-          <p className="mt-3 text-xs text-red-400">{parseError}</p>
-        )}
-        <p className="mt-3 text-xs text-zinc-400">
-          We'll save a fresh copy of your current data to Downloads just before
-          restoring, so you always have a way back.
-        </p>
-      </CardContent>
+        <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300 ring-1 ring-amber-500/20">
+          Destructive
+        </span>
+      </div>
+      <p className="mb-4 text-xs text-zinc-400 leading-relaxed">
+        Upload a backup file to replace everything in the app with what&apos;s in
+        that file. Use this if something&apos;s gone wrong and you need to roll
+        back. You&apos;ll be asked to confirm before anything is overwritten.
+      </p>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void handleFile(file);
+        }}
+      />
+      <Button
+        variant="outline"
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <Upload className="mr-2 size-4" />
+        Choose backup file
+      </Button>
+      {parseError && (
+        <p className="mt-3 text-xs text-red-400">{parseError}</p>
+      )}
+      <p className="mt-3 text-[11px] text-zinc-500">
+        We&apos;ll save a fresh copy of your current data to Downloads just before
+        restoring, so you always have a way back.
+      </p>
 
       <Dialog open={showDialog} onOpenChange={closeDialog}>
         <DialogContent className="max-w-md">
@@ -539,6 +554,6 @@ function RestoreBackupCard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </section>
   );
 }
