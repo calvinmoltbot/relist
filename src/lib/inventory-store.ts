@@ -57,21 +57,28 @@ export interface InventoryFilters {
 interface InventoryState {
   items: InventoryItem[];
   loading: boolean;
+  hydrated: boolean;
   filters: InventoryFilters;
   fetchItems: () => Promise<void>;
   addItem: (item: NewInventoryItem) => Promise<void>;
   updateItem: (id: string, data: Partial<InventoryItem>) => Promise<void>;
   deleteItem: (id: string) => Promise<void>;
   setFilters: (filters: Partial<InventoryFilters>) => void;
+  hydrate: (items: InventoryItem[]) => void;
 }
 
 export const useInventoryStore = create<InventoryState>((set, get) => ({
   items: [],
   loading: false,
+  hydrated: false,
   filters: {
     status: "all",
     search: "",
     sortBy: "date",
+  },
+
+  hydrate: (items) => {
+    set({ items, hydrated: true, loading: false });
   },
 
   fetchItems: async () => {
