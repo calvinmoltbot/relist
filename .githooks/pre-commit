@@ -1,15 +1,31 @@
 #!/usr/bin/env bash
-# Block commits that contain obvious secrets. Run from this repo's versioned
-# hooks dir (enable once per clone with: git config core.hooksPath .githooks).
-
-set -e
+# Repo-local pre-commit: secret scan with the project's .gitleaks.toml.
+# See ~/.githooks/pre-commit for the global version.
 
 if ! command -v gitleaks >/dev/null 2>&1; then
-  echo "pre-commit: gitleaks not installed; skipping secret scan"
+  echo "pre-commit: gitleaks not installed — secret scan skipped"
   echo "  install with: brew install gitleaks"
   exit 0
 fi
 
-# Scan only what's staged (protect: subcommand respects staged diff).
-gitleaks protect --staged --redact --no-banner --verbose \
-  --config "$(git rev-parse --show-toplevel)/.gitleaks.toml"
+CONFIG="$(git rev-parse --show-toplevel)/.gitleaks.toml"
+
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+  gitleaks git --staged --redact --verbose --config "$CONFIG"
+  rc=$?
+else
+  staged=$(git diff --cached --name-only --diff-filter=ACMR)
+  if [ -z "$staged" ]; then exit 0; fi
+  # shellcheck disable=SC2086
+  gitleaks dir --redact --verbose --config "$CONFIG" $staged
+  rc=$?
+fi
+
+if [ "$rc" -ne 0 ]; then
+  echo ""
+  echo "pre-commit: secrets detected — commit blocked."
+  echo "  fix the leak, or bypass with: git commit --no-verify"
+  exit 1
+fi
+
+exit 0
