@@ -1,0 +1,38 @@
+{
+  "$schema": "launcher-meta/v1",
+  "name": "ReList",
+  "description": "Vinted reseller dashboard",
+  "icon": "ShoppingBag",
+  "color": "lime",
+  "category": "data",
+  "pinned": false,
+  "longDescription": "Inventory, pricing, and financial tracking for Vinted resellers. Built for Lily (lily.dor) — daily kanban flow for shipping and repricing, AI photo descriptions, Chrome-extension ingest from Vinted, and profit analytics with full backup/restore.",
+  "features": [
+    "Today's Flow kanban: ship, update, review",
+    "Inventory with thumbnails, filters, bulk actions",
+    "Profit analytics with category and source breakdowns",
+    "Deal finder for flip opportunities from watched items",
+    "AI photo-to-description via OpenRouter",
+    "Backup and restore of the full database"
+  ],
+  "techStack": [
+    "Next.js",
+    "React 19",
+    "Tailwind CSS v4",
+    "Drizzle ORM",
+    "Neon Postgres",
+    "Zustand",
+    "OpenRouter"
+  ],
+  "screenshots": [],
+  "repo": "calvinmoltbot/relist",
+  "envVars": [
+    "DATABASE_URL",
+    "OPENROUTER_API_KEY"
+  ],
+  "dependencies": [
+    "Vercel",
+    "Neon",
+    "OpenRouter"
+  ]
+}
