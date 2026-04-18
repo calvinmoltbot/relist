@@ -299,6 +299,15 @@ export const HELP_ENTRIES: HelpEntry[] = [
     group: "Settings",
     context: "/settings",
   },
+  {
+    id: "settings-restore",
+    title: "Restore From Backup",
+    description:
+      "On the Settings page, tap 'Choose backup file' under Restore From Backup to replace everything in the app with the contents of a previously downloaded backup JSON. You'll see a summary of how many items, sales, and expenses are in the file vs what's currently in the app, and you have to type RESTORE to confirm. Just before the restore runs, a fresh copy of your current data is saved to your Downloads folder — so if you picked the wrong file, you can always restore that one back.",
+    category: "tip",
+    group: "Settings",
+    context: "/settings",
+  },
 
   // ── Deal Finder ──────────────────────────────────────────────
   {
