@@ -5,53 +5,60 @@ import { eq, desc, and } from "drizzle-orm";
 
 // ---------------------------------------------------------------------------
 // GET /api/watch-items — list watched items, enriched with price stats
+//
+// Previously this issued one extra priceStats query per watched item (N+1).
+// Now it's a single leftJoin on (brand, category). Multiple priceStats rows
+// per key are possible (non-unique index), so we dedup by watchItem id and
+// prefer the most recently updated stats row.
 // ---------------------------------------------------------------------------
 export async function GET(request: NextRequest) {
   const status = request.nextUrl.searchParams.get("status") ?? "watching";
 
-  const conditions =
-    status === "all" ? [] : [eq(watchItems.status, status)];
+  const whereClause =
+    status === "all" ? undefined : eq(watchItems.status, status);
 
   const rows = await db
-    .select()
+    .select({
+      watchItem: watchItems,
+      stat: priceStats,
+    })
     .from(watchItems)
-    .where(conditions.length ? and(...conditions) : undefined)
-    .orderBy(desc(watchItems.createdAt));
+    .leftJoin(
+      priceStats,
+      and(
+        eq(priceStats.brand, watchItems.brand),
+        eq(priceStats.category, watchItems.category),
+      ),
+    )
+    .where(whereClause)
+    .orderBy(desc(watchItems.createdAt), desc(priceStats.lastUpdatedAt));
 
-  // Enrich with latest price stats for margin estimation
-  const enriched = await Promise.all(
-    rows.map(async (row) => {
-      if (!row.brand && !row.category) return row;
+  // Dedup: one priceStats row per watch item (the first hit after ordering
+  // by lastUpdatedAt desc is the freshest match).
+  const seen = new Map<string, (typeof rows)[number]>();
+  for (const row of rows) {
+    if (!seen.has(row.watchItem.id)) seen.set(row.watchItem.id, row);
+  }
 
-      const statsConditions = [];
-      if (row.brand) statsConditions.push(eq(priceStats.brand, row.brand));
-      if (row.category)
-        statsConditions.push(eq(priceStats.category, row.category));
+  const enriched = Array.from(seen.values()).map(({ watchItem, stat }) => {
+    if (stat?.medianPrice && watchItem.currentPrice) {
+      const resale = Number(stat.medianPrice);
+      const cost = Number(watchItem.currentPrice);
+      const margin = cost > 0 ? ((resale - cost) / cost) * 100 : 0;
+      return {
+        ...watchItem,
+        estimatedResale: String(resale),
+        estimatedMarginPct: String(Math.round(margin)),
+      };
+    }
+    return watchItem;
+  });
 
-      const [stat] = statsConditions.length
-        ? await db
-            .select()
-            .from(priceStats)
-            .where(and(...statsConditions))
-            .limit(1)
-        : [];
-
-      if (stat?.medianPrice && row.currentPrice) {
-        const resale = Number(stat.medianPrice);
-        const cost = Number(row.currentPrice);
-        const margin = cost > 0 ? ((resale - cost) / cost) * 100 : 0;
-        return {
-          ...row,
-          estimatedResale: String(resale),
-          estimatedMarginPct: String(Math.round(margin)),
-        };
-      }
-
-      return row;
-    }),
-  );
-
-  return NextResponse.json(enriched);
+  return NextResponse.json(enriched, {
+    headers: {
+      "Cache-Control": "private, max-age=60, stale-while-revalidate=180",
+    },
+  });
 }
 
 // ---------------------------------------------------------------------------

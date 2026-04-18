@@ -308,6 +308,10 @@ export async function GET(request: NextRequest) {
       .filter(([k]) => k !== "unknown")
       .map(([month, data]) => ({ month, ...roundObj(data) }))
       .sort((a, b) => a.month.localeCompare(b.month)),
+  }, {
+    headers: {
+      "Cache-Control": "private, max-age=300, stale-while-revalidate=600",
+    },
   });
 }
 

@@ -33,14 +33,21 @@ export async function GET(request: NextRequest) {
     byCategory[row.category] = (byCategory[row.category] ?? 0) + amt;
   }
 
-  return NextResponse.json({
-    expenses: rows,
-    summary: {
-      total: Math.round(total * 100) / 100,
-      byCategory,
-      count: rows.length,
+  return NextResponse.json(
+    {
+      expenses: rows,
+      summary: {
+        total: Math.round(total * 100) / 100,
+        byCategory,
+        count: rows.length,
+      },
     },
-  });
+    {
+      headers: {
+        "Cache-Control": "private, max-age=60, stale-while-revalidate=180",
+      },
+    },
+  );
 }
 
 // ---------------------------------------------------------------------------
