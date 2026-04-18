@@ -1,18 +1,31 @@
-import { describe, it, expect, afterAll, beforeEach } from "vitest";
+import { describe, it, expect, afterAll, beforeEach, beforeAll } from "vitest";
 import { db } from "@/lib/db";
 import { items, transactions, dealAlerts } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 // ---------------------------------------------------------------------------
 // Tests for schema constraints: FK relationships, array fields on other
 // tables, and edge cases in data types.
+//
+// These tests run against the real Neon DB (the only one configured). Every
+// seeded row uses one of the TEST_NAMES below so a bulk cleanup can
+// guarantee no leak regardless of test-flow mishaps — a previous version
+// of this file was dropping rows on Lily's real inventory.
 // ---------------------------------------------------------------------------
+
+const TEST_ITEM_NAMES = [
+  "FK Test Item",
+  "FK Delete Test",
+  "Buy/Sell Test",
+];
+const TEST_ALERT_NAMES = ["Levi's Jeans Alert"];
 
 const cleanupFns: (() => Promise<void>)[] = [];
 
 async function cleanup() {
-  // Run in reverse order (transactions before items due to FK)
-  for (const fn of cleanupFns.reverse()) {
+  // Per-fn cleanup first (in unshift-push insertion order, which is already
+  // child-before-parent for our callers).
+  for (const fn of cleanupFns) {
     try {
       await fn();
     } catch {
@@ -20,8 +33,26 @@ async function cleanup() {
     }
   }
   cleanupFns.length = 0;
+
+  // Belt-and-braces bulk cleanup in FK-safe order. Catches anything the
+  // per-test cleanup missed.
+  try {
+    const orphans = await db
+      .select({ id: items.id })
+      .from(items)
+      .where(inArray(items.name, TEST_ITEM_NAMES));
+    if (orphans.length) {
+      const ids = orphans.map((o) => o.id);
+      await db.delete(transactions).where(inArray(transactions.itemId, ids));
+      await db.delete(items).where(inArray(items.id, ids));
+    }
+    await db.delete(dealAlerts).where(inArray(dealAlerts.name, TEST_ALERT_NAMES));
+  } catch {
+    // ignore
+  }
 }
 
+beforeAll(cleanup);
 afterAll(cleanup);
 beforeEach(cleanup);
 

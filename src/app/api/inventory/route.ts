@@ -1,78 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { items } from "@/db/schema";
-import { desc, asc, ilike, eq, or, sql } from "drizzle-orm";
+import { ilike, eq } from "drizzle-orm";
 import { downloadAndResizePhoto, thumbnailFromDataUri } from "@/lib/photos";
+import { getInventoryList } from "@/lib/inventory-query";
 
 // ---------------------------------------------------------------------------
-// GET /api/inventory
+// GET /api/inventory — thin wrapper around getInventoryList, used for
+// client-side refreshes when filters change. Page-level first paint goes
+// through the Server Component in src/app/inventory/page.tsx directly.
 // ---------------------------------------------------------------------------
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const status = searchParams.get("status");
-  const search = searchParams.get("search")?.toLowerCase();
-  const sort = searchParams.get("sort") ?? "date";
+  const search = searchParams.get("search");
+  const sort = searchParams.get("sort") as
+    | "date"
+    | "price"
+    | "brand"
+    | null;
 
-  const conditions = [];
-
-  if (status && status !== "all") {
-    conditions.push(eq(items.status, status));
-  }
-
-  if (search) {
-    conditions.push(
-      or(
-        ilike(items.name, `%${search}%`),
-        ilike(items.brand, `%${search}%`),
-        ilike(items.category, `%${search}%`),
-      ),
-    );
-  }
-
-  let orderBy;
-  switch (sort) {
-    case "price":
-      orderBy = desc(sql`COALESCE(${items.listedPrice}, ${items.costPrice}, '0')`);
-      break;
-    case "brand":
-      orderBy = asc(items.brand);
-      break;
-    case "date":
-    default:
-      orderBy = desc(items.createdAt);
-      break;
-  }
-
-  const where = conditions.length > 0
-    ? conditions.reduce((a, b) => sql`${a} AND ${b}`)
-    : undefined;
-
-  // Only select columns the list UI actually renders. `description` and
-  // `vintedUrl` in particular can be large and aren't shown in cards/table;
-  // they're fetched on demand by the edit dialog via /api/inventory/[id].
-  const result = await db
-    .select({
-      id: items.id,
-      name: items.name,
-      brand: items.brand,
-      category: items.category,
-      size: items.size,
-      costPrice: items.costPrice,
-      listedPrice: items.listedPrice,
-      soldPrice: items.soldPrice,
-      status: items.status,
-      thumbnailUrl: items.thumbnailUrl,
-      // photo_urls is a text[] of base64 data URIs — each cover photo is
-      // 200-400 KB. List responses return only thumbnailUrl + count, never
-      // the array. Full photos come from /api/inventory/[id] on demand.
-      photoCount: sql<number>`COALESCE(array_length(${items.photoUrls}, 1), 0)::int`,
-      soldAt: items.soldAt,
-      createdAt: items.createdAt,
-      updatedAt: items.updatedAt,
-    })
-    .from(items)
-    .where(where)
-    .orderBy(orderBy);
+  const result = await getInventoryList({ status, search, sort });
 
   return NextResponse.json(
     { items: result },

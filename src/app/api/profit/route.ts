@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { items, transactions, expenses } from "@/db/schema";
-import { eq, and, gte, lte, or, sql } from "drizzle-orm";
+import { eq, and, gte, lte, or, sql, inArray } from "drizzle-orm";
 import { getTargets } from "@/lib/settings";
 
 // ---------------------------------------------------------------------------
@@ -20,7 +20,30 @@ export async function GET(request: NextRequest) {
   const { from, to } = resolveDateRange(searchParams);
 
   // ── Load all items ───────────────────────────────────────────
-  const allItems = await db.select().from(items);
+  // Select only the columns the analytics code actually reads. Cuts the
+  // response payload substantially — the items table stores ~300 KB of
+  // base64 photo data per row in photoUrls that we don't need here.
+  // Date filtering stays in JS because several "always current" sections
+  // (current-month stats, previous-period comparison, weekly pulse,
+  // inventory health) need every sold row regardless of the user's range.
+  const allItems = await db
+    .select({
+      id: items.id,
+      name: items.name,
+      brand: items.brand,
+      category: items.category,
+      status: items.status,
+      costPrice: items.costPrice,
+      listedPrice: items.listedPrice,
+      soldPrice: items.soldPrice,
+      soldAt: items.soldAt,
+      listedAt: items.listedAt,
+      sourceType: items.sourceType,
+      createdAt: items.createdAt,
+    })
+    .from(items);
+
+  type ProfitItem = (typeof allItems)[number];
 
   // Sold items (optionally filtered by date range)
   const hasDateFilter = from != null || to != null;
@@ -36,9 +59,17 @@ export async function GET(request: NextRequest) {
   const sourced = allItems.filter((i) => i.status === "sourced");
 
   // ── Load transactions for net profit ─────────────────────────
-  const soldItemIds = new Set(sold.map((i) => i.id));
-  const allTransactions = await db.select().from(transactions);
-  const relevantTx = allTransactions.filter((t) => soldItemIds.has(t.itemId));
+  // Only fetch transactions for the filtered sold items. Previously this
+  // loaded the full transactions table and filtered in JS; pushing the
+  // predicate into SQL scales better as the table grows.
+  const soldItemIds = sold.map((i) => i.id);
+  const relevantTx =
+    soldItemIds.length > 0
+      ? await db
+          .select()
+          .from(transactions)
+          .where(inArray(transactions.itemId, soldItemIds))
+      : [];
 
   // Map item → transaction for fee data
   const txByItem = new Map(relevantTx.map((t) => [t.itemId, t]));
@@ -308,6 +339,10 @@ export async function GET(request: NextRequest) {
       .filter(([k]) => k !== "unknown")
       .map(([month, data]) => ({ month, ...roundObj(data) }))
       .sort((a, b) => a.month.localeCompare(b.month)),
+  }, {
+    headers: {
+      "Cache-Control": "private, max-age=300, stale-while-revalidate=600",
+    },
   });
 }
 
@@ -366,10 +401,20 @@ function resolveDateRange(params: URLSearchParams): { from: Date | null; to: Dat
 // ---------------------------------------------------------------------------
 // Inventory health computation
 // ---------------------------------------------------------------------------
+interface InventoryHealthItem {
+  id: string;
+  name: string;
+  brand: string | null;
+  costPrice: string | null;
+  listedPrice: string | null;
+  listedAt: Date | null;
+  createdAt: Date | null;
+}
+
 function computeInventoryHealth(
-  listed: typeof items.$inferSelect[],
-  sourced: typeof items.$inferSelect[],
-  allSold: typeof items.$inferSelect[]
+  listed: InventoryHealthItem[],
+  sourced: InventoryHealthItem[],
+  allSold: InventoryHealthItem[]
 ) {
   const now = new Date();
   const unsold = [...listed, ...sourced];
