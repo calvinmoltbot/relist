@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { items, transactions, expenses } from "@/db/schema";
 import { eq, and, gte, lte, or, sql, inArray } from "drizzle-orm";
 import { getTargets } from "@/lib/settings";
+import { resolveDateRange } from "@/lib/date-range";
 
 // ---------------------------------------------------------------------------
 // GET /api/profit — Financial analytics with date filtering
@@ -344,58 +345,6 @@ export async function GET(request: NextRequest) {
       "Cache-Control": "private, max-age=300, stale-while-revalidate=600",
     },
   });
-}
-
-// ---------------------------------------------------------------------------
-// Date range helpers
-// ---------------------------------------------------------------------------
-function resolveDateRange(params: URLSearchParams): { from: Date | null; to: Date | null } {
-  const preset = params.get("preset");
-  const now = new Date();
-
-  if (preset) {
-    switch (preset) {
-      case "this_month":
-        return {
-          from: new Date(now.getFullYear(), now.getMonth(), 1),
-          to: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59),
-        };
-      case "last_month":
-        return {
-          from: new Date(now.getFullYear(), now.getMonth() - 1, 1),
-          to: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59),
-        };
-      case "last_90_days":
-        return {
-          from: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000),
-          to: now,
-        };
-      case "this_year":
-        return {
-          from: new Date(now.getFullYear(), 0, 1),
-          to: now,
-        };
-      case "tax_year": {
-        // UK tax year: April 6 to April 5
-        const taxYearStart =
-          now.getMonth() > 3 || (now.getMonth() === 3 && now.getDate() >= 6)
-            ? new Date(now.getFullYear(), 3, 6) // Apr 6 this year
-            : new Date(now.getFullYear() - 1, 3, 6); // Apr 6 last year
-        return { from: taxYearStart, to: now };
-      }
-      case "all_time":
-      default:
-        return { from: null, to: null };
-    }
-  }
-
-  const fromStr = params.get("from");
-  const toStr = params.get("to");
-
-  return {
-    from: fromStr ? new Date(fromStr + "T00:00:00") : null,
-    to: toStr ? new Date(toStr + "T23:59:59") : null,
-  };
 }
 
 // ---------------------------------------------------------------------------
