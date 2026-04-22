@@ -322,9 +322,11 @@ export default function InventoryClient({
         status={filters.status}
         search={filters.search}
         sortBy={filters.sortBy}
+        incompleteOnly={filters.incompleteOnly}
         onStatusChange={(s) => setFilters({ status: s })}
         onSearchChange={(s) => setFilters({ search: s })}
         onSortChange={(s) => setFilters({ sortBy: s })}
+        onIncompleteOnlyChange={(v) => setFilters({ incompleteOnly: v })}
         itemCounts={itemCounts}
       />
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, ArrowUpDown } from "lucide-react";
+import { Search, ArrowUpDown, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,9 +37,11 @@ interface ItemFiltersProps {
   status: ItemStatus;
   search: string;
   sortBy: SortBy;
+  incompleteOnly?: boolean;
   onStatusChange: (status: ItemStatus) => void;
   onSearchChange: (search: string) => void;
   onSortChange: (sort: SortBy) => void;
+  onIncompleteOnlyChange?: (v: boolean) => void;
   itemCounts: Record<string, number>;
 }
 
@@ -47,9 +49,11 @@ export function ItemFilters({
   status,
   search,
   sortBy,
+  incompleteOnly,
   onStatusChange,
   onSearchChange,
   onSortChange,
+  onIncompleteOnlyChange,
   itemCounts,
 }: ItemFiltersProps) {
   const [sortOpen, setSortOpen] = useState(false);
@@ -98,8 +102,8 @@ export function ItemFilters({
         </DropdownMenu>
       </div>
 
-      {/* Status tabs */}
-      <div className="flex gap-1 overflow-x-auto">
+      {/* Status tabs + incomplete filter */}
+      <div className="flex items-center gap-1 overflow-x-auto">
         {STATUSES.map((s) => {
           const count = s.value === "all"
             ? itemCounts.total ?? 0
@@ -129,6 +133,21 @@ export function ItemFilters({
             </button>
           );
         })}
+
+        {onIncompleteOnlyChange && (
+          <button
+            onClick={() => onIncompleteOnlyChange(!incompleteOnly)}
+            className={cn(
+              "ml-auto flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap",
+              incompleteOnly
+                ? "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30"
+                : "text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-200",
+            )}
+          >
+            <AlertCircle className="size-3" />
+            Incomplete
+          </button>
+        )}
       </div>
     </div>
   );

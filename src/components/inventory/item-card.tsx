@@ -42,6 +42,39 @@ const STATUS_CONFIG: Record<
 const STATUS_ORDER: string[] = ["sourced", "listed", "sold", "shipped"];
 
 // ---------------------------------------------------------------------------
+// CompletenessBadge — small per-item signal for the Vinted algo score.
+// ---------------------------------------------------------------------------
+function CompletenessBadge({
+  score,
+  band,
+  gap,
+}: {
+  score: number;
+  band: "green" | "amber" | "red";
+  gap: string | null;
+}) {
+  const tone =
+    band === "green"
+      ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+      : band === "amber"
+        ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
+        : "bg-rose-500/10 text-rose-300 border-rose-500/30";
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-2 rounded border px-1.5 py-1 text-[11px]",
+        tone,
+      )}
+    >
+      <span className="font-medium">{score}/100</span>
+      {gap && band !== "green" && (
+        <span className="truncate text-[10px] opacity-80">Add {gap.toLowerCase()}</span>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // ItemCard
 // ---------------------------------------------------------------------------
 interface ItemCardProps {
@@ -137,6 +170,16 @@ export function ItemCard({ item, onStatusChange, onEdit, onDelete }: ItemCardPro
         {item.size && (
           <p className="text-[11px] text-zinc-300">Size: {item.size}</p>
         )}
+
+        {/* Completeness — only surface on unsold items */}
+        {item.completenessScore != null &&
+          (item.status === "listed" || item.status === "sourced") && (
+            <CompletenessBadge
+              score={item.completenessScore}
+              band={item.completenessBand ?? "red"}
+              gap={item.completenessGap ?? null}
+            />
+          )}
       </div>
 
       {/* Actions footer */}
