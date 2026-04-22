@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { items } from "@/db/schema";
 import { eq, and, lt, or, isNull, sql } from "drizzle-orm";
+import { getTargets } from "@/lib/settings";
 
 export interface DailyTask {
   id: string;
@@ -22,7 +23,10 @@ export interface DailyPlan {
 
 export async function buildDailyPlan(): Promise<DailyPlan> {
   const now = new Date();
-  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+  const { staleListingDays } = await getTargets();
+  const staleCutoff = new Date(
+    now.getTime() - staleListingDays * 24 * 60 * 60 * 1000,
+  );
 
   const [soldItems, incompleteItems, staleItems, noPhotoItems] = await Promise.all([
     db.select({
@@ -56,7 +60,7 @@ export async function buildDailyPlan(): Promise<DailyPlan> {
     }).from(items).where(
       and(
         eq(items.status, "listed"),
-        lt(items.listedAt, fourteenDaysAgo),
+        lt(items.listedAt, staleCutoff),
       ),
     ),
 

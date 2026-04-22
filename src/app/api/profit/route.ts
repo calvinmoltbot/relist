@@ -260,7 +260,9 @@ export async function GET(request: NextRequest) {
   }
 
   // ── Inventory health (always current) ────────────────────────
-  const inventoryHealth = computeInventoryHealth(listed, sourced, allSold);
+  const inventoryHealth = computeInventoryHealth(listed, sourced, allSold, {
+    deadStockDays: targets.refreshSuggestedDays,
+  });
 
   // ── Weekly pulse ─────────────────────────────────────────────
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -363,7 +365,8 @@ interface InventoryHealthItem {
 function computeInventoryHealth(
   listed: InventoryHealthItem[],
   sourced: InventoryHealthItem[],
-  allSold: InventoryHealthItem[]
+  allSold: InventoryHealthItem[],
+  { deadStockDays }: { deadStockDays: number },
 ) {
   const now = new Date();
   const unsold = [...listed, ...sourced];
@@ -402,7 +405,7 @@ function computeInventoryHealth(
       bucketValues["28+"] += value;
     }
 
-    if (days >= 21) {
+    if (days >= deadStockDays) {
       deadStock.push({
         id: item.id,
         name: item.name,

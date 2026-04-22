@@ -8,6 +8,9 @@ export interface Targets {
   marginTargetPct: number;
   activeListingsTarget: number;
   urgentShipDays: number;
+  staleListingDays: number;
+  refreshSuggestedDays: number;
+  weeklyListingsTarget: number;
 }
 
 const DEFAULTS: Record<string, string> = {
@@ -17,6 +20,9 @@ const DEFAULTS: Record<string, string> = {
   margin_target_pct: "65",
   active_listings_target: "30",
   urgent_ship_days: "2",
+  stale_listing_days: "2",
+  refresh_suggested_days: "7",
+  weekly_listings_target: "10",
 };
 
 export async function getSettings(): Promise<Record<string, string>> {
@@ -37,5 +43,8 @@ export async function getTargets(): Promise<Targets> {
     marginTargetPct: Number(s.margin_target_pct),
     activeListingsTarget: Number(s.active_listings_target),
     urgentShipDays: Number(s.urgent_ship_days),
+    staleListingDays: Number(s.stale_listing_days),
+    refreshSuggestedDays: Number(s.refresh_suggested_days),
+    weeklyListingsTarget: Number(s.weekly_listings_target),
   };
 }

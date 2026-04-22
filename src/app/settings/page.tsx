@@ -15,6 +15,9 @@ import {
   Shield,
   Upload,
   AlertTriangle,
+  HeartPulse,
+  RefreshCw,
+  Calendar,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +39,9 @@ interface Settings {
   margin_target_pct: string;
   active_listings_target: string;
   urgent_ship_days: string;
+  stale_listing_days: string;
+  refresh_suggested_days: string;
+  weekly_listings_target: string;
 }
 
 const FIELDS = [
@@ -78,6 +84,30 @@ const FIELDS = [
     prefix: "",
     suffix: "days",
     description: "Flag sold-but-not-shipped items as urgent after this many days",
+  },
+  {
+    key: "stale_listing_days" as const,
+    label: "Stale Listing Threshold",
+    icon: HeartPulse,
+    prefix: "",
+    suffix: "days",
+    description: "Show listings older than this on the Dashboard 'Review' column",
+  },
+  {
+    key: "refresh_suggested_days" as const,
+    label: "Refresh Suggested",
+    icon: RefreshCw,
+    prefix: "",
+    suffix: "days",
+    description: "Flag unsold items as 'needs refresh' after this many days on Inventory Health",
+  },
+  {
+    key: "weekly_listings_target" as const,
+    label: "Weekly Listings Target",
+    icon: Calendar,
+    prefix: "",
+    suffix: "items/wk",
+    description: "How many new listings per week you want to publish",
   },
 ];
 

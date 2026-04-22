@@ -30,7 +30,6 @@ import {
   DateRangePicker,
   type DatePreset,
 } from "@/components/profit/date-range-picker";
-import { InventoryHealth } from "@/components/profit/inventory-health";
 import { ExpensesTab } from "@/components/profit/expenses-tab";
 import { TaxExportTab } from "@/components/profit/tax-export-tab";
 
@@ -244,17 +243,6 @@ export default function FinancialsPage() {
         <TabsList variant="line" className="mb-4 overflow-x-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="breakdown">Breakdown</TabsTrigger>
-          <TabsTrigger value="inventory" className="whitespace-nowrap">
-            Inventory Health
-            {data.inventoryHealth.deadStock.length > 0 && (
-              <Badge
-                variant="secondary"
-                className="ml-1.5 bg-red-500/10 text-red-400 text-[10px] px-1.5 py-0"
-              >
-                {data.inventoryHealth.deadStock.length}
-              </Badge>
-            )}
-          </TabsTrigger>
           <TabsTrigger value="expenses">Expenses</TabsTrigger>
           <TabsTrigger value="tax" className="whitespace-nowrap">Tax &amp; Export</TabsTrigger>
         </TabsList>
@@ -428,15 +416,6 @@ export default function FinancialsPage() {
               </>
             )}
           </div>
-        </TabsContent>
-
-        {/* ── Inventory Health Tab ─────────────────────────────── */}
-        <TabsContent value="inventory">
-          <InventoryHealth
-            data={data.inventoryHealth}
-            sellThroughRate={summary.sellThroughRate}
-            avgDaysToSell={summary.avgDaysToSell}
-          />
         </TabsContent>
 
         <TabsContent value="expenses">
