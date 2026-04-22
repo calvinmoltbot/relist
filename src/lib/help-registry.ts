@@ -243,6 +243,44 @@ export const HELP_ENTRIES: HelpEntry[] = [
     context: "/profit",
   },
 
+  // ── Best Sellers ─────────────────────────────────────────────
+  {
+    id: "bestsellers-overview",
+    title: "Best Sellers",
+    description:
+      "Spots what's flying out the door. Ranks your products by how quickly they sell after being listed, grouped by category, brand, source, condition or size. Only groups with 2+ sales appear so one lucky sale doesn't skew things.",
+    category: "feature",
+    group: "Best Sellers",
+    context: "/bestsellers",
+  },
+  {
+    id: "bestsellers-days-to-sell",
+    title: "Days to Sell",
+    description:
+      "Counts the days between when you listed an item and when it sold. Lower is better — tells you which product types turn over fastest. Items without a listed date are skipped.",
+    category: "tip",
+    group: "Best Sellers",
+    context: "/bestsellers",
+  },
+  {
+    id: "bestsellers-sorting",
+    title: "Fastest · Profit · Margin",
+    description:
+      "Toggle how the breakdown is ranked. 'Fastest' surfaces what sells quickest; 'Profit' shows where you make the most cash per sale; 'Margin' highlights the best return on investment.",
+    category: "tip",
+    group: "Best Sellers",
+    context: "/bestsellers",
+  },
+  {
+    id: "bestsellers-hall-of-fame",
+    title: "Hall of Fame",
+    description:
+      "Two lists under the breakdown: your ten fastest-selling items ever (great for spotting winners to source again), and your ten highest-profit sales (your personal records).",
+    category: "feature",
+    group: "Best Sellers",
+    context: "/bestsellers",
+  },
+
   {
     id: "expenses-overview",
     title: "Tracking Expenses",
