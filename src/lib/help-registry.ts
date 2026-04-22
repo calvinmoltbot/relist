@@ -243,6 +243,35 @@ export const HELP_ENTRIES: HelpEntry[] = [
     context: "/profit",
   },
 
+  // ── Health ───────────────────────────────────────────────────
+  {
+    id: "health-overview",
+    title: "Inventory Health",
+    description:
+      "The Health page tells you how fresh, complete and well-priced your listings are — the signals Vinted's algorithm uses to decide whose items get seen. Right now it shows freshness (how old your listings are) and dead-stock value; completeness, refresh checklist, price checks, portfolio mix and weekly cadence are coming next.",
+    category: "feature",
+    group: "Health",
+    context: "/health",
+  },
+  {
+    id: "health-freshness",
+    title: "Freshness Aging Buckets",
+    description:
+      "The stacked bar shows how your unsold stock splits across age bands. Vinted buries old listings, so aim to keep items out of the 3+ week bands — refresh them (edit title/photo/description) or consider dropping the price.",
+    category: "tip",
+    group: "Health",
+    context: "/health",
+  },
+  {
+    id: "health-thresholds",
+    title: "Stale and Refresh Thresholds",
+    description:
+      "The Dashboard's Review column and the Health page's dead-stock list both use settings you control. 'Stale listing' defaults to 2 days (Lily asked for aggressive refreshing); 'Refresh suggested' defaults to 7 days. Tune both on the Settings page.",
+    category: "tip",
+    group: "Health",
+    context: "/settings",
+  },
+
   // ── Best Sellers ─────────────────────────────────────────────
   {
     id: "bestsellers-overview",
