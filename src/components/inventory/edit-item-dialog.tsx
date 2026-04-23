@@ -482,6 +482,8 @@ function FetchFromVinted({
     }
   }, [itemId, vintedUrl, onFetchingChange, onErrorChange, onSuccessChange, onPhotosAdded]);
 
+  const trimmedUrl = vintedUrl.trim();
+
   return (
     <div className="flex flex-col gap-1.5">
       <Label>Vinted URL</Label>
@@ -492,45 +494,37 @@ function FetchFromVinted({
           onChange={(e) => onVintedUrlChange(e.target.value)}
           className="flex-1 bg-zinc-900 text-sm"
         />
-        {vintedUrl.trim() && (
-          <a
-            href={vintedUrl.trim()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center rounded-md border border-zinc-800 px-2 text-zinc-300 transition-colors hover:border-zinc-700 hover:text-zinc-200"
-            title="Open in new tab"
-          >
-            <ExternalLink className="size-3.5" />
-          </a>
-        )}
-      </div>
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
+        {trimmedUrl && (
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="gap-1.5 text-xs"
-            disabled={fetching || !vintedUrl.trim()}
+            className="shrink-0 gap-1.5 text-xs"
+            disabled={fetching}
             onClick={handleFetch}
+            title="Download photos from the Vinted listing"
           >
             {fetching ? (
               <RefreshCw className="size-3 animate-spin" />
             ) : (
               <Download className="size-3" />
             )}
-            {fetching ? "Fetching..." : "Fetch Photos"}
+            {fetching ? "Fetching…" : "Fetch photos"}
           </Button>
-          <span className="text-[11px] text-zinc-400">
-            Attempts to download photos from the listing
-          </span>
-        </div>
-        {vintedUrl.trim() && (
-          <p className="text-[11px] text-zinc-400">
-            If fetch fails, open the link above with the ReList extension active — it can grab photos directly.
-          </p>
         )}
       </div>
+      {trimmedUrl && (
+        <a
+          href={trimmedUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 truncate text-xs text-sky-300 transition-colors hover:text-sky-200 hover:underline"
+          title={trimmedUrl}
+        >
+          <ExternalLink className="size-3 shrink-0" />
+          <span className="truncate">Open on Vinted — {trimmedUrl}</span>
+        </a>
+      )}
       {error && <p className="text-xs text-amber-400">{error}</p>}
       {success && <p className="text-xs text-emerald-400">{success}</p>}
     </div>

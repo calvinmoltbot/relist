@@ -7,10 +7,10 @@ function fullItem() {
     brand: "Zara",
     category: "Blazers",
     size: "M / UK 12",
-    condition: "like_new",
     description:
       "Classic navy pinstripe blazer with satin lining. Runs slightly boxy — suits a size up. Great over a tee.",
     photoUrls: ["a", "b", "c", "d"],
+    vintedUrl: "https://www.vinted.co.uk/items/123-navy-blazer",
   };
 }
 
@@ -28,9 +28,9 @@ describe("scoreItem", () => {
       brand: null,
       category: null,
       size: null,
-      condition: null,
       description: null,
       photoUrls: null,
+      vintedUrl: null,
     });
     expect(r.score).toBe(0);
     expect(r.band).toBe("red");
@@ -45,6 +45,11 @@ describe("scoreItem", () => {
   it("applies the category weight", () => {
     const item = { ...fullItem(), category: null };
     expect(scoreItem(item).score).toBe(100 - WEIGHTS.category);
+  });
+
+  it("applies the vintedUrl weight", () => {
+    const item = { ...fullItem(), vintedUrl: null };
+    expect(scoreItem(item).score).toBe(100 - WEIGHTS.vintedUrl);
   });
 
   it("requires 40+ char description", () => {
@@ -68,17 +73,17 @@ describe("scoreItem", () => {
       brand: null,
       category: null,
       size: null,
-      condition: null,
       description: null,
       photoUrls: null,
+      vintedUrl: null,
     });
     // Highest weight missing first (20 tied → stable order acceptable)
     expect(r.missing[0].weight).toBeGreaterThanOrEqual(r.missing[1].weight);
-    expect(r.missing[r.missing.length - 1].weight).toBe(WEIGHTS.condition);
+    expect(r.missing[r.missing.length - 1].weight).toBe(WEIGHTS.vintedUrl);
   });
 
   it("bands: red <50, amber 50-79, green ≥80", () => {
-    // Remove 50% of weight (photos + description + title = 50) → band amber(50)
+    // Remove 50% of weight (photos 20 + description 20 + title 10 = 50)
     const r = scoreItem({
       ...fullItem(),
       description: "short",
@@ -102,7 +107,7 @@ describe("summarise", () => {
     const items = [
       { id: "1", ...fullItem() }, // 100
       { id: "2", ...fullItem(), brand: null }, // 80, missing brand (20)
-      { id: "3", ...fullItem(), condition: null }, // 95, missing condition (5)
+      { id: "3", ...fullItem(), vintedUrl: null }, // 95, missing vintedUrl (5)
       { id: "4", ...fullItem(), description: "no" }, // 80, missing description (20)
     ];
     const s = summarise(items, 2);
@@ -117,7 +122,15 @@ describe("summarise", () => {
       { id: "1", ...fullItem() }, // green
       { id: "2", ...fullItem() }, // green
       { id: "3", ...fullItem(), brand: null, category: null }, // 65 amber
-      { id: "4", ...fullItem(), brand: null, category: null, size: null, description: "x", photoUrls: [] }, // red
+      {
+        id: "4",
+        ...fullItem(),
+        brand: null,
+        category: null,
+        size: null,
+        description: "x",
+        photoUrls: [],
+      }, // red
     ];
     const s = summarise(items);
     expect(s.bands.green).toBe(2);

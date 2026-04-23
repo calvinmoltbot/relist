@@ -8,14 +8,17 @@ import type { Item } from "@/db/schema";
 // Tune against Lily's real listings as the data stabilises.
 // ---------------------------------------------------------------------------
 
+// Weights sum to 100. `condition` is intentionally omitted — Lily's UX
+// avoids mentioning condition (see memory). `vintedUrl` takes its slot:
+// a missing URL means we can't link through to the live listing.
 export const WEIGHTS = {
   brand: 20,
   category: 15,
   size: 10,
-  condition: 5,
   description: 20, // ≥40 chars
   photos: 20, // ≥3
   title: 10, // >3 words
+  vintedUrl: 5, // live Vinted link for listed/sold items
 } as const;
 
 export type CompletenessField = keyof typeof WEIGHTS;
@@ -38,17 +41,17 @@ export interface CompletenessResult {
 
 type ItemLike = Pick<
   Item,
-  "name" | "brand" | "category" | "size" | "condition" | "description" | "photoUrls"
+  "name" | "brand" | "category" | "size" | "description" | "photoUrls" | "vintedUrl"
 >;
 
 const FIELD_META: Record<CompletenessField, { label: string; hint: string }> = {
   brand: { label: "Brand", hint: "Add the brand — buyers search for it" },
   category: { label: "Category", hint: "Pick a category so it shows up in the right browse" },
   size: { label: "Size", hint: "Size matters for every clothing search" },
-  condition: { label: "Condition", hint: "Tell buyers how worn it is" },
   description: { label: "Description (40+ chars)", hint: "Aim for a couple of sentences — fit, feel, styling ideas" },
   photos: { label: "3+ photos", hint: "More angles = more clicks" },
   title: { label: "Title (4+ words)", hint: "Stuff the title with keywords buyers actually search" },
+  vintedUrl: { label: "Vinted link", hint: "Paste the Vinted URL so you can jump back to the live listing" },
 };
 
 function hasText(v: string | null | undefined, minLen = 1): boolean {
@@ -65,10 +68,10 @@ export function scoreItem(item: ItemLike): CompletenessResult {
     ["brand", hasText(item.brand)],
     ["category", hasText(item.category)],
     ["size", hasText(item.size)],
-    ["condition", hasText(item.condition)],
     ["description", hasText(item.description, 40)],
     ["photos", Array.isArray(item.photoUrls) && item.photoUrls.length >= 3],
     ["title", wordCount(item.name) >= 4],
+    ["vintedUrl", hasText(item.vintedUrl)],
   ];
 
   const fields: FieldStatus[] = checks.map(([field, present]) => ({

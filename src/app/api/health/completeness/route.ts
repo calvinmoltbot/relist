@@ -23,9 +23,9 @@ export async function GET() {
       brand: items.brand,
       category: items.category,
       size: items.size,
-      condition: items.condition,
       descriptionLength: sql<number>`COALESCE(LENGTH(${items.description}), 0)::int`,
       photoCount: sql<number>`COALESCE(array_length(${items.photoUrls}, 1), 0)::int`,
+      hasVintedUrl: sql<boolean>`${items.vintedUrl} IS NOT NULL`,
     })
     .from(items)
     .where(or(eq(items.status, "listed"), eq(items.status, "sourced")));
@@ -38,10 +38,10 @@ export async function GET() {
     brand: r.brand,
     category: r.category,
     size: r.size,
-    condition: r.condition,
     description: r.descriptionLength >= 40 ? "x".repeat(r.descriptionLength) : null,
     photoUrls:
       r.photoCount > 0 ? Array.from({ length: r.photoCount }, () => "x") : null,
+    vintedUrl: r.hasVintedUrl ? "x" : null,
   }));
 
   const summary = summarise(asScored, 5);
@@ -53,7 +53,7 @@ export async function GET() {
         .select({
           id: items.id,
           name: items.name,
-          thumbnailUrl: items.thumbnailUrl,
+          hasThumbnail: sql<boolean>`${items.thumbnailUrl} IS NOT NULL`,
           listedPrice: items.listedPrice,
         })
         .from(items)
@@ -66,7 +66,9 @@ export async function GET() {
     return {
       ...entry,
       name: extra?.name ?? "",
-      thumbnailUrl: extra?.thumbnailUrl ?? null,
+      thumbnailUrl: extra?.hasThumbnail
+        ? `/api/inventory/thumb/${entry.itemId}`
+        : null,
       listedPrice: extra?.listedPrice ?? null,
     };
   });
