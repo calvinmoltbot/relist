@@ -104,8 +104,26 @@ export default function InventoryClient({
   );
 
   const handleEdit = useCallback((item: InventoryItem) => {
+    // Open immediately with the list-row data so the dialog isn't blank, then
+    // fetch the full item — the list omits fields like vintedUrl, description
+    // and photoUrls to keep the payload small (#42).
     setEditItem(item);
     setEditOpen(true);
+
+    void (async () => {
+      try {
+        const res = await fetch(`/api/inventory/${item.id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const full = data?.item;
+        if (!full) return;
+        setEditItem((prev) =>
+          prev && prev.id === item.id ? { ...prev, ...full } : prev,
+        );
+      } catch {
+        /* keep the partial row — user can still edit visible fields */
+      }
+    })();
   }, []);
 
   const handleEditSave = useCallback(

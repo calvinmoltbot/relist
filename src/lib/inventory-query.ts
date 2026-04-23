@@ -90,9 +90,15 @@ export async function getInventoryList(
       listedPrice: items.listedPrice,
       soldPrice: items.soldPrice,
       status: items.status,
-      thumbnailUrl: items.thumbnailUrl,
+      // Emit a URL to the thumb endpoint instead of the base64 data URI —
+      // the endpoint decodes + caches per-item so the list payload stays small.
+      // NULL stays NULL so card placeholders still render for items without photos.
+      thumbnailUrl: sql<
+        string | null
+      >`CASE WHEN ${items.thumbnailUrl} IS NOT NULL THEN '/api/inventory/thumb/' || ${items.id} ELSE NULL END`,
       photoCount: sql<number>`COALESCE(array_length(${items.photoUrls}, 1), 0)::int`,
       descriptionLength: sql<number>`COALESCE(LENGTH(${items.description}), 0)::int`,
+      hasVintedUrl: sql<boolean>`${items.vintedUrl} IS NOT NULL`,
       soldAt: items.soldAt,
       createdAt: items.createdAt,
       updatedAt: items.updatedAt,
@@ -107,15 +113,15 @@ export async function getInventoryList(
       brand: r.brand,
       category: r.category,
       size: r.size,
-      condition: r.condition,
       // scorer checks typeof + min length; any ≥40-char string works
       description: r.descriptionLength >= 40 ? "x".repeat(r.descriptionLength) : null,
       // scorer checks isArray + length; a stub of the right length works
       photoUrls:
         r.photoCount > 0 ? Array.from({ length: r.photoCount }, () => "x") : null,
+      vintedUrl: r.hasVintedUrl ? "x" : null,
     });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { condition: _c, descriptionLength: _d, ...rest } = r;
+    const { condition: _c, descriptionLength: _d, hasVintedUrl: _v, ...rest } = r;
     return {
       ...rest,
       completenessScore: result.score,
