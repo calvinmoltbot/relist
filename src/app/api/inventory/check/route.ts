@@ -1,32 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { items, watchItems } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, or, like } from "drizzle-orm";
 
 // ---------------------------------------------------------------------------
 // GET /api/inventory/check?vintedUrl=...
 // Lightweight lookup used by the Chrome extension to determine button mode.
+//
+// Vinted often appends tracking query params (e.g. ?referrer=personal_profile)
+// when Lily lands on her own listing via her profile. The stored URL is clean,
+// so an exact match would miss. We normalise by stripping query + hash, then
+// also match any stored URL that starts with the same path prefix — covers
+// legacy dirty data too.
 // ---------------------------------------------------------------------------
-export async function GET(request: NextRequest) {
-  const vintedUrl = request.nextUrl.searchParams.get("vintedUrl");
+function normaliseVintedUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.origin}${u.pathname}`.replace(/\/$/, "");
+  } catch {
+    return url.split("?")[0].split("#")[0].replace(/\/$/, "");
+  }
+}
 
-  if (!vintedUrl) {
+export async function GET(request: NextRequest) {
+  const rawUrl = request.nextUrl.searchParams.get("vintedUrl");
+
+  if (!rawUrl) {
     return NextResponse.json(
       { inInventory: false, watched: false },
       { status: 200 },
     );
   }
 
+  const clean = normaliseVintedUrl(rawUrl);
+  const prefixMatch = `${clean}%`;
+
   const [inventoryResult, watchResult] = await Promise.all([
     db
       .select({ id: items.id, status: items.status })
       .from(items)
-      .where(eq(items.vintedUrl, vintedUrl))
+      .where(
+        or(eq(items.vintedUrl, clean), like(items.vintedUrl, prefixMatch)),
+      )
       .limit(1),
     db
       .select({ id: watchItems.id, status: watchItems.status })
       .from(watchItems)
-      .where(eq(watchItems.vintedUrl, vintedUrl))
+      .where(
+        or(
+          eq(watchItems.vintedUrl, clean),
+          like(watchItems.vintedUrl, prefixMatch),
+        ),
+      )
       .limit(1),
   ]);
 
