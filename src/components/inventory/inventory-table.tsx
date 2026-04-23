@@ -180,7 +180,7 @@ export function InventoryTable({
             const isSelected = selectedIds.has(item.id);
             const cost = item.costPrice ? parseFloat(item.costPrice) : null;
             const sold = item.soldPrice ? parseFloat(item.soldPrice) : null;
-            const profit = sold != null && cost != null ? sold - cost : null;
+            const profit = sold != null ? sold - (cost ?? 0) : null;
             const statusCfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.sourced;
 
             // Format soldAt for date input

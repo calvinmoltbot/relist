@@ -90,7 +90,7 @@ export function ItemCard({ item, onStatusChange, onEdit, onDelete }: ItemCardPro
   const cost = item.costPrice ? parseFloat(item.costPrice) : null;
   const listed = item.listedPrice ? parseFloat(item.listedPrice) : null;
   const sold = item.soldPrice ? parseFloat(item.soldPrice) : null;
-  const profit = sold != null && cost != null ? sold - cost : null;
+  const profit = sold != null ? sold - (cost ?? 0) : null;
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl bg-zinc-900 ring-1 ring-white/[0.06] transition-all hover:ring-white/[0.12]">
