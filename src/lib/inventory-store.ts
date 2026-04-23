@@ -24,6 +24,8 @@ export interface InventoryItem {
   listedAt: string | null;
   soldAt: string | null;
   shippedAt: string | null;
+  lastEditedAt?: string | null;
+  relistCount?: number;
   createdAt: string | null;
   updatedAt: string | null;
   completenessScore?: number;

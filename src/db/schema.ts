@@ -37,6 +37,8 @@ export const items = pgTable(
     soldAt: timestamp("sold_at"),
     buyerPaidShipping: boolean("buyer_paid_shipping").default(true),
     shippedAt: timestamp("shipped_at"),
+    lastEditedAt: timestamp("last_edited_at"),
+    relistCount: integer("relist_count").default(0).notNull(),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
@@ -48,6 +50,7 @@ export const items = pgTable(
     index("items_listed_at_idx").on(table.listedAt),
     index("items_sold_at_idx").on(table.soldAt),
     index("items_vinted_url_idx").on(table.vintedUrl),
+    index("items_last_edited_at_idx").on(table.lastEditedAt),
   ],
 );
 

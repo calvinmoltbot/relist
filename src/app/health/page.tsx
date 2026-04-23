@@ -9,6 +9,7 @@ import {
   DeadStockCard,
 } from "@/components/profit/inventory-health";
 import { CompletenessCard } from "@/components/health/completeness-card";
+import { NeedsRefreshCard } from "@/components/health/needs-refresh-card";
 
 // ---------------------------------------------------------------------------
 // Shape we need from /api/profit — we only pluck what Inventory Health uses.
@@ -92,13 +93,14 @@ export default function HealthPage() {
             <AgingChart data={data.inventoryHealth} />
             <DeadStockCard data={data.inventoryHealth} />
             <CompletenessCard />
+            <NeedsRefreshCard />
           </div>
 
           <Card className="border-dashed border-zinc-800 bg-zinc-900/30">
             <CardContent className="p-5 text-sm text-zinc-400">
-              <strong className="text-zinc-200">Coming next:</strong> refresh checklist with{" "}
-              <code>lastEditedAt</code> (#36), price competitiveness (#37), portfolio mix (#38),
-              and listing cadence (#39).
+              <strong className="text-zinc-200">Coming next:</strong> price
+              competitiveness (#37), portfolio mix (#38), and listing cadence
+              (#39).
             </CardContent>
           </Card>
         </>

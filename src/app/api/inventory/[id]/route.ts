@@ -5,6 +5,25 @@ import { eq, and } from "drizzle-orm";
 
 const SOLD_STATUSES = new Set(["sold", "shipped"]);
 
+// Fields whose change counts as a "real" listing refresh for Vinted's algo.
+// Status transitions alone don't qualify.
+type ItemRow = typeof items.$inferSelect;
+function meaningfulEdit(existing: ItemRow, body: Record<string, unknown>): boolean {
+  if (typeof body.name === "string" && body.name !== existing.name) return true;
+  if (typeof body.description === "string" && body.description !== existing.description) return true;
+  if (body.listedPrice !== undefined && String(body.listedPrice ?? "") !== String(existing.listedPrice ?? "")) {
+    return true;
+  }
+  if (Array.isArray(body.photoUrls)) {
+    const prev = existing.photoUrls ?? [];
+    if (body.photoUrls.length !== prev.length) return true;
+    for (let i = 0; i < body.photoUrls.length; i++) {
+      if (body.photoUrls[i] !== prev[i]) return true;
+    }
+  }
+  return false;
+}
+
 // ---------------------------------------------------------------------------
 // GET /api/inventory/[id]
 // ---------------------------------------------------------------------------
@@ -69,6 +88,12 @@ export async function PATCH(
   // Remove transaction-only fields from item updates
   delete updates.shippingCost;
   delete updates.platformFees;
+
+  // Bump lastEditedAt when a listing-visible field actually changes — Vinted's
+  // algorithm rewards recent edits, but only if content has meaningfully changed.
+  if (meaningfulEdit(existing, body)) {
+    updates.lastEditedAt = now;
+  }
 
   if (body.status === "listed" && existing.status !== "listed" && !body.listedAt) {
     updates.listedAt = now;

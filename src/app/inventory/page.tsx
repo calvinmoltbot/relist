@@ -33,6 +33,8 @@ export default async function InventoryPage() {
     listedAt: null,
     soldAt: r.soldAt ? r.soldAt.toISOString() : null,
     shippedAt: null,
+    lastEditedAt: r.lastEditedAt ? r.lastEditedAt.toISOString() : null,
+    relistCount: r.relistCount,
     createdAt: r.createdAt ? r.createdAt.toISOString() : null,
     updatedAt: r.updatedAt ? r.updatedAt.toISOString() : null,
     completenessScore: r.completenessScore,
