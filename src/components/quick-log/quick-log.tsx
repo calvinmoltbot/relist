@@ -8,51 +8,24 @@ import {
   Search,
   Check,
   Package,
-  Plus,
-  Tag,
   Loader2,
+  ExternalLink,
 } from "lucide-react";
 import type { Item } from "@/db/schema";
 
 // ---------------------------------------------------------------------------
-// Types
+// Quick Log — update an existing item's status (sold / shipped).
+//
+// NOTE: Creating new items lives in the Chrome extension (listing-first
+// workflow). Quick Log is deliberately update-only so records never ship
+// with missing vintedUrl / photos / description.
 // ---------------------------------------------------------------------------
-type Mode = "sold" | "shipped" | "new" | "listed";
 
-interface QuickLogState {
-  mode: Mode;
-  open: boolean;
-  search: string;
-  results: Item[];
-  loading: boolean;
-  selectedItem: Item | null;
-  soldPrice: string;
-  soldDate: string;
-  // New item fields
-  name: string;
-  brand: string;
-  size: string;
-  costPrice: string;
-  listPrice: string;
-  sourceType: string;
-  // UI
-  submitting: boolean;
-  success: string | null;
-}
+type Mode = "sold" | "shipped";
 
 const MODES: { key: Mode; label: string; icon: React.ReactNode }[] = [
   { key: "sold", label: "Sold", icon: <Check className="size-3.5" /> },
   { key: "shipped", label: "Shipped", icon: <Package className="size-3.5" /> },
-  { key: "new", label: "New Item", icon: <Plus className="size-3.5" /> },
-  { key: "listed", label: "Listed", icon: <Tag className="size-3.5" /> },
-];
-
-const SOURCE_OPTIONS = [
-  { value: "", label: "Select source..." },
-  { value: "charity_shop", label: "Charity shop" },
-  { value: "car_boot", label: "Car boot" },
-  { value: "online", label: "Online" },
-  { value: "other", label: "Gifted / Other" },
 ];
 
 function todayString() {
@@ -81,18 +54,18 @@ function useInventorySearch(status: string) {
       timerRef.current = setTimeout(async () => {
         try {
           const res = await fetch(
-            `/api/inventory?status=${status}&search=${encodeURIComponent(q)}`
+            `/api/inventory?search=${encodeURIComponent(q)}&status=${status}`,
           );
-          const data = await res.json();
-          setResults((data.items as Item[]).slice(0, 6));
-        } catch {
-          setResults([]);
+          if (res.ok) {
+            const data = await res.json();
+            setResults((data.items ?? []).slice(0, 5));
+          }
         } finally {
           setLoading(false);
         }
-      }, 300);
+      }, 200);
     },
-    [status]
+    [status],
   );
 
   const clear = useCallback(() => {
@@ -117,14 +90,6 @@ export function QuickLog() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // New/Listed item fields
-  const [name, setName] = useState("");
-  const [brand, setBrand] = useState("");
-  const [size, setSize] = useState("");
-  const [costPrice, setCostPrice] = useState("");
-  const [listPrice, setListPrice] = useState("");
-  const [sourceType, setSourceType] = useState("");
-
   const searchStatus = mode === "sold" ? "listed" : "sold";
   const inv = useInventorySearch(searchStatus);
 
@@ -139,17 +104,10 @@ export function QuickLog() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  // Reset state when closing or switching modes
   const resetForm = useCallback(() => {
     setSelectedItem(null);
     setSoldPrice("");
     setSoldDate(todayString());
-    setName("");
-    setBrand("");
-    setSize("");
-    setCostPrice("");
-    setListPrice("");
-    setSourceType("");
     setSuccess(null);
     inv.clear();
   }, [inv]);
@@ -159,7 +117,7 @@ export function QuickLog() {
       setMode(m);
       resetForm();
     },
-    [resetForm]
+    [resetForm],
   );
 
   const handleSelectItem = useCallback((item: Item) => {
@@ -167,7 +125,6 @@ export function QuickLog() {
     if (item.listedPrice) setSoldPrice(item.listedPrice);
   }, []);
 
-  // Submit handlers
   const handleSold = async () => {
     if (!selectedItem) return;
     setSubmitting(true);
@@ -219,63 +176,6 @@ export function QuickLog() {
     }
   };
 
-  const handleNewItem = async (asListed: boolean) => {
-    if (!name.trim()) return;
-    setSubmitting(true);
-    try {
-      const body: Record<string, unknown> = {
-        name: name.trim(),
-        brand: brand.trim() || undefined,
-        size: size.trim() || undefined,
-        costPrice: costPrice || undefined,
-        listedPrice: listPrice || undefined,
-        sourceType: sourceType || undefined,
-      };
-
-      if (asListed) {
-        // Create item then immediately mark as listed
-        const res = await fetch("/api/inventory", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        if (!res.ok) throw new Error("Failed to create");
-        const data = await res.json();
-        // Now mark as listed
-        const patchRes = await fetch(`/api/inventory/${data.item.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            status: "listed",
-            listedPrice: listPrice || undefined,
-          }),
-        });
-        if (!patchRes.ok) throw new Error("Failed to list");
-        setSuccess(`Listed: ${name.trim()}`);
-      } else {
-        const res = await fetch("/api/inventory", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        if (!res.ok) throw new Error("Failed");
-        setSuccess(`Added: ${name.trim()}`);
-      }
-
-      setTimeout(() => {
-        resetForm();
-        setOpen(false);
-      }, 1500);
-    } catch {
-      setSuccess(null);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // -------------------------------------------------------------------------
-  // Render
-  // -------------------------------------------------------------------------
   return (
     <>
       {/* Floating Action Button */}
@@ -315,7 +215,6 @@ export function QuickLog() {
       <AnimatePresence>
         {open && (
           <>
-            {/* Backdrop (mobile) */}
             <motion.div
               key="ql-backdrop"
               initial={{ opacity: 0 }}
@@ -338,7 +237,6 @@ export function QuickLog() {
                 bg-zinc-900 border border-white/[0.08] shadow-2xl shadow-black/40
                 flex flex-col overflow-hidden"
             >
-              {/* Header */}
               <div className="flex items-center justify-between px-4 pt-4 pb-2">
                 <h2 className="text-sm font-semibold text-zinc-100 tracking-tight">
                   Quick Log
@@ -351,7 +249,6 @@ export function QuickLog() {
                 </button>
               </div>
 
-              {/* Mode pills */}
               <div className="flex gap-1 px-4 pb-3">
                 {MODES.map((m) => (
                   <button
@@ -361,11 +258,7 @@ export function QuickLog() {
                       mode === m.key
                         ? m.key === "sold"
                           ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25"
-                          : m.key === "shipped"
-                            ? "bg-blue-500/15 text-blue-400 border border-blue-500/25"
-                            : m.key === "new"
-                              ? "bg-amber-500/15 text-amber-400 border border-amber-500/25"
-                              : "bg-purple-500/15 text-purple-400 border border-purple-500/25"
+                          : "bg-blue-500/15 text-blue-400 border border-blue-500/25"
                         : "text-zinc-300 hover:text-zinc-200 border border-transparent hover:bg-zinc-800"
                     }`}
                   >
@@ -375,12 +268,9 @@ export function QuickLog() {
                 ))}
               </div>
 
-              {/* Divider */}
               <div className="h-px bg-white/[0.06]" />
 
-              {/* Content area */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {/* Success message */}
                 {success && (
                   <motion.div
                     initial={{ opacity: 0, y: -8 }}
@@ -392,268 +282,154 @@ export function QuickLog() {
                   </motion.div>
                 )}
 
-                {/* Sold / Shipped modes — item search */}
-                {(mode === "sold" || mode === "shipped") && !success && (
+                {!success && !selectedItem && (
                   <>
-                    {!selectedItem ? (
-                      <>
-                        {/* Search input */}
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-300" />
-                          <input
-                            type="text"
-                            value={inv.query}
-                            onChange={(e) => inv.search(e.target.value)}
-                            placeholder={
-                              mode === "sold"
-                                ? "Search listed items..."
-                                : "Search sold items..."
-                            }
-                            className="w-full rounded-lg bg-zinc-800 border border-white/[0.08] py-2.5 pl-10 pr-3 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-blue-500/50 transition-colors"
-                            autoFocus
-                          />
-                          {inv.loading && (
-                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-zinc-300 animate-spin" />
-                          )}
-                        </div>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-300" />
+                      <input
+                        type="text"
+                        value={inv.query}
+                        onChange={(e) => inv.search(e.target.value)}
+                        placeholder={
+                          mode === "sold"
+                            ? "Search listed items…"
+                            : "Search sold items…"
+                        }
+                        className="w-full rounded-lg bg-zinc-800 border border-white/[0.08] py-2.5 pl-10 pr-3 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-blue-500/50 transition-colors"
+                        autoFocus
+                      />
+                      {inv.loading && (
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-zinc-300 animate-spin" />
+                      )}
+                    </div>
 
-                        {/* Results dropdown */}
-                        {inv.results.length > 0 && (
-                          <div className="rounded-lg border border-white/[0.06] bg-zinc-800/60 overflow-hidden">
-                            {inv.results.map((item) => (
-                              <button
-                                key={item.id}
-                                onClick={() => handleSelectItem(item)}
-                                className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-zinc-700/50 transition-colors border-b border-white/[0.04] last:border-b-0"
-                              >
-                                <StatusPill status={item.status} />
-                                <div className="min-w-0 flex-1">
-                                  <p className="truncate text-sm font-medium text-zinc-100">
-                                    {item.name}
-                                  </p>
-                                  {item.brand && (
-                                    <p className="truncate text-xs text-zinc-300">
-                                      {item.brand}
-                                    </p>
-                                  )}
-                                </div>
-                                {item.listedPrice && (
-                                  <span className="text-sm font-medium text-zinc-400 tabular-nums">
-                                    £{Number(item.listedPrice).toFixed(2)}
-                                  </span>
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-
-                        {inv.query && !inv.loading && inv.results.length === 0 && (
-                          <p className="text-center text-sm text-zinc-300 py-4">
-                            No {mode === "sold" ? "listed" : "sold"} items found
-                          </p>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {/* Selected item */}
-                        <div className="flex items-center gap-3 rounded-lg bg-zinc-800/60 border border-white/[0.06] px-3 py-2.5">
-                          <StatusPill status={selectedItem.status} />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-zinc-100">
-                              {selectedItem.name}
-                            </p>
-                            {selectedItem.brand && (
-                              <p className="truncate text-xs text-zinc-300">
-                                {selectedItem.brand}
-                              </p>
-                            )}
-                          </div>
+                    {inv.results.length > 0 && (
+                      <div className="rounded-lg border border-white/[0.06] bg-zinc-800/60 overflow-hidden">
+                        {inv.results.map((item) => (
                           <button
-                            onClick={() => {
-                              setSelectedItem(null);
-                              inv.clear();
-                            }}
-                            className="flex size-6 items-center justify-center rounded text-zinc-300 hover:text-zinc-200 hover:bg-zinc-700 transition-colors"
+                            key={item.id}
+                            onClick={() => handleSelectItem(item)}
+                            className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-zinc-700/50 transition-colors border-b border-white/[0.04] last:border-b-0"
                           >
-                            <X className="size-3.5" />
+                            <StatusPill status={item.status} />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-zinc-100">
+                                {item.name}
+                              </p>
+                              {item.brand && (
+                                <p className="truncate text-xs text-zinc-300">
+                                  {item.brand}
+                                </p>
+                              )}
+                            </div>
+                            {item.listedPrice && (
+                              <span className="text-sm font-medium text-zinc-400 tabular-nums">
+                                £{Number(item.listedPrice).toFixed(2)}
+                              </span>
+                            )}
                           </button>
-                        </div>
+                        ))}
+                      </div>
+                    )}
 
-                        {mode === "sold" && (
-                          <>
-                            {/* Sold price */}
-                            <div>
-                              <label className="block text-xs font-medium text-zinc-400 mb-1.5">
-                                Sold Price
-                              </label>
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-300">
-                                  £
-                                </span>
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  value={soldPrice}
-                                  onChange={(e) => setSoldPrice(e.target.value)}
-                                  className="w-full rounded-lg bg-zinc-800 border border-white/[0.08] py-2.5 pl-7 pr-3 text-sm text-zinc-100 outline-none focus:border-blue-500/50 transition-colors tabular-nums"
-                                  placeholder="0.00"
-                                />
-                              </div>
-                            </div>
+                    {inv.query && !inv.loading && inv.results.length === 0 && (
+                      <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-3 text-xs text-amber-200">
+                        <p className="font-medium text-amber-300">
+                          Not in ReList yet
+                        </p>
+                        <p className="mt-1 text-amber-200/80">
+                          Open the listing on Vinted and click the ReList
+                          extension button — it captures the URL, photos and
+                          description automatically. Come back here to log the
+                          sale.
+                        </p>
+                      </div>
+                    )}
 
-                            {/* Date */}
-                            <div>
-                              <label className="block text-xs font-medium text-zinc-400 mb-1.5">
-                                Date
-                              </label>
-                              <input
-                                type="date"
-                                value={soldDate}
-                                onChange={(e) => setSoldDate(e.target.value)}
-                                className="w-full rounded-lg bg-zinc-800 border border-white/[0.08] py-2.5 px-3 text-sm text-zinc-100 outline-none focus:border-blue-500/50 transition-colors [color-scheme:dark]"
-                              />
-                            </div>
-                          </>
-                        )}
-
-                        {/* Submit */}
-                        <button
-                          onClick={mode === "sold" ? handleSold : handleShipped}
-                          disabled={submitting}
-                          className={`w-full rounded-lg py-2.5 text-sm font-medium text-white transition-colors disabled:opacity-50 ${
-                            mode === "sold"
-                              ? "bg-emerald-600 hover:bg-emerald-500"
-                              : "bg-blue-600 hover:bg-blue-500"
-                          }`}
-                        >
-                          {submitting ? (
-                            <Loader2 className="mx-auto size-4 animate-spin" />
-                          ) : mode === "sold" ? (
-                            "Log Sale"
-                          ) : (
-                            "Mark Shipped"
-                          )}
-                        </button>
-                      </>
+                    {!inv.query && (
+                      <p className="flex items-center gap-1.5 text-xs text-zinc-500">
+                        <ExternalLink className="size-3" />
+                        Add new items via the Chrome extension on Vinted.
+                      </p>
                     )}
                   </>
                 )}
 
-                {/* New Item / Listed modes */}
-                {(mode === "new" || mode === "listed") && !success && (
+                {!success && selectedItem && (
                   <>
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-400 mb-1.5">
-                        Name <span className="text-red-400">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full rounded-lg bg-zinc-800 border border-white/[0.08] py-2.5 px-3 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-blue-500/50 transition-colors"
-                        placeholder="Item name"
-                        autoFocus
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-1.5">
-                          Brand
-                        </label>
-                        <input
-                          type="text"
-                          value={brand}
-                          onChange={(e) => setBrand(e.target.value)}
-                          className="w-full rounded-lg bg-zinc-800 border border-white/[0.08] py-2.5 px-3 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-blue-500/50 transition-colors"
-                          placeholder="e.g. Nike"
-                        />
+                    <div className="flex items-center gap-3 rounded-lg bg-zinc-800/60 border border-white/[0.06] px-3 py-2.5">
+                      <StatusPill status={selectedItem.status} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-zinc-100">
+                          {selectedItem.name}
+                        </p>
+                        {selectedItem.brand && (
+                          <p className="truncate text-xs text-zinc-300">
+                            {selectedItem.brand}
+                          </p>
+                        )}
                       </div>
-                      <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-1.5">
-                          Size
-                        </label>
-                        <input
-                          type="text"
-                          value={size}
-                          onChange={(e) => setSize(e.target.value)}
-                          className="w-full rounded-lg bg-zinc-800 border border-white/[0.08] py-2.5 px-3 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-blue-500/50 transition-colors"
-                          placeholder="e.g. M"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-1.5">
-                          Cost Price
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-300">
-                            £
-                          </span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={costPrice}
-                            onChange={(e) => setCostPrice(e.target.value)}
-                            className="w-full rounded-lg bg-zinc-800 border border-white/[0.08] py-2.5 pl-7 pr-3 text-sm text-zinc-100 outline-none focus:border-blue-500/50 transition-colors tabular-nums"
-                            placeholder="0.00"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-1.5">
-                          List Price
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-300">
-                            £
-                          </span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={listPrice}
-                            onChange={(e) => setListPrice(e.target.value)}
-                            className="w-full rounded-lg bg-zinc-800 border border-white/[0.08] py-2.5 pl-7 pr-3 text-sm text-zinc-100 outline-none focus:border-blue-500/50 transition-colors tabular-nums"
-                            placeholder="0.00"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-400 mb-1.5">
-                        Source
-                      </label>
-                      <select
-                        value={sourceType}
-                        onChange={(e) => setSourceType(e.target.value)}
-                        className="w-full rounded-lg bg-zinc-800 border border-white/[0.08] py-2.5 px-3 text-sm text-zinc-100 outline-none focus:border-blue-500/50 transition-colors [color-scheme:dark] appearance-none"
+                      <button
+                        onClick={() => {
+                          setSelectedItem(null);
+                          inv.clear();
+                        }}
+                        className="flex size-6 items-center justify-center rounded text-zinc-300 hover:text-zinc-200 hover:bg-zinc-700 transition-colors"
                       >
-                        {SOURCE_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>
-                            {o.label}
-                          </option>
-                        ))}
-                      </select>
+                        <X className="size-3.5" />
+                      </button>
                     </div>
+
+                    {mode === "sold" && (
+                      <>
+                        <div>
+                          <label className="block text-xs font-medium text-zinc-400 mb-1.5">
+                            Sold Price
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-300">
+                              £
+                            </span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={soldPrice}
+                              onChange={(e) => setSoldPrice(e.target.value)}
+                              className="w-full rounded-lg bg-zinc-800 border border-white/[0.08] py-2.5 pl-7 pr-3 text-sm text-zinc-100 outline-none focus:border-blue-500/50 transition-colors tabular-nums"
+                              placeholder="0.00"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-zinc-400 mb-1.5">
+                            Date
+                          </label>
+                          <input
+                            type="date"
+                            value={soldDate}
+                            onChange={(e) => setSoldDate(e.target.value)}
+                            className="w-full rounded-lg bg-zinc-800 border border-white/[0.08] py-2.5 px-3 text-sm text-zinc-100 outline-none focus:border-blue-500/50 transition-colors [color-scheme:dark]"
+                          />
+                        </div>
+                      </>
+                    )}
 
                     <button
-                      onClick={() => handleNewItem(mode === "listed")}
-                      disabled={submitting || !name.trim()}
+                      onClick={mode === "sold" ? handleSold : handleShipped}
+                      disabled={submitting}
                       className={`w-full rounded-lg py-2.5 text-sm font-medium text-white transition-colors disabled:opacity-50 ${
-                        mode === "listed"
-                          ? "bg-purple-600 hover:bg-purple-500"
-                          : "bg-amber-600 hover:bg-amber-500"
+                        mode === "sold"
+                          ? "bg-emerald-600 hover:bg-emerald-500"
+                          : "bg-blue-600 hover:bg-blue-500"
                       }`}
                     >
                       {submitting ? (
                         <Loader2 className="mx-auto size-4 animate-spin" />
-                      ) : mode === "listed" ? (
-                        "Add & List"
+                      ) : mode === "sold" ? (
+                        "Log Sale"
                       ) : (
-                        "Add to Inventory"
+                        "Mark Shipped"
                       )}
                     </button>
                   </>
