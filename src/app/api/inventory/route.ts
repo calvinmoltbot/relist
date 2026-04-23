@@ -19,8 +19,9 @@ export async function GET(request: NextRequest) {
     | "price"
     | "brand"
     | null;
+  const incompleteOnly = searchParams.get("incompleteOnly") === "1";
 
-  const result = await getInventoryList({ status, search, sort });
+  const result = await getInventoryList({ status, search, sort, incompleteOnly });
 
   return NextResponse.json(
     { items: result },

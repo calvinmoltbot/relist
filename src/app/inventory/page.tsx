@@ -35,6 +35,9 @@ export default async function InventoryPage() {
     shippedAt: null,
     createdAt: r.createdAt ? r.createdAt.toISOString() : null,
     updatedAt: r.updatedAt ? r.updatedAt.toISOString() : null,
+    completenessScore: r.completenessScore,
+    completenessBand: r.completenessBand,
+    completenessGap: r.completenessGap,
   }));
 
   return <InventoryClient initialItems={initialItems} />;

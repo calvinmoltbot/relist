@@ -26,6 +26,9 @@ export interface InventoryItem {
   shippedAt: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  completenessScore?: number;
+  completenessBand?: "green" | "amber" | "red";
+  completenessGap?: string | null;
 }
 
 export interface NewInventoryItem {
@@ -49,6 +52,7 @@ export interface InventoryFilters {
   status: ItemStatus;
   search: string;
   sortBy: SortBy;
+  incompleteOnly?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,6 +93,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       if (filters.status !== "all") params.set("status", filters.status);
       if (filters.search) params.set("search", filters.search);
       if (filters.sortBy) params.set("sort", filters.sortBy);
+      if (filters.incompleteOnly) params.set("incompleteOnly", "1");
 
       const res = await fetch(`/api/inventory?${params.toString()}`);
       const data = await res.json();
