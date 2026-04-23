@@ -2,14 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { HeartPulse } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { InventoryHealth } from "@/components/profit/inventory-health";
+  FreshnessStats,
+  AgingChart,
+  DeadStockCard,
+} from "@/components/profit/inventory-health";
 import { CompletenessCard } from "@/components/health/completeness-card";
 
 // ---------------------------------------------------------------------------
@@ -63,7 +61,7 @@ export default function HealthPage() {
   }, []);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-4 sm:p-6">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 p-4 sm:p-6">
       <header className="flex flex-col gap-1">
         <h1 className="flex items-center gap-2 text-xl font-semibold text-zinc-100">
           <HeartPulse className="size-5 text-rose-400" />
@@ -85,25 +83,16 @@ export default function HealthPage() {
 
       {data && !loading && !error && (
         <>
-          <Card className="border-zinc-800 bg-zinc-900/40">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base text-zinc-100">
-                Freshness
-              </CardTitle>
-              <CardDescription className="text-zinc-400">
-                Age of your currently-listed inventory. Older listings get buried by Vinted's algorithm — aim to keep the right-hand buckets empty.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <InventoryHealth
-                data={data.inventoryHealth}
-                sellThroughRate={data.summary.sellThroughRate}
-                avgDaysToSell={data.summary.avgDaysToSell}
-              />
-            </CardContent>
-          </Card>
-
-          <CompletenessCard />
+          <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+            <FreshnessStats
+              data={data.inventoryHealth}
+              sellThroughRate={data.summary.sellThroughRate}
+              avgDaysToSell={data.summary.avgDaysToSell}
+            />
+            <AgingChart data={data.inventoryHealth} />
+            <DeadStockCard data={data.inventoryHealth} />
+            <CompletenessCard />
+          </div>
 
           <Card className="border-dashed border-zinc-800 bg-zinc-900/30">
             <CardContent className="p-5 text-sm text-zinc-400">

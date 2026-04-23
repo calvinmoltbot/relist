@@ -257,7 +257,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     id: "health-freshness",
     title: "Freshness Aging Buckets",
     description:
-      "The stacked bar shows how your unsold stock splits across age bands. Vinted buries old listings, so aim to keep items out of the 3+ week bands — refresh them (edit title/photo/description) or consider dropping the price.",
+      "The stacked bar shows how your unsold stock splits across age bands: just listed (0–3 days), this week (4–7), 2 weeks (8–14), over 2 weeks (15–21), and really stale (22+). Aim to keep everything in the first two bands — once something slides into the 2-weeks band, refresh it (edit title/photo/description) or drop the price.",
     category: "tip",
     group: "Health",
     context: "/health",

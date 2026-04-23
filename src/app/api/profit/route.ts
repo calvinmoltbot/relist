@@ -371,9 +371,14 @@ function computeInventoryHealth(
   const now = new Date();
   const unsold = [...listed, ...sourced];
 
-  // Aging buckets — weekly, up to 4+ weeks
-  const buckets = { "0-7": 0, "8-14": 0, "15-21": 0, "22-28": 0, "28+": 0 };
-  const bucketValues = { "0-7": 0, "8-14": 0, "15-21": 0, "22-28": 0, "28+": 0 };
+  // Aging buckets tuned to Lily's 2-week ceiling:
+  //   0-3 days   = just listed
+  //   4-7 days   = this week
+  //   8-14 days  = second week (amber — should be moving)
+  //   15-21 days = over 2 weeks (orange — reprice/relist)
+  //   22+ days   = really stale (red)
+  const buckets = { "0-3": 0, "4-7": 0, "8-14": 0, "15-21": 0, "22+": 0 };
+  const bucketValues = { "0-3": 0, "4-7": 0, "8-14": 0, "15-21": 0, "22+": 0 };
 
   const deadStock: {
     id: string;
@@ -388,21 +393,21 @@ function computeInventoryHealth(
     const days = Math.round((now.getTime() - refDate.getTime()) / (1000 * 60 * 60 * 24));
     const value = item.listedPrice ? parseFloat(item.listedPrice) : (item.costPrice ? parseFloat(item.costPrice) : 0);
 
-    if (days <= 7) {
-      buckets["0-7"]++;
-      bucketValues["0-7"] += value;
+    if (days <= 3) {
+      buckets["0-3"]++;
+      bucketValues["0-3"] += value;
+    } else if (days <= 7) {
+      buckets["4-7"]++;
+      bucketValues["4-7"] += value;
     } else if (days <= 14) {
       buckets["8-14"]++;
       bucketValues["8-14"] += value;
     } else if (days <= 21) {
       buckets["15-21"]++;
       bucketValues["15-21"] += value;
-    } else if (days <= 28) {
-      buckets["22-28"]++;
-      bucketValues["22-28"] += value;
     } else {
-      buckets["28+"]++;
-      bucketValues["28+"] += value;
+      buckets["22+"]++;
+      bucketValues["22+"] += value;
     }
 
     if (days >= deadStockDays) {
@@ -424,17 +429,17 @@ function computeInventoryHealth(
   const totalStockValue = Object.values(bucketValues).reduce((a, b) => a + b, 0);
   const inventoryTurnover = totalStockValue > 0 ? totalCOGS / totalStockValue : 0;
 
-  // Stock value at risk (unsold 4+ weeks)
-  const stockAtRisk = round(bucketValues["28+"]);
+  // Stock value at risk: unsold for more than 2 weeks (orange + red buckets)
+  const stockAtRisk = round(bucketValues["15-21"] + bucketValues["22+"]);
 
   return {
     agingBuckets: buckets,
     agingValues: {
-      "0-7": round(bucketValues["0-7"]),
+      "0-3": round(bucketValues["0-3"]),
+      "4-7": round(bucketValues["4-7"]),
       "8-14": round(bucketValues["8-14"]),
       "15-21": round(bucketValues["15-21"]),
-      "22-28": round(bucketValues["22-28"]),
-      "28+": round(bucketValues["28+"]),
+      "22+": round(bucketValues["22+"]),
     },
     deadStock: deadStock.sort((a, b) => b.daysListed - a.daysListed),
     totalUnsold: unsold.length,
