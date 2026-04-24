@@ -251,6 +251,7 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
                 onChange={(e) => setListedPrice(e.target.value)}
                 className="bg-zinc-900"
               />
+              <PriceBandHint item={item} listedPrice={listedPrice} />
             </div>
 
             {(status === "sold" || status === "shipped") && (
@@ -609,5 +610,50 @@ function DescriptionField({
         <p className="text-xs text-red-400">{genError}</p>
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Inline hint under the Listed price field — compares the current draft
+// to the market band stored on the item (baked in by inventory-query).
+// ---------------------------------------------------------------------------
+function PriceBandHint({
+  item,
+  listedPrice,
+}: {
+  item: InventoryItem | null;
+  listedPrice: string;
+}) {
+  if (!item || item.priceBand == null || item.priceBand === "none") return null;
+  if (item.priceP25 == null || item.priceP75 == null) return null;
+
+  const draft = parseFloat(listedPrice);
+  const live = Number.isFinite(draft) && draft > 0 ? draft : null;
+
+  const tone =
+    item.priceBand === "high"
+      ? "text-rose-300"
+      : item.priceBand === "low"
+        ? "text-amber-300"
+        : "text-emerald-300";
+  const label =
+    item.priceBand === "high"
+      ? "above market band"
+      : item.priceBand === "low"
+        ? "below market band"
+        : "in market band";
+
+  const range = `£${item.priceP25.toFixed(0)}–£${item.priceP75.toFixed(0)}`;
+
+  return (
+    <p className="text-[11px] text-zinc-400">
+      <span className={tone}>{label}</span> · typical sold band {range}
+      {item.priceMedian != null ? (
+        <> · median £{item.priceMedian.toFixed(0)}</>
+      ) : null}
+      {live != null && live !== parseFloat(item.listedPrice ?? "") ? (
+        <span className="ml-1 text-zinc-500">(saved value used for band)</span>
+      ) : null}
+    </p>
   );
 }

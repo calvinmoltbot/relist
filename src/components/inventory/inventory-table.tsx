@@ -170,6 +170,7 @@ export function InventoryTable({
             <th className="sticky top-0 z-10 w-24 border-b border-white/[0.06] bg-zinc-900 px-3 py-2.5">Status</th>
             <th className="sticky top-0 z-10 w-24 border-b border-white/[0.06] bg-zinc-900 px-3 py-2.5">Cost</th>
             <th className="sticky top-0 z-10 w-24 border-b border-white/[0.06] bg-zinc-900 px-3 py-2.5">Listed</th>
+            <th className="sticky top-0 z-10 w-24 border-b border-white/[0.06] bg-zinc-900 px-3 py-2.5">Price check</th>
             <th className="sticky top-0 z-10 w-24 border-b border-white/[0.06] bg-zinc-900 px-3 py-2.5">Sold</th>
             <th className="sticky top-0 z-10 w-28 border-b border-white/[0.06] bg-zinc-900 px-3 py-2.5">Sold Date</th>
             <th className="sticky top-0 z-10 w-24 border-b border-white/[0.06] bg-zinc-900 px-3 py-2.5">Profit</th>
@@ -270,6 +271,11 @@ export function InventoryTable({
                   )}
                 </td>
 
+                {/* Price check vs market band */}
+                <td className="px-3 py-2">
+                  <PriceCheckBadge item={item} />
+                </td>
+
                 {/* Sold price — editable */}
                 <td className="px-3 py-2">
                   <InlineEditCell
@@ -319,5 +325,61 @@ export function InventoryTable({
         </div>
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Price check badge — compact inline indicator of listedPrice vs market band.
+// ---------------------------------------------------------------------------
+const PRICE_BAND_STYLE: Record<
+  NonNullable<InventoryItem["priceBand"]>,
+  { label: string; className: string }
+> = {
+  high: {
+    label: "High",
+    className: "bg-rose-500/15 text-rose-300 border-rose-500/25",
+  },
+  range: {
+    label: "In range",
+    className: "bg-emerald-500/15 text-emerald-300 border-emerald-500/25",
+  },
+  low: {
+    label: "Low",
+    className: "bg-amber-500/15 text-amber-300 border-amber-500/25",
+  },
+  none: {
+    label: "—",
+    className: "text-zinc-400",
+  },
+};
+
+function PriceCheckBadge({ item }: { item: InventoryItem }) {
+  if (item.status !== "listed") {
+    return <span className="px-1.5 py-0.5 text-zinc-400">{"—"}</span>;
+  }
+  const band = item.priceBand ?? "none";
+  const style = PRICE_BAND_STYLE[band];
+  if (band === "none") {
+    return (
+      <span
+        className="px-1.5 py-0.5 text-[11px] text-zinc-400"
+        title="No market data yet"
+      >
+        no data
+      </span>
+    );
+  }
+  const tooltip =
+    item.priceP25 != null && item.priceP75 != null
+      ? `Market band £${item.priceP25.toFixed(0)}–£${item.priceP75.toFixed(0)}`
+      : undefined;
+  return (
+    <Badge
+      variant="outline"
+      className={cn("text-[11px] font-medium", style.className)}
+      title={tooltip}
+    >
+      {style.label}
+    </Badge>
   );
 }

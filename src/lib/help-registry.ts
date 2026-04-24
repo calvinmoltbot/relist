@@ -248,7 +248,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     id: "health-overview",
     title: "Inventory Health",
     description:
-      "The Health page tells you how fresh, complete and well-priced your listings are — the signals Vinted's algorithm uses to decide whose items get seen. It shows freshness (how old your listings are), dead-stock value, listing completeness, and a 'Needs refresh' queue; price checks, portfolio mix and weekly cadence are coming next.",
+      "The Health page tells you how fresh, complete and well-priced your listings are — the signals Vinted's algorithm uses to decide whose items get seen. It covers freshness, dead stock, completeness, the Needs Refresh queue, listing cadence vs your weekly target, where your unsold stock is concentrated, and which items are priced above the market band.",
     category: "feature",
     group: "Health",
     context: "/health",
@@ -267,6 +267,33 @@ export const HELP_ENTRIES: HelpEntry[] = [
     title: "Needs Refresh queue",
     description:
       "Vinted rewards recently-edited listings with more search traffic. This card ranks your listed items by days since the last edit × how incomplete they are × £ at risk, so the highest-value stale items surface first. Tap one to see the refresh checklist (title / description / photo / price) and mark it as refreshed once you've made a real change in Vinted — a naïve repost without any changes can get flagged as a duplicate.",
+    category: "feature",
+    group: "Health",
+    context: "/health",
+  },
+  {
+    id: "health-cadence",
+    title: "Listing cadence",
+    description:
+      "Vinted rewards active sellers, so consistency matters more than big bursts. This card shows how many items you've listed each of the last 4 weeks, your current week's count vs your weekly target, and your pace as a percentage. Green means you're on pace, amber means a bit behind, red means you need to push a few more listings out. Change the target in Settings.",
+    category: "feature",
+    group: "Health",
+    context: "/health",
+  },
+  {
+    id: "health-portfolio-mix",
+    title: "Where your unsold stock lives",
+    description:
+      "A donut chart of your currently-listed items grouped by category, brand, size, or source. If 40% of your dead stock is in one group, that's a sourcing signal — you're buying things that aren't moving. Tap the tabs to flip dimensions and watch for callouts like 'Size 14s have been listed longest on average'.",
+    category: "feature",
+    group: "Health",
+    context: "/health",
+  },
+  {
+    id: "health-price-competitiveness",
+    title: "Priced above market",
+    description:
+      "For each listed item, we compare your price to the p25–p75 band of market prices we've collected for the same brand + category + size. 'High' means >20% above the top of that band — Vinted buyers skip those. 'Low' means >20% under the bottom — possibly underpriced. The Inventory table has a 'Price check' column showing the same badge per row.",
     category: "feature",
     group: "Health",
     context: "/health",

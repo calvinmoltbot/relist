@@ -1,7 +1,8 @@
 import { db } from "@/lib/db";
-import { items } from "@/db/schema";
+import { items, priceStats } from "@/db/schema";
 import { desc, asc, ilike, eq, or, and, sql } from "drizzle-orm";
 import { scoreItem } from "@/lib/inventory/completeness";
+import { checkPrice, indexStats, type PriceBand } from "@/lib/inventory/price-check";
 
 // ---------------------------------------------------------------------------
 // getInventoryList — the list payload the Inventory page renders.
@@ -38,6 +39,11 @@ export interface InventoryListItem {
   completenessBand: "green" | "amber" | "red";
   /** Label of the biggest-impact missing field, null if nothing missing. */
   completenessGap: string | null;
+  priceBand: PriceBand;
+  /** Median of the matched market band, null if no data. */
+  priceMedian: number | null;
+  priceP25: number | null;
+  priceP75: number | null;
 }
 
 export async function getInventoryList(
@@ -111,6 +117,19 @@ export async function getInventoryList(
     .where(where)
     .orderBy(orderBy);
 
+  const statsRows = await db
+    .select({
+      brand: priceStats.brand,
+      category: priceStats.category,
+      size: priceStats.size,
+      medianPrice: priceStats.medianPrice,
+      p25Price: priceStats.p25Price,
+      p75Price: priceStats.p75Price,
+      sampleCount: priceStats.sampleCount,
+    })
+    .from(priceStats);
+  const statsIndex = indexStats(statsRows);
+
   const scored: InventoryListItem[] = rows.map((r) => {
     const result = scoreItem({
       name: r.name,
@@ -124,6 +143,15 @@ export async function getInventoryList(
         r.photoCount > 0 ? Array.from({ length: r.photoCount }, () => "x") : null,
       vintedUrl: r.hasVintedUrl ? "x" : null,
     });
+    const price = checkPrice(
+      {
+        listedPrice: r.listedPrice ? parseFloat(r.listedPrice) : null,
+        brand: r.brand,
+        category: r.category,
+        size: r.size,
+      },
+      statsIndex,
+    );
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { condition: _c, descriptionLength: _d, hasVintedUrl: _v, ...rest } = r;
     return {
@@ -131,6 +159,10 @@ export async function getInventoryList(
       completenessScore: result.score,
       completenessBand: result.band,
       completenessGap: result.missing[0]?.label ?? null,
+      priceBand: price.band,
+      priceMedian: price.median,
+      priceP25: price.p25,
+      priceP75: price.p75,
     };
   });
 

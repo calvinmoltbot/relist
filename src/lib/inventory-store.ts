@@ -31,6 +31,10 @@ export interface InventoryItem {
   completenessScore?: number;
   completenessBand?: "green" | "amber" | "red";
   completenessGap?: string | null;
+  priceBand?: "high" | "range" | "low" | "none";
+  priceMedian?: number | null;
+  priceP25?: number | null;
+  priceP75?: number | null;
 }
 
 export interface NewInventoryItem {
