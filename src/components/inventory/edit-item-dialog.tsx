@@ -392,6 +392,15 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
             condition={condition}
             itemSize={size}
           />
+
+          {item && status === "listed" ? (
+            <RefreshChecklist
+              itemId={item.id}
+              lastEditedAt={item.lastEditedAt ?? null}
+              relistCount={item.relistCount ?? 0}
+              onRefreshed={() => onOpenChange(false)}
+            />
+          ) : null}
         </form>
 
         <DialogFooter>
@@ -405,6 +414,74 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function RefreshChecklist({
+  itemId,
+  lastEditedAt,
+  relistCount,
+  onRefreshed,
+}: {
+  itemId: string;
+  lastEditedAt: string | null;
+  relistCount: number;
+  onRefreshed: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  const daysSinceEdit = lastEditedAt
+    ? Math.max(
+        0,
+        Math.floor((Date.now() - new Date(lastEditedAt).getTime()) / 86_400_000),
+      )
+    : null;
+
+  const handleClick = useCallback(async () => {
+    setBusy(true);
+    try {
+      await fetch(`/api/inventory/${itemId}/refresh`, { method: "POST" });
+      onRefreshed();
+    } finally {
+      setBusy(false);
+    }
+  }, [itemId, onRefreshed]);
+
+  return (
+    <div className="rounded-md border border-amber-500/25 bg-amber-500/[0.04] p-3">
+      <div className="flex items-center gap-2 text-sm font-medium text-amber-200">
+        <RefreshCw className="size-4" />
+        Refresh this listing
+      </div>
+      <p className="mt-1 text-xs text-zinc-300">
+        {daysSinceEdit == null
+          ? "Not yet refreshed."
+          : `Last refreshed ${daysSinceEdit}d ago.`}
+        {relistCount > 0 ? ` Refreshed ${relistCount}× so far.` : null}
+      </p>
+      <p className="mt-2 text-xs text-zinc-300">
+        To avoid Vinted flagging this as a duplicate, change at least one of:
+      </p>
+      <ul className="mt-1 space-y-1 text-xs text-zinc-300">
+        <li>• Title — try adding a keyword buyers search for</li>
+        <li>• Description — rewrite the first sentence</li>
+        <li>• Swap or crop your main photo</li>
+        <li>• Adjust the price</li>
+      </ul>
+      <p className="mt-2 text-xs text-zinc-400">
+        Then edit it in Vinted (or delete + re-upload with the changes) and tap
+        below.
+      </p>
+      <Button
+        type="button"
+        size="sm"
+        onClick={handleClick}
+        disabled={busy}
+        className="mt-3 bg-emerald-500/90 text-emerald-950 hover:bg-emerald-400"
+      >
+        {busy ? "Saving…" : "I've refreshed this"}
+      </Button>
+    </div>
   );
 }
 

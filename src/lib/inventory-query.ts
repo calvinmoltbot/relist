@@ -30,6 +30,8 @@ export interface InventoryListItem {
   thumbnailUrl: string | null;
   photoCount: number;
   soldAt: Date | null;
+  lastEditedAt: Date | null;
+  relistCount: number;
   createdAt: Date | null;
   updatedAt: Date | null;
   completenessScore: number;
@@ -100,6 +102,8 @@ export async function getInventoryList(
       descriptionLength: sql<number>`COALESCE(LENGTH(${items.description}), 0)::int`,
       hasVintedUrl: sql<boolean>`${items.vintedUrl} IS NOT NULL`,
       soldAt: items.soldAt,
+      lastEditedAt: items.lastEditedAt,
+      relistCount: items.relistCount,
       createdAt: items.createdAt,
       updatedAt: items.updatedAt,
     })

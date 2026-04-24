@@ -248,7 +248,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     id: "health-overview",
     title: "Inventory Health",
     description:
-      "The Health page tells you how fresh, complete and well-priced your listings are — the signals Vinted's algorithm uses to decide whose items get seen. Right now it shows freshness (how old your listings are) and dead-stock value; completeness, refresh checklist, price checks, portfolio mix and weekly cadence are coming next.",
+      "The Health page tells you how fresh, complete and well-priced your listings are — the signals Vinted's algorithm uses to decide whose items get seen. It shows freshness (how old your listings are), dead-stock value, listing completeness, and a 'Needs refresh' queue; price checks, portfolio mix and weekly cadence are coming next.",
     category: "feature",
     group: "Health",
     context: "/health",
@@ -259,6 +259,15 @@ export const HELP_ENTRIES: HelpEntry[] = [
     description:
       "The stacked bar shows how your unsold stock splits across age bands: just listed (0–3 days), this week (4–7), 2 weeks (8–14), over 2 weeks (15–21), and really stale (22+). Aim to keep everything in the first two bands — once something slides into the 2-weeks band, refresh it (edit title/photo/description) or drop the price.",
     category: "tip",
+    group: "Health",
+    context: "/health",
+  },
+  {
+    id: "health-needs-refresh",
+    title: "Needs Refresh queue",
+    description:
+      "Vinted rewards recently-edited listings with more search traffic. This card ranks your listed items by days since the last edit × how incomplete they are × £ at risk, so the highest-value stale items surface first. Tap one to see the refresh checklist (title / description / photo / price) and mark it as refreshed once you've made a real change in Vinted — a naïve repost without any changes can get flagged as a duplicate.",
+    category: "feature",
     group: "Health",
     context: "/health",
   },
