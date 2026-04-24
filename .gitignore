@@ -50,3 +50,6 @@ vercel-env*
 .env.pull*
 *.secrets
 secrets.json
+
+# Local DB backups
+backups/
