@@ -40,6 +40,10 @@ export default async function InventoryPage() {
     completenessScore: r.completenessScore,
     completenessBand: r.completenessBand,
     completenessGap: r.completenessGap,
+    priceBand: r.priceBand,
+    priceMedian: r.priceMedian,
+    priceP25: r.priceP25,
+    priceP75: r.priceP75,
   }));
 
   return <InventoryClient initialItems={initialItems} />;

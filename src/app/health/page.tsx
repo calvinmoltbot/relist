@@ -10,6 +10,9 @@ import {
 } from "@/components/profit/inventory-health";
 import { CompletenessCard } from "@/components/health/completeness-card";
 import { NeedsRefreshCard } from "@/components/health/needs-refresh-card";
+import { CadenceCard } from "@/components/health/cadence-card";
+import { PortfolioMixCard } from "@/components/health/portfolio-mix-card";
+import { PriceCompetitivenessCard } from "@/components/health/price-competitiveness-card";
 
 // ---------------------------------------------------------------------------
 // Shape we need from /api/profit — we only pluck what Inventory Health uses.
@@ -91,18 +94,13 @@ export default function HealthPage() {
               avgDaysToSell={data.summary.avgDaysToSell}
             />
             <AgingChart data={data.inventoryHealth} />
+            <CadenceCard />
+            <PriceCompetitivenessCard />
             <DeadStockCard data={data.inventoryHealth} />
             <CompletenessCard />
+            <PortfolioMixCard />
             <NeedsRefreshCard />
           </div>
-
-          <Card className="border-dashed border-zinc-800 bg-zinc-900/30">
-            <CardContent className="p-5 text-sm text-zinc-400">
-              <strong className="text-zinc-200">Coming next:</strong> price
-              competitiveness (#37), portfolio mix (#38), and listing cadence
-              (#39).
-            </CardContent>
-          </Card>
         </>
       )}
     </div>
