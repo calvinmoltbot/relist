@@ -205,14 +205,34 @@ export const HELP_ENTRIES: HelpEntry[] = [
     context: "/describe",
   },
 
-  // ── Financials ────────────────────────────────────────────────
+  // ── Finances (overview) ──────────────────────────────────────
+  {
+    id: "finances-overview",
+    title: "Finances Overview",
+    description:
+      "A calm, top-level view of the money side: this month's sales and profit (like Vinted's trading account), all-time totals, and what your current stock is worth — both at cost (what you've spent) and at listed value (what it's listed for). The difference is your unrealised profit if everything sells at list price.",
+    category: "feature",
+    group: "Finances",
+    context: "/finances",
+  },
+  {
+    id: "finances-stock-value",
+    title: "Stock at cost vs listed value",
+    description:
+      "'At cost' is the total you've paid for everything you haven't sold yet. 'At listed value' is what those same items are listed for on Vinted. The gap between them is the profit you'd make if every single listed item sold at its current price.",
+    category: "tip",
+    group: "Finances",
+    context: "/finances",
+  },
+
+  // ── Profit & Tax ──────────────────────────────────────────────
   {
     id: "profit-overview",
     title: "Profit Dashboard",
     description:
       "See your financial performance at a glance: total profit, revenue, average margin, and items sold. Data comes from your inventory — mark items as Sold with a sale price to see stats here.",
     category: "feature",
-    group: "Financials",
+    group: "Profit & Tax",
     context: "/profit",
   },
   {
@@ -221,7 +241,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     description:
       "Shows how close you are to your monthly revenue target, how many days are left, and whether your current pace will get you there.",
     category: "feature",
-    group: "Financials",
+    group: "Profit & Tax",
     context: "/profit",
   },
   {
@@ -230,7 +250,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     description:
       "Average margin is colour-coded: green (65%+) means you're hitting target, amber (40-65%) is okay, red (below 40%) means your costs might be too high relative to selling prices.",
     category: "tip",
-    group: "Financials",
+    group: "Profit & Tax",
     context: "/profit",
   },
   {
@@ -239,7 +259,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     description:
       "The monthly chart shows revenue vs costs over time. Category and source breakdowns show which types of items and sourcing channels are most profitable.",
     category: "feature",
-    group: "Financials",
+    group: "Profit & Tax",
     context: "/profit",
   },
 
@@ -352,7 +372,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     description:
       "Log business costs like shipping supplies, packaging, and Vinted promotions on the Expenses tab. These reduce your net profit and are included in your tax summary as allowable deductions.",
     category: "feature",
-    group: "Financials",
+    group: "Profit & Tax",
     context: "/profit",
   },
   {
@@ -361,7 +381,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     description:
       "The Tax & Export tab shows your UK tax position: whether you're within the £1,000 trading allowance, whether Vinted will auto-report to HMRC (above £1,700), and your net taxable profit after all expenses. Export a CSV summary for Self Assessment.",
     category: "feature",
-    group: "Financials",
+    group: "Profit & Tax",
     context: "/profit",
   },
   {
@@ -370,7 +390,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     description:
       "If your total revenue is under £1,000 in a tax year, you don't need to file Self Assessment for this income. Once you exceed it, you'll need to declare it but can deduct allowable expenses.",
     category: "tip",
-    group: "Financials",
+    group: "Profit & Tax",
     context: "/profit",
   },
 

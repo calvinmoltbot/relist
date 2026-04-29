@@ -13,6 +13,7 @@ import {
   Settings,
   HelpCircle,
   PackageOpen,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +21,8 @@ const navItems = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Inventory", href: "/inventory", icon: Package },
   { label: "Describe", href: "/describe", icon: Sparkles },
-  { label: "Financials", href: "/profit", icon: TrendingUp },
+  { label: "Finances", href: "/finances", icon: Wallet },
+  { label: "Profit & Tax", href: "/profit", icon: TrendingUp },
   { label: "Best Sellers", href: "/bestsellers", icon: Trophy },
   { label: "Health", href: "/health", icon: HeartPulse },
   { label: "Deals", href: "/deals", icon: Zap },
