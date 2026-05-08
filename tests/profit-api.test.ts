@@ -94,7 +94,15 @@ async function seedProfitData() {
     },
   ];
 
-  const inserted = await db.insert(items).values(batch).returning();
+  const inserted = await db
+    .insert(items)
+    .values(
+      batch.map((b, i) => ({
+        ...b,
+        sku: `T-batch-${Date.now()}-${i}`,
+      })),
+    )
+    .returning();
   for (const i of inserted) createdIds.push(i.id);
   return inserted;
 }
@@ -206,7 +214,7 @@ describe("profit — summary computation", () => {
   it("handles zero sold items gracefully", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Unsold Item", status: "listed", costPrice: "10.00" })
+      .values({ sku: `T-0042-${Math.random().toString(36).slice(2,8)}`, name: "Unsold Item", status: "listed", costPrice: "10.00" })
       .returning();
     createdIds.push(item.id);
 

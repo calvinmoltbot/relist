@@ -41,7 +41,7 @@ async function seed() {
   const soldAt = new Date("2026-04-10");
   const [sold] = await db
     .insert(items)
-    .values({
+    .values({ sku: `T-0043-${Math.random().toString(36).slice(2,8)}`,
       name: "TEST-Profit-Sold",
       brand: "TestBrand",
       category: "test-cat",
@@ -68,7 +68,7 @@ async function seed() {
 
   const [listed] = await db
     .insert(items)
-    .values({
+    .values({ sku: `T-0044-${Math.random().toString(36).slice(2,8)}`,
       name: "TEST-Profit-Listed",
       status: "listed",
       costPrice: "3.00",

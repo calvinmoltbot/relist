@@ -5,6 +5,7 @@ import { create } from "zustand";
 // ---------------------------------------------------------------------------
 export interface InventoryItem {
   id: string;
+  sku: string;
   name: string;
   brand: string | null;
   category: string | null;
@@ -115,6 +116,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     const tempId = `temp-${Date.now()}`;
     const optimistic: InventoryItem = {
       id: tempId,
+      sku: "…",
       name: item.name,
       brand: item.brand ?? null,
       category: item.category ?? null,

@@ -104,6 +104,15 @@ export const HELP_ENTRIES: HelpEntry[] = [
     context: "/inventory",
   },
   {
+    id: "inventory-sku",
+    title: "SKUs (item codes)",
+    description:
+      "Every item gets a short code automatically — like C-001 for clothes, J-001 for jewellery, S-001 for shoes, H-001 for handbags, B-001 for books, A-001 for accessories. The letter comes from the category, the number counts up. Useful for writing on price tags or referring to an item in messages. You can search by SKU in the search box.",
+    category: "tip",
+    group: "Inventory",
+    context: "/inventory",
+  },
+  {
     id: "inventory-views",
     title: "Grid, List & Table Views",
     description:

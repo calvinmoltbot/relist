@@ -28,7 +28,7 @@ describe("photoUrls array field", () => {
   it("stores and retrieves a single photo URL", async () => {
     const [item] = await db
       .insert(items)
-      .values({
+      .values({ sku: `T-0028-${Math.random().toString(36).slice(2,8)}`,
         name: "Single Photo",
         photoUrls: ["data:image/png;base64,abc123"],
       })
@@ -51,7 +51,7 @@ describe("photoUrls array field", () => {
 
     const [item] = await db
       .insert(items)
-      .values({ name: "Multi Photo", photoUrls: urls })
+      .values({ sku: `T-0029-${Math.random().toString(36).slice(2,8)}`, name: "Multi Photo", photoUrls: urls })
       .returning();
     createdIds.push(item.id);
 
@@ -62,7 +62,7 @@ describe("photoUrls array field", () => {
   it("stores null when no photos", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "No Photo" })
+      .values({ sku: `T-0030-${Math.random().toString(36).slice(2,8)}`, name: "No Photo" })
       .returning();
     createdIds.push(item.id);
 
@@ -72,7 +72,7 @@ describe("photoUrls array field", () => {
   it("stores empty array", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Empty Array", photoUrls: [] })
+      .values({ sku: `T-0031-${Math.random().toString(36).slice(2,8)}`, name: "Empty Array", photoUrls: [] })
       .returning();
     createdIds.push(item.id);
 
@@ -82,7 +82,7 @@ describe("photoUrls array field", () => {
   it("updates photos on an existing item", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Update Photos" })
+      .values({ sku: `T-0032-${Math.random().toString(36).slice(2,8)}`, name: "Update Photos" })
       .returning();
     createdIds.push(item.id);
 
@@ -100,7 +100,7 @@ describe("photoUrls array field", () => {
   it("clears photos by setting to null", async () => {
     const [item] = await db
       .insert(items)
-      .values({
+      .values({ sku: `T-0033-${Math.random().toString(36).slice(2,8)}`,
         name: "Clear Photos",
         photoUrls: ["data:image/jpeg;base64,willremove"],
       })
@@ -119,7 +119,7 @@ describe("photoUrls array field", () => {
   it("replaces photo array entirely", async () => {
     const [item] = await db
       .insert(items)
-      .values({
+      .values({ sku: `T-0034-${Math.random().toString(36).slice(2,8)}`,
         name: "Replace Photos",
         photoUrls: ["old1", "old2"],
       })
@@ -141,7 +141,7 @@ describe("photoUrls array field", () => {
 
     const [item] = await db
       .insert(items)
-      .values({ name: "Long URL", photoUrls: [longUrl] })
+      .values({ sku: `T-0035-${Math.random().toString(36).slice(2,8)}`, name: "Long URL", photoUrls: [longUrl] })
       .returning();
     createdIds.push(item.id);
 

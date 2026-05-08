@@ -70,7 +70,7 @@ describe("status transitions — forward flow", () => {
   it("sourced → listed: sets listedAt", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Forward Test", status: "sourced" })
+      .values({ sku: `T-0001-${Math.random().toString(36).slice(2,8)}`, name: "Forward Test", status: "sourced" })
       .returning();
     createdIds.push(item.id);
 
@@ -91,7 +91,7 @@ describe("status transitions — forward flow", () => {
   it("listed → sold: sets soldAt, preserves listedAt", async () => {
     const [item] = await db
       .insert(items)
-      .values({
+      .values({ sku: `T-0002-${Math.random().toString(36).slice(2,8)}`,
         name: "Sell Test",
         status: "listed",
         listedPrice: "30.00",
@@ -116,7 +116,7 @@ describe("status transitions — forward flow", () => {
   it("sold → shipped: sets shippedAt, preserves soldAt", async () => {
     const [item] = await db
       .insert(items)
-      .values({
+      .values({ sku: `T-0003-${Math.random().toString(36).slice(2,8)}`,
         name: "Ship Test",
         status: "sold",
         soldPrice: "20.00",
@@ -137,7 +137,7 @@ describe("status transitions — forward flow", () => {
   it("full lifecycle: sourced → listed → sold → shipped", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Full Lifecycle", costPrice: "5.00" })
+      .values({ sku: `T-0004-${Math.random().toString(36).slice(2,8)}`, name: "Full Lifecycle", costPrice: "5.00" })
       .returning();
     createdIds.push(item.id);
 
@@ -178,7 +178,7 @@ describe("status transitions — backward and skip", () => {
   it("listed → sourced: does not clear listedAt (API just sets status)", async () => {
     const [item] = await db
       .insert(items)
-      .values({
+      .values({ sku: `T-0005-${Math.random().toString(36).slice(2,8)}`,
         name: "Backward Test",
         status: "listed",
         listedAt: new Date("2026-04-01"),
@@ -198,7 +198,7 @@ describe("status transitions — backward and skip", () => {
   it("sourced → sold (skip listed): sets soldAt only", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Skip Test", status: "sourced" })
+      .values({ sku: `T-0006-${Math.random().toString(36).slice(2,8)}`, name: "Skip Test", status: "sourced" })
       .returning();
     createdIds.push(item.id);
 
@@ -221,7 +221,7 @@ describe("status transitions — no-op", () => {
     const originalDate = new Date("2026-04-01T10:00:00Z");
     const [item] = await db
       .insert(items)
-      .values({
+      .values({ sku: `T-0007-${Math.random().toString(36).slice(2,8)}`,
         name: "No-op Test",
         status: "listed",
         listedAt: originalDate,
@@ -248,7 +248,7 @@ describe("status transitions — combined updates", () => {
   it("updates name and status simultaneously", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Old Name", status: "sourced" })
+      .values({ sku: `T-0008-${Math.random().toString(36).slice(2,8)}`, name: "Old Name", status: "sourced" })
       .returning();
     createdIds.push(item.id);
 
@@ -267,7 +267,7 @@ describe("status transitions — combined updates", () => {
   it("updates brand/category without changing status", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Meta Update", status: "listed", brand: "Nike" })
+      .values({ sku: `T-0009-${Math.random().toString(36).slice(2,8)}`, name: "Meta Update", status: "listed", brand: "Nike" })
       .returning();
     createdIds.push(item.id);
 

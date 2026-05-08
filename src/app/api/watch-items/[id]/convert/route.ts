@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { items, watchItems } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { generateSku } from "@/lib/sku";
 
 // ---------------------------------------------------------------------------
 // POST /api/watch-items/[id]/convert — "Mark as Bought"
@@ -33,9 +34,11 @@ export async function POST(
   }
 
   // Create inventory item from watched item data
+  const sku = await generateSku(watchItem.category);
   const [newItem] = await db
     .insert(items)
     .values({
+      sku,
       name: watchItem.title,
       brand: watchItem.brand,
       category: watchItem.category,

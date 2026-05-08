@@ -42,7 +42,15 @@ async function seedDashboardData() {
     { name: "Already Shipped", status: "shipped" as const, costPrice: "7.00", soldPrice: "28.00", soldAt: thisMonth },
   ];
 
-  const inserted = await db.insert(items).values(batch).returning();
+  const inserted = await db
+    .insert(items)
+    .values(
+      batch.map((b, i) => ({
+        ...b,
+        sku: `T-batch-${Date.now()}-${i}`,
+      })),
+    )
+    .returning();
   for (const i of inserted) createdIds.push(i.id);
   return inserted;
 }

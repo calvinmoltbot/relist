@@ -37,7 +37,7 @@ describe("items table — insert", () => {
   it("inserts a minimal item (name only)", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Test Item — Minimal" })
+      .values({ sku: `T-0015-${Math.random().toString(36).slice(2,8)}`, name: "Test Item — Minimal" })
       .returning();
 
     createdIds.push(item.id);
@@ -53,7 +53,7 @@ describe("items table — insert", () => {
   it("inserts a fully-populated item", async () => {
     const [item] = await db
       .insert(items)
-      .values({
+      .values({ sku: `T-0016-${Math.random().toString(36).slice(2,8)}`,
         name: "Vintage Levi's 501",
         brand: "Levi's",
         category: "jeans",
@@ -84,7 +84,7 @@ describe("items table — insert", () => {
   it("generates a UUID primary key", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "UUID Test" })
+      .values({ sku: `T-0017-${Math.random().toString(36).slice(2,8)}`, name: "UUID Test" })
       .returning();
 
     createdIds.push(item.id);
@@ -103,7 +103,7 @@ describe("items table — select", () => {
   it("selects an item by id", async () => {
     const [created] = await db
       .insert(items)
-      .values({ name: "Select Test" })
+      .values({ sku: `T-0018-${Math.random().toString(36).slice(2,8)}`, name: "Select Test" })
       .returning();
     createdIds.push(created.id);
 
@@ -128,11 +128,11 @@ describe("items table — select", () => {
   it("filters by status", async () => {
     const [a] = await db
       .insert(items)
-      .values({ name: "Status A", status: "sourced" })
+      .values({ sku: `T-0019-${Math.random().toString(36).slice(2,8)}`, name: "Status A", status: "sourced" })
       .returning();
     const [b] = await db
       .insert(items)
-      .values({ name: "Status B", status: "listed" })
+      .values({ sku: `T-0020-${Math.random().toString(36).slice(2,8)}`, name: "Status B", status: "listed" })
       .returning();
     createdIds.push(a.id, b.id);
 
@@ -154,7 +154,7 @@ describe("items table — update", () => {
   it("updates fields on an existing item", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Update Test", status: "sourced" })
+      .values({ sku: `T-0021-${Math.random().toString(36).slice(2,8)}`, name: "Update Test", status: "sourced" })
       .returning();
     createdIds.push(item.id);
 
@@ -193,7 +193,7 @@ describe("items table — delete", () => {
   it("deletes an item by id", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Delete Test" })
+      .values({ sku: `T-0022-${Math.random().toString(36).slice(2,8)}`, name: "Delete Test" })
       .returning();
 
     const [deleted] = await db
@@ -228,7 +228,7 @@ describe("items table — defaults and constraints", () => {
   it("defaults status to 'sourced'", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Default Status" })
+      .values({ sku: `T-0023-${Math.random().toString(36).slice(2,8)}`, name: "Default Status" })
       .returning();
     createdIds.push(item.id);
 
@@ -238,7 +238,7 @@ describe("items table — defaults and constraints", () => {
   it("defaults platform to 'vinted'", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Default Platform" })
+      .values({ sku: `T-0024-${Math.random().toString(36).slice(2,8)}`, name: "Default Platform" })
       .returning();
     createdIds.push(item.id);
 
@@ -249,7 +249,7 @@ describe("items table — defaults and constraints", () => {
     const before = new Date();
     const [item] = await db
       .insert(items)
-      .values({ name: "Timestamp Test" })
+      .values({ sku: `T-0025-${Math.random().toString(36).slice(2,8)}`, name: "Timestamp Test" })
       .returning();
     createdIds.push(item.id);
     const after = new Date();
@@ -260,14 +260,14 @@ describe("items table — defaults and constraints", () => {
 
   it("rejects insert without name", async () => {
     await expect(
-      db.insert(items).values({} as { name: string }).returning(),
+      db.insert(items).values({ sku: `T-0026-${Math.random().toString(36).slice(2,8)}` } as unknown as typeof items.$inferInsert).returning(),
     ).rejects.toThrow();
   });
 
   it("stores numeric prices with correct precision", async () => {
     const [item] = await db
       .insert(items)
-      .values({
+      .values({ sku: `T-0027-${Math.random().toString(36).slice(2,8)}`,
         name: "Price Precision",
         costPrice: "12.99",
         listedPrice: "29.50",

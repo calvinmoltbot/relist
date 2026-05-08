@@ -14,6 +14,7 @@ export default async function InventoryPage() {
   // contract). Serialize here so the hydration shape is identical.
   const initialItems: InventoryItem[] = rows.map((r) => ({
     id: r.id,
+    sku: r.sku,
     name: r.name,
     brand: r.brand,
     category: r.category,

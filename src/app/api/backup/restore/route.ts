@@ -10,7 +10,9 @@ import {
   userSettings,
   priceData,
   priceStats,
+  skuCounters,
 } from "@/db/schema";
+import { generateSku, resyncSkuCounters } from "@/lib/sku";
 
 // ---------------------------------------------------------------------------
 // POST /api/backup/restore — Replace ALL data with the uploaded backup file.
@@ -109,6 +111,7 @@ export async function POST(request: Request) {
   await db.delete(priceStats);
   await db.delete(userSettings);
   await db.delete(items);
+  await db.delete(skuCounters);
 
   // Insert parents before children.
   const counts: Record<TableKey, number> = {
@@ -124,9 +127,17 @@ export async function POST(request: Request) {
 
   const itemRows = (data.items ?? []) as (typeof items.$inferInsert)[];
   if (itemRows.length) {
+    // Pre-SKU backups won't have items.sku — mint one before insert so the
+    // NOT NULL constraint holds. Counters are reseeded from the final state below.
+    for (const row of itemRows) {
+      if (!row.sku) row.sku = await generateSku(row.category);
+    }
     await db.insert(items).values(itemRows);
     counts.items = itemRows.length;
   }
+  // Sync the counter table to the highest existing SKU per prefix so the next
+  // new item picks up cleanly after the restore.
+  await resyncSkuCounters();
 
   const txRows = (data.transactions ?? []) as (typeof transactions.$inferInsert)[];
   if (txRows.length) {

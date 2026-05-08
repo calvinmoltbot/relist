@@ -132,9 +132,10 @@ export function ItemCard({ item, onStatusChange, onEdit, onDelete }: ItemCardPro
           <h3 className="truncate text-sm font-medium text-zinc-100">
             {item.name}
           </h3>
-          {item.brand && (
-            <p className="truncate text-xs text-zinc-400">{item.brand}</p>
-          )}
+          <p className="truncate text-xs text-zinc-400">
+            <span className="font-mono">{item.sku}</span>
+            {item.brand ? <> · {item.brand}</> : null}
+          </p>
         </div>
 
         {/* Price row — includes profit chip when sold */}

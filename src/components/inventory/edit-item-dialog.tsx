@@ -148,7 +148,14 @@ export function EditItemDialog({ item, open, onOpenChange, onSave }: EditItemDia
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Item</DialogTitle>
+          <DialogTitle>
+            Edit Item
+            {item?.sku ? (
+              <span className="ml-2 font-mono text-xs font-normal text-zinc-400">
+                {item.sku}
+              </span>
+            ) : null}
+          </DialogTitle>
           <DialogDescription>
             Update item details. Only name is required.
           </DialogDescription>

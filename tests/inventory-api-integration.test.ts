@@ -39,7 +39,15 @@ async function seedItems() {
     { name: "Unbranded Vintage Dress", brand: null, category: "dresses", status: "listed" as const, costPrice: "3.00", listedPrice: "22.00" },
   ];
 
-  const inserted = await db.insert(items).values(batch).returning();
+  const inserted = await db
+    .insert(items)
+    .values(
+      batch.map((b, i) => ({
+        ...b,
+        sku: `T-batch-${Date.now()}-${i}`,
+      })),
+    )
+    .returning();
   for (const i of inserted) createdIds.push(i.id);
   return inserted;
 }
@@ -168,7 +176,7 @@ describe("inventory create", () => {
   it("creates item with all optional fields", async () => {
     const [item] = await db
       .insert(items)
-      .values({
+      .values({ sku: `T-0036-${Math.random().toString(36).slice(2,8)}`,
         name: "Full Item Test",
         brand: "TestBrand",
         category: "jackets",
@@ -197,7 +205,7 @@ describe("inventory update — status transitions", () => {
   it("sets listedAt when status changes to listed", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Status Transition Test", status: "sourced" })
+      .values({ sku: `T-0037-${Math.random().toString(36).slice(2,8)}`, name: "Status Transition Test", status: "sourced" })
       .returning();
     createdIds.push(item.id);
 
@@ -217,7 +225,7 @@ describe("inventory update — status transitions", () => {
   it("sets soldAt when status changes to sold", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Sold Transition", status: "listed" })
+      .values({ sku: `T-0038-${Math.random().toString(36).slice(2,8)}`, name: "Sold Transition", status: "listed" })
       .returning();
     createdIds.push(item.id);
 
@@ -236,7 +244,7 @@ describe("inventory update — status transitions", () => {
   it("sets shippedAt when status changes to shipped", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Ship Transition", status: "sold" })
+      .values({ sku: `T-0039-${Math.random().toString(36).slice(2,8)}`, name: "Ship Transition", status: "sold" })
       .returning();
     createdIds.push(item.id);
 
@@ -259,7 +267,7 @@ describe("inventory delete", () => {
   it("deletes and returns the deleted item", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Delete Me" })
+      .values({ sku: `T-0040-${Math.random().toString(36).slice(2,8)}`, name: "Delete Me" })
       .returning();
 
     const [deleted] = await db
@@ -283,7 +291,7 @@ describe("full CRUD lifecycle", () => {
     // CREATE
     const [created] = await db
       .insert(items)
-      .values({
+      .values({ sku: `T-0041-${Math.random().toString(36).slice(2,8)}`,
         name: "Lifecycle Item",
         brand: "Nike",
         costPrice: "10.00",

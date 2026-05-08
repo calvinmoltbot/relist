@@ -232,9 +232,24 @@ export function InventoryTable({
                         {item.name}
                       </p>
                       <p className="truncate text-[11px] text-zinc-300">
-                        {[item.brand, item.size, item.category]
+                        {[
+                          <span
+                            key="sku"
+                            className="font-mono text-zinc-400"
+                          >
+                            {item.sku}
+                          </span>,
+                          item.brand,
+                          item.size,
+                          item.category,
+                        ]
                           .filter(Boolean)
-                          .join(" \u00B7 ")}
+                          .map((part, i, arr) => (
+                            <span key={i}>
+                              {part}
+                              {i < arr.length - 1 ? " \u00B7 " : ""}
+                            </span>
+                          ))}
                       </p>
                     </div>
                   </button>
