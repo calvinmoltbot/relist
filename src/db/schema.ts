@@ -7,6 +7,7 @@ import {
   integer,
   boolean,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
@@ -17,6 +18,7 @@ export const items = pgTable(
   "items",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    sku: text("sku").notNull(),
     name: text("name").notNull(),
     brand: text("brand"),
     category: text("category"),
@@ -51,8 +53,17 @@ export const items = pgTable(
     index("items_sold_at_idx").on(table.soldAt),
     index("items_vinted_url_idx").on(table.vintedUrl),
     index("items_last_edited_at_idx").on(table.lastEditedAt),
+    uniqueIndex("items_sku_idx").on(table.sku),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// SKU counters — one row per prefix (e.g. C, J, S, H, B, A, O)
+// ---------------------------------------------------------------------------
+export const skuCounters = pgTable("sku_counters", {
+  prefix: text("prefix").primaryKey(),
+  nextValue: integer("next_value").notNull().default(1),
+});
 
 // ---------------------------------------------------------------------------
 // Transactions

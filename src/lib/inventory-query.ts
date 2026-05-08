@@ -20,6 +20,7 @@ export interface InventoryQueryFilters {
 
 export interface InventoryListItem {
   id: string;
+  sku: string;
   name: string;
   brand: string | null;
   category: string | null;
@@ -62,6 +63,7 @@ export async function getInventoryList(
         ilike(items.name, `%${q}%`),
         ilike(items.brand, `%${q}%`),
         ilike(items.category, `%${q}%`),
+        ilike(items.sku, `%${q}%`),
       ),
     );
   }
@@ -89,6 +91,7 @@ export async function getInventoryList(
   const rows = await db
     .select({
       id: items.id,
+      sku: items.sku,
       name: items.name,
       brand: items.brand,
       category: items.category,

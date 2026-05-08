@@ -63,7 +63,7 @@ describe("transactions — FK constraint", () => {
   it("creates a transaction linked to an item", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "FK Test Item", costPrice: "10.00" })
+      .values({ sku: `T-0010-${Math.random().toString(36).slice(2,8)}`, name: "FK Test Item", costPrice: "10.00" })
       .returning();
     cleanupFns.push(() => db.delete(items).where(eq(items.id, item.id)).then(() => {}));
 
@@ -101,7 +101,7 @@ describe("transactions — FK constraint", () => {
   it("blocks item deletion when transactions exist", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "FK Delete Test" })
+      .values({ sku: `T-0011-${Math.random().toString(36).slice(2,8)}`, name: "FK Delete Test" })
       .returning();
 
     const [txn] = await db
@@ -126,7 +126,7 @@ describe("transactions — FK constraint", () => {
   it("creates buy and sell transactions for same item", async () => {
     const [item] = await db
       .insert(items)
-      .values({ name: "Buy/Sell Test", costPrice: "8.00" })
+      .values({ sku: `T-0012-${Math.random().toString(36).slice(2,8)}`, name: "Buy/Sell Test", costPrice: "8.00" })
       .returning();
 
     const [buy] = await db
@@ -221,7 +221,7 @@ describe("numeric precision", () => {
   it("handles max schema precision (10,2)", async () => {
     const [item] = await db
       .insert(items)
-      .values({
+      .values({ sku: `T-0013-${Math.random().toString(36).slice(2,8)}`,
         name: "Big Price",
         costPrice: "99999999.99",
         listedPrice: "0.01",
@@ -236,7 +236,7 @@ describe("numeric precision", () => {
   it("rounds to 2 decimal places", async () => {
     const [item] = await db
       .insert(items)
-      .values({
+      .values({ sku: `T-0014-${Math.random().toString(36).slice(2,8)}`,
         name: "Rounding Test",
         costPrice: "10.999",
       })

@@ -4,6 +4,7 @@ import { items } from "@/db/schema";
 import { ilike, eq } from "drizzle-orm";
 import { downloadAndResizePhoto, thumbnailFromDataUri } from "@/lib/photos";
 import { getInventoryList } from "@/lib/inventory-query";
+import { generateSku } from "@/lib/sku";
 
 // ---------------------------------------------------------------------------
 // GET /api/inventory — thin wrapper around getInventoryList, used for
@@ -127,10 +128,12 @@ export async function POST(request: NextRequest) {
   // Create new item
   const status = body.status ?? "sourced";
   const now = new Date();
+  const sku = await generateSku(body.category);
 
   const [item] = await db
     .insert(items)
     .values({
+      sku,
       name: body.name,
       brand: body.brand ?? null,
       category: body.category ?? null,
