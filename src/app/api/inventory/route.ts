@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { items } from "@/db/schema";
-import { ilike, eq } from "drizzle-orm";
+import { ilike, eq, and, inArray, isNull } from "drizzle-orm";
 import { downloadAndResizePhoto, thumbnailFromDataUri } from "@/lib/photos";
 import { getInventoryList } from "@/lib/inventory-query";
 import { generateSku } from "@/lib/sku";
@@ -47,25 +47,53 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Check for duplicates by vintedUrl (most reliable) or exact name match
+  // Deduplicate carefully. A Vinted URL uniquely identifies a listing, so it's
+  // the only fully reliable dedup key. Item names are heavily templated (Lily
+  // has several "…sequin hanky hem cami"), so a bare name match is NOT proof of
+  // a duplicate — and merging a fresh submission into an already sold/shipped
+  // row would silently swallow it (it would never appear under "Listed"). Rules:
+  //   • vintedUrl present → match that exact URL. Only if none, fall back to an
+  //     ACTIVE (sourced/listed) name match that isn't yet linked to any URL —
+  //     i.e. link up a manual entry for the same item. Never a sold/shipped row,
+  //     never one already tied to a different listing.
+  //   • no vintedUrl → dedup by name ONLY against a still-active item.
+  const ACTIVE_STATUSES = ["sourced", "listed"] as const;
   let existing: typeof items.$inferSelect | null = null;
 
   if (body.vintedUrl) {
-    const [match] = await db
+    const [urlMatch] = await db
       .select()
       .from(items)
       .where(eq(items.vintedUrl, body.vintedUrl))
       .limit(1);
-    existing = match ?? null;
-  }
+    existing = urlMatch ?? null;
 
-  if (!existing) {
-    const [match] = await db
+    if (!existing) {
+      const [nameMatch] = await db
+        .select()
+        .from(items)
+        .where(
+          and(
+            ilike(items.name, body.name.trim()),
+            inArray(items.status, [...ACTIVE_STATUSES]),
+            isNull(items.vintedUrl),
+          ),
+        )
+        .limit(1);
+      existing = nameMatch ?? null;
+    }
+  } else {
+    const [nameMatch] = await db
       .select()
       .from(items)
-      .where(ilike(items.name, body.name.trim()))
+      .where(
+        and(
+          ilike(items.name, body.name.trim()),
+          inArray(items.status, [...ACTIVE_STATUSES]),
+        ),
+      )
       .limit(1);
-    existing = match ?? null;
+    existing = nameMatch ?? null;
   }
 
   // If externalPhotoUrls are provided (from extension), download and resize them
