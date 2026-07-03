@@ -149,8 +149,9 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
+      // Only the main (first) photo — images are just a visual reference.
       const downloadResults = await Promise.all(
-        photoUrls.slice(0, 10).map((u) => downloadVintedPhoto(u)),
+        photoUrls.slice(0, 1).map((u) => downloadVintedPhoto(u)),
       );
       const successful = downloadResults.filter(
         (r): r is { full: string; thumb: string } => r !== null,

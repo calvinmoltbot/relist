@@ -105,10 +105,12 @@ export async function POST(request: NextRequest) {
     Array.isArray(body.externalPhotoUrls) &&
     body.externalPhotoUrls.length > 0
   ) {
+    // Lily only uses photos as a visual reference, so only the main
+    // (first) photo is downloaded — the rest are skipped to save storage.
     const downloadResults = await Promise.all(
-      body.externalPhotoUrls.map((url: string) =>
-        downloadAndResizePhoto(url),
-      ),
+      body.externalPhotoUrls
+        .slice(0, 1)
+        .map((url: string) => downloadAndResizePhoto(url)),
     );
     const successful = downloadResults.filter(
       (r): r is { full: string; thumb: string } => r !== null,

@@ -193,6 +193,13 @@
     }
     .settings-save:hover { background: #27272a; color: #e4e4e7; }
     .settings-save.saved { color: #10b981; border-color: #10b981; }
+    .settings-error {
+      display: none;
+      margin-top: 6px;
+      font-size: 11px;
+      color: #ef4444;
+    }
+    .settings-error.visible { display: block; }
   </style>
 </head>
 <body>
@@ -236,6 +243,12 @@
       <input type="text" class="settings-input" id="api-url" placeholder="https://relist.warmwetcircles.com">
       <button class="settings-save" id="save-url">Save</button>
     </div>
+    <div class="section-title">API Key</div>
+    <div class="settings-row">
+      <input type="password" class="settings-input" id="api-key" placeholder="Paste your ReList key">
+      <button class="settings-save" id="save-key">Save</button>
+    </div>
+    <div class="settings-error" id="settings-error"></div>
   </div>
 
   <script src="popup.js"></script>
