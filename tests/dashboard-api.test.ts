@@ -37,7 +37,7 @@ async function seedDashboardData() {
     { name: "Fresh Listing", status: "listed" as const, listedPrice: "25.00", listedAt: lastWeek },
     { name: "Stale Listing", status: "listed" as const, listedPrice: "30.00", listedAt: twoWeeksAgo },
     // Sold — needs shipping
-    { name: "Needs Shipping", status: "sold" as const, costPrice: "10.00", soldPrice: "35.00", soldAt: lastWeek },
+    { name: "Needs Shipping", status: "sold" as const, costPrice: "10.00", soldPrice: "35.00", soldAt: thisMonth },
     // Shipped this month
     { name: "Already Shipped", status: "shipped" as const, costPrice: "7.00", soldPrice: "28.00", soldAt: thisMonth },
   ];
