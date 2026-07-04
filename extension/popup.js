@@ -15,6 +15,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const recentList = document.getElementById("recent-list");
   const apiUrlInput = document.getElementById("api-url");
   const saveUrlBtn = document.getElementById("save-url");
+  const apiKeyInput = document.getElementById("api-key");
+  const saveKeyBtn = document.getElementById("save-key");
+  const settingsError = document.getElementById("settings-error");
 
   // ---------------------------------------------------------------------------
   // Load state
@@ -29,11 +32,12 @@ document.addEventListener("DOMContentLoaded", () => {
     statusLine.classList.toggle("active", enabled);
   });
 
-  // Load API URL from sync storage
-  chrome.storage.sync.get(["apiBase"], (result) => {
+  // Load API URL + key from sync storage
+  chrome.storage.sync.get(["apiBase", "apiKey"], (result) => {
     const base = result.apiBase || API_BASE;
     apiUrlInput.value = base;
     dashboardLink.href = base;
+    if (result.apiKey) apiKeyInput.value = result.apiKey;
   });
 
   // Get today's count
@@ -127,15 +131,12 @@ document.addEventListener("DOMContentLoaded", () => {
             // Description
             data.description = document.querySelector('[itemprop="description"]')?.textContent?.trim() ?? null;
 
-            // Photos — item-photo-N--img pattern (only actual product photos)
+            // Photo — only the main photo (images are just a visual reference)
             const photoUrls = [];
-            for (let i = 1; i <= 20; i++) {
-              const img = document.querySelector(`[data-testid="item-photo-${i}--img"]`);
-              if (!img) break;
-              const src = img.src || img.getAttribute("src");
-              if (src && src.startsWith("http")) {
-                photoUrls.push(src);
-              }
+            const mainImg = document.querySelector('[data-testid="item-photo-1--img"]');
+            const mainSrc = mainImg ? mainImg.src || mainImg.getAttribute("src") : null;
+            if (mainSrc && mainSrc.startsWith("http")) {
+              photoUrls.push(mainSrc);
             }
             data.photoUrls = photoUrls;
 
@@ -282,23 +283,51 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Settings — API URL
+  // Settings — API URL + key
   // ---------------------------------------------------------------------------
+  function showSettingsError(msg) {
+    settingsError.textContent = msg;
+    settingsError.classList.add("visible");
+    setTimeout(() => settingsError.classList.remove("visible"), 4000);
+  }
+
+  function flashSaved(btn) {
+    btn.classList.add("saved");
+    btn.textContent = "Saved";
+    setTimeout(() => {
+      btn.classList.remove("saved");
+      btn.textContent = "Save";
+    }, 2000);
+  }
+
   saveUrlBtn.addEventListener("click", () => {
     const url = apiUrlInput.value.trim().replace(/\/+$/, "");
     if (!url) return;
+
+    // Only accept a well-formed http(s) URL — a typo here would silently
+    // send every scraped listing to the wrong host.
+    let parsed;
+    try {
+      parsed = new URL(url);
+    } catch {
+      showSettingsError("That doesn't look like a valid URL");
+      return;
+    }
+    if (parsed.protocol !== "https:" && parsed.hostname !== "localhost") {
+      showSettingsError("URL must use https://");
+      return;
+    }
 
     chrome.storage.sync.set({ apiBase: url }, () => {
       // Also update local storage for background worker compatibility
       chrome.storage.local.set({ apiBase: url });
       dashboardLink.href = url;
-
-      saveUrlBtn.classList.add("saved");
-      saveUrlBtn.textContent = "Saved";
-      setTimeout(() => {
-        saveUrlBtn.classList.remove("saved");
-        saveUrlBtn.textContent = "Save";
-      }, 2000);
+      flashSaved(saveUrlBtn);
     });
+  });
+
+  saveKeyBtn.addEventListener("click", () => {
+    const key = apiKeyInput.value.trim();
+    chrome.storage.sync.set({ apiKey: key }, () => flashSaved(saveKeyBtn));
   });
 });

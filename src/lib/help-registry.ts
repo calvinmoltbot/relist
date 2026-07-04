@@ -483,7 +483,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     id: "extension-install",
     title: "Installing the Extension",
     description:
-      "Load the extension from the 'extension/' folder in developer mode: Chrome → Extensions → Enable Developer Mode → Load Unpacked → select the extension folder.",
+      "Download the extension zip from relist.warmwetcircles.com/relist-extension-v0.2.0.zip and unzip it. Then in Chrome: Extensions → Enable Developer Mode → Load Unpacked → select the unzipped folder. After installing, add your access key in the extension's Settings.",
     category: "tip",
     group: "Chrome Extension",
   },
@@ -502,6 +502,30 @@ export const HELP_ENTRIES: HelpEntry[] = [
       "When you view an item on Vinted, a floating button appears. It changes based on context: green 'Add to ReList' for new items, blue 'Update' for items already in your inventory, and amber 'Watching' for items on your flip watch list. Click the dropdown arrow for more options like 'Watch for Flip'.",
     category: "feature",
     group: "Chrome Extension",
+  },
+  {
+    id: "extension-api-key",
+    title: "Connecting the Extension (Access Key)",
+    description:
+      "The extension needs your access key to talk to ReList. Open the extension popup, scroll to Settings, paste your access key into the 'API Key' box and hit Save. It's the same key you use to log in to the ReList website. Without it, the buttons will show an error when you try to send items.",
+    category: "tip",
+    group: "Chrome Extension",
+  },
+  {
+    id: "extension-main-photo",
+    title: "Photos: Main Picture Only",
+    description:
+      "When you add an item from Vinted, ReList saves just the main (first) photo. It's there as a quick visual reminder of which item is which — you don't need every angle cluttering things up.",
+    category: "tip",
+    group: "Chrome Extension",
+  },
+  {
+    id: "app-login",
+    title: "Logging In",
+    description:
+      "ReList is protected with a password so only you can see your inventory and profits. Enter your access key on the login page and you'll stay logged in on that browser for a year. Use the same key in the Chrome extension settings.",
+    category: "feature",
+    group: "Getting Started",
   },
 ];
 

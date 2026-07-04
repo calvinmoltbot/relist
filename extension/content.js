@@ -8,7 +8,7 @@
   "use strict";
 
   const BATCH_INTERVAL = 30000; // Send batch every 30 seconds
-  const SCRAPE_INTERVAL = 3000; // Re-scrape DOM every 3 seconds (for infinite scroll)
+  const MAX_SEEN_IDS = 2000; // Cap dedup memory during long browsing sessions
   let pendingListings = [];
   let seenIds = new Set();
   let enabled = true;
@@ -40,6 +40,7 @@
       try {
         const listing = extractFromCard(card);
         if (listing && !seenIds.has(listing.vintedId)) {
+          if (seenIds.size >= MAX_SEEN_IDS) seenIds.clear();
           seenIds.add(listing.vintedId);
           pendingListings.push(listing);
           injectBadge(card, listing);
@@ -297,27 +298,23 @@
     const descEl = document.querySelector('[itemprop="description"]');
     data.description = descEl?.textContent?.trim() ?? null;
 
-    // Photos — Vinted uses data-testid="item-photo-N--img" pattern
-    const photoUrls = new Set();
-    for (let i = 1; i <= 20; i++) {
-      const img = document.querySelector(`[data-testid="item-photo-${i}--img"]`);
-      if (!img) break;
-      const src = img.src || img.getAttribute("src");
-      if (src && src.startsWith("http")) {
-        // Keep the full URL (includes size params for CDN)
-        photoUrls.add(src);
-      }
-    }
-    // Fallback: any img inside elements with item-photo test IDs
-    if (photoUrls.size === 0) {
-      document.querySelectorAll('[data-testid^="item-photo"] img').forEach(img => {
+    // Photo — only the main photo; Lily uses images purely as a visual
+    // reference, so the rest are never needed.
+    const photoUrls = [];
+    const mainImg = document.querySelector('[data-testid="item-photo-1--img"]');
+    let mainSrc = mainImg ? mainImg.src || mainImg.getAttribute("src") : null;
+    // Fallback: first img inside elements with item-photo test IDs
+    if (!mainSrc || !mainSrc.startsWith("http")) {
+      for (const img of document.querySelectorAll('[data-testid^="item-photo"] img')) {
         const src = img.src || img.getAttribute("src");
         if (src && src.startsWith("http") && !src.includes("favicon")) {
-          photoUrls.add(src);
+          mainSrc = src;
+          break;
         }
-      });
+      }
     }
-    data.photoUrls = [...photoUrls];
+    if (mainSrc && mainSrc.startsWith("http")) photoUrls.push(mainSrc);
+    data.photoUrls = photoUrls;
 
     return data;
   }
@@ -374,6 +371,13 @@
   let currentCheckResult = null;
   let dropdownOpen = false;
 
+  // Close dropdown on outside click. Registered once for the page lifetime —
+  // injectSendButton runs on every SPA navigation, so registering there would
+  // stack up duplicate listeners that toggle the dropdown multiple times.
+  document.addEventListener("click", () => {
+    if (dropdownOpen) toggleDropdown();
+  });
+
   function injectSendButton() {
     if (sendButtonInjected) return;
     if (!isItemDetailPage()) return;
@@ -408,11 +412,6 @@
     container.appendChild(toggle);
     container.appendChild(dropdown);
     document.body.appendChild(container);
-
-    // Close dropdown on outside click
-    document.addEventListener("click", () => {
-      if (dropdownOpen) toggleDropdown();
-    });
 
     // Check inventory status
     chrome.runtime.sendMessage(
@@ -632,15 +631,15 @@
     btn.disabled = true;
 
     try {
-      const { apiBase } = await new Promise((resolve) =>
-        chrome.storage.sync.get(["apiBase"], resolve),
-      );
-      const base = apiBase || "https://relist.warmwetcircles.com";
-
-      await fetch(`${base}/api/watch-items/${watchItemId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "passed" }),
+      await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(
+          { type: "PASS_WATCH_ITEM", watchItemId },
+          (resp) => {
+            if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+            else if (resp?.error) reject(new Error(resp.error));
+            else resolve(resp);
+          },
+        );
       });
 
       btn.className = "relist-send-success";
@@ -663,14 +662,12 @@
     injectSendButton();
   }
 
-  // Re-scrape periodically (handles infinite scroll)
-  setInterval(extractListings, SCRAPE_INTERVAL);
-
   // Flush batch periodically
   setInterval(flushBatch, BATCH_INTERVAL);
 
-  // Also flush on page unload
-  window.addEventListener("beforeunload", flushBatch);
+  // Also flush on page unload — pagehide fires reliably where beforeunload
+  // doesn't (bfcache, mobile tab discard)
+  window.addEventListener("pagehide", flushBatch);
 
   // Track URL changes for SPA navigation — use both polling and MutationObserver
   // because Vinted is an SPA and neither method alone is reliable
@@ -691,10 +688,17 @@
   // don't trigger DOM mutations (e.g. History API pushState)
   setInterval(checkNavigation, 500);
 
-  // Also watch DOM mutations as a faster fallback
+  // Also watch DOM mutations as a faster fallback. Vinted's feed mutates
+  // constantly, so debounce — without it this fires extractListings dozens
+  // of times per second while scrolling.
+  let mutationDebounce = null;
   const observer = new MutationObserver(() => {
-    extractListings();
     checkNavigation();
+    if (mutationDebounce) return;
+    mutationDebounce = setTimeout(() => {
+      mutationDebounce = null;
+      extractListings();
+    }, 500);
   });
   observer.observe(document.body, { childList: true, subtree: true });
 })();

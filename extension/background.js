@@ -1,14 +1,28 @@
 // ---------------------------------------------------------------------------
 // ReList Background Service Worker
 // Batches listing data from content script and sends to ReList API.
-// Caches price stats for content script overlay.
+// All API calls go through apiFetch, which attaches the X-ReList-Key header.
 // ---------------------------------------------------------------------------
 
 const API_BASE = "https://relist.warmwetcircles.com";
+const MAX_QUEUED_BATCHES = 20; // Failed ingest batches kept for retry
 let cachedStats = {};
 let todayCount = 0;
-let lastStatsRefresh = 0;
-const STATS_REFRESH_INTERVAL = 5 * 60 * 1000; // Refresh stats every 5 minutes
+
+// ---------------------------------------------------------------------------
+// Config + authenticated fetch
+// ---------------------------------------------------------------------------
+async function getConfig() {
+  const { apiBase, apiKey } = await chrome.storage.sync.get(["apiBase", "apiKey"]);
+  return { base: apiBase || API_BASE, key: apiKey || "" };
+}
+
+async function apiFetch(path, options = {}) {
+  const { base, key } = await getConfig();
+  const headers = { ...(options.headers || {}) };
+  if (key) headers["X-ReList-Key"] = key;
+  return fetch(`${base}${path}`, { ...options, headers });
+}
 
 // ---------------------------------------------------------------------------
 // Message handler
@@ -20,10 +34,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   if (message.type === "GET_STATS") {
-    maybeRefreshStats().then(() => {
-      sendResponse({ stats: cachedStats });
-    });
-    return true; // Will respond async
+    sendResponse({ stats: cachedStats });
+    return false;
   }
 
   if (message.type === "GET_COUNT") {
@@ -65,15 +77,19 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       .catch((error) => sendResponse({ error: error.message }));
     return true;
   }
+
+  if (message.type === "PASS_WATCH_ITEM") {
+    passWatchItem(message.watchItemId)
+      .then((result) => sendResponse(result))
+      .catch((error) => sendResponse({ error: error.message }));
+    return true;
+  }
 });
 
 // ---------------------------------------------------------------------------
 // Send item to ReList inventory
 // ---------------------------------------------------------------------------
 async function sendToReList(data) {
-  const { apiBase } = await chrome.storage.sync.get(["apiBase"]);
-  const base = apiBase || API_BASE;
-
   const payload = {
     name: data.title,
     brand: data.brand || null,
@@ -89,7 +105,7 @@ async function sendToReList(data) {
     externalPhotoUrls: data.photoUrls || [],
   };
 
-  const response = await fetch(`${base}/api/inventory`, {
+  const response = await apiFetch("/api/inventory", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -105,53 +121,40 @@ async function sendToReList(data) {
 }
 
 // ---------------------------------------------------------------------------
-// Ingest batch to API
+// Ingest batch to API — failed batches are queued and retried on the next
+// ingest so a flaky connection doesn't lose scraped listings.
 // ---------------------------------------------------------------------------
+async function postListings(listings) {
+  const response = await apiFetch("/api/price-data/ingest", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ listings }),
+  });
+  if (!response.ok) throw new Error(`Ingest failed: ${response.status}`);
+}
+
 async function ingestBatch(listings) {
   if (!listings || listings.length === 0) return;
 
   todayCount += listings.length;
-
-  // Persist count
   chrome.storage.local.set({ todayCount, lastCountDate: new Date().toDateString() });
 
-  const { apiBase } = await chrome.storage.sync.get(["apiBase"]);
-  const base = apiBase || API_BASE;
+  // Prepend any batches that failed earlier
+  const { queuedBatches } = await chrome.storage.local.get(["queuedBatches"]);
+  const batches = [...(queuedBatches || []), listings];
+  const failed = [];
 
-  try {
-    const response = await fetch(`${base}/api/price-data/ingest`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ listings }),
-    });
-
-    if (!response.ok) {
-      console.error("[ReList] Ingest failed:", response.status);
+  for (const batch of batches) {
+    try {
+      await postListings(batch);
+    } catch (error) {
+      console.error("[ReList] Ingest error, queuing batch for retry:", error);
+      failed.push(batch);
     }
-  } catch (error) {
-    console.error("[ReList] Ingest error:", error);
-    // TODO: Queue for retry
   }
-}
 
-// ---------------------------------------------------------------------------
-// Stats cache
-// ---------------------------------------------------------------------------
-async function maybeRefreshStats() {
-  const now = Date.now();
-  if (now - lastStatsRefresh < STATS_REFRESH_INTERVAL) return;
-
-  const { apiBase } = await chrome.storage.sync.get(["apiBase"]);
-  const base = apiBase || API_BASE;
-
-  try {
-    // Fetch stats for common brand+category combos Lily browses
-    // For now, we cache whatever stats the API returns
-    // The content script requests specific brand+category combos
-    lastStatsRefresh = now;
-  } catch {
-    // Use stale cache
-  }
+  // Keep the newest batches if the queue overflows
+  chrome.storage.local.set({ queuedBatches: failed.slice(-MAX_QUEUED_BATCHES) });
 }
 
 // ---------------------------------------------------------------------------
@@ -160,11 +163,8 @@ async function maybeRefreshStats() {
 async function checkInventory(vintedUrl) {
   if (!vintedUrl) return { inInventory: false, watched: false };
 
-  const { apiBase } = await chrome.storage.sync.get(["apiBase"]);
-  const base = apiBase || API_BASE;
-
-  const response = await fetch(
-    `${base}/api/inventory/check?vintedUrl=${encodeURIComponent(vintedUrl)}`,
+  const response = await apiFetch(
+    `/api/inventory/check?vintedUrl=${encodeURIComponent(vintedUrl)}`,
   );
 
   if (!response.ok) {
@@ -178,10 +178,7 @@ async function checkInventory(vintedUrl) {
 // Add item to watch list
 // ---------------------------------------------------------------------------
 async function watchItem(data) {
-  const { apiBase } = await chrome.storage.sync.get(["apiBase"]);
-  const base = apiBase || API_BASE;
-
-  const response = await fetch(`${base}/api/watch-items`, {
+  const response = await apiFetch("/api/watch-items", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -209,10 +206,7 @@ async function watchItem(data) {
 // Convert watched item to inventory (Mark as Bought)
 // ---------------------------------------------------------------------------
 async function convertWatchItem(watchItemId, buyPrice) {
-  const { apiBase } = await chrome.storage.sync.get(["apiBase"]);
-  const base = apiBase || API_BASE;
-
-  const response = await fetch(`${base}/api/watch-items/${watchItemId}/convert`, {
+  const response = await apiFetch(`/api/watch-items/${watchItemId}/convert`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ buyPrice }),
@@ -221,6 +215,23 @@ async function convertWatchItem(watchItemId, buyPrice) {
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(`Convert failed: ${response.status}: ${errorBody}`);
+  }
+
+  return await response.json();
+}
+
+// ---------------------------------------------------------------------------
+// Mark a watched item as passed
+// ---------------------------------------------------------------------------
+async function passWatchItem(watchItemId) {
+  const response = await apiFetch(`/api/watch-items/${watchItemId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: "passed" }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Pass failed: ${response.status}`);
   }
 
   return await response.json();

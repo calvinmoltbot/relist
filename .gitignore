@@ -53,3 +53,6 @@ secrets.json
 
 # Local DB backups
 backups/
+
+# Lily's setup instructions (contains the API key)
+FOR-LILY.md
